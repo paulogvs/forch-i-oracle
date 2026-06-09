@@ -2,8 +2,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrediction } from '@/lib/gemini';
 import { getMatchContext } from '@/lib/football-api';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // Rate limiting: 10 requests per minute per IP
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  if (!checkRateLimit(ip, 10, 60000)) {
+    return NextResponse.json(
+      { error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { homeTeam, awayTeam } = body;
@@ -41,10 +51,7 @@ export async function POST(request: NextRequest) {
     console.error('Error en /api/predict:', error);
 
     return NextResponse.json(
-      {
-        error: 'Error al generar predicción',
-        details: error instanceof Error ? error.message : 'Error desconocido',
-      },
+      { error: 'Error al generar predicción' },
       { status: 500 }
     );
   }

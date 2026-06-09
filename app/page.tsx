@@ -86,13 +86,15 @@ export default function Home() {
                 value={homeTeam}
                 onChange={setHomeTeam}
                 label="🏠 Equipo Local"
-                disabled={awayTeam}
+                disabled={!!awayTeam}
+                disabledTeam={awayTeam}
               />
               <TeamSelector
                 value={awayTeam}
                 onChange={setAwayTeam}
                 label="✈️ Equipo Visitante"
-                disabled={homeTeam}
+                disabled={!!homeTeam}
+                disabledTeam={homeTeam}
               />
             </div>
 

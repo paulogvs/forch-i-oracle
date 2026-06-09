@@ -7,10 +7,11 @@ interface TeamSelectorProps {
   value: string;
   onChange: (value: string) => void;
   label: string;
-  disabled?: string;
+  disabled?: boolean;
+  disabledTeam?: string;
 }
 
-export default function TeamSelector({ value, onChange, label, disabled }: TeamSelectorProps) {
+export default function TeamSelector({ value, onChange, label, disabled, disabledTeam }: TeamSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLDivElement>(null);
@@ -18,7 +19,7 @@ export default function TeamSelector({ value, onChange, label, disabled }: TeamS
   const filteredTeams = TEAM_NAMES.filter(
     (team) =>
       team.toLowerCase().includes(search.toLowerCase()) &&
-      team !== disabled
+      team !== disabledTeam
   );
 
   useEffect(() => {

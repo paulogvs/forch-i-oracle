@@ -13,10 +13,14 @@ export const metadata: Metadata = {
     'Gemini',
     'FORCH.i',
   ],
+  icons: {
+    icon: '/favicon.svg',
+  },
   openGraph: {
     title: 'FORCH.i ORACLE',
     description: 'Predicciones IA del Mundial FIFA 2026',
     type: 'website',
+    images: ['/opengraph.svg'],
   },
 };
 

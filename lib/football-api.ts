@@ -1,6 +1,6 @@
 // FORCH.i ORACLE — Fetch de datos de API-Football (gratis: 100 req/día)
 
-const API_KEY = process.env.FOOTBALL_API_KEY;
+const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
 
 // Mapeo de nombres en español a códigos API-Football
@@ -71,6 +71,7 @@ function toApiName(spanishName: string): string {
  * Fetch genérico con manejo de errores
  */
 async function apiFetch(endpoint: string): Promise<Record<string, unknown> | null> {
+  const API_KEY = getApiKey();
   if (!API_KEY) {
     console.warn('FOOTBALL_API_KEY no configurada — usando datos genéricos');
     return null;
