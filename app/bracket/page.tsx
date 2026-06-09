@@ -94,7 +94,7 @@ export default function BracketPage() {
             </button>
 
             <p className="text-gray-600 text-xs mt-4">
-              La simulación puede tardar 1-2 minutos. Usa datos en tiempo real de API-Football + Groq Llama 3.3.
+              Simulación rápida: usa ratings de potencia para fase de grupos + Groq para eliminatorias.
             </p>
           </div>
         )}
@@ -122,14 +122,14 @@ export default function BracketPage() {
               <p className={progress > 10 ? 'text-forch-gold' : ''}>
                 {progress > 10 ? '✓' : '○'} Simulando fase de grupos...
               </p>
-              <p className={progress > 40 ? 'text-forch-gold' : ''}>
-                {progress > 40 ? '✓' : '○'} Calculando clasificados...
+              <p className={progress > 30 ? 'text-forch-gold' : ''}>
+                {progress > 30 ? '✓' : '○'} Simulando 1/16 y 1/8 de final con IA...
               </p>
               <p className={progress > 60 ? 'text-forch-gold' : ''}>
-                {progress > 60 ? '✓' : '○'} Simulando eliminatorias...
+                {progress > 60 ? '✓' : '○'} Simulando cuartos y semifinales...
               </p>
               <p className={progress > 85 ? 'text-forch-gold' : ''}>
-                {progress > 85 ? '✓' : '○'} Generando bracket final...
+                {progress > 85 ? '✓' : '○'} Simulando la Gran Final...
               </p>
             </div>
           </div>
