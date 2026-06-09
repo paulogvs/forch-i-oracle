@@ -73,26 +73,34 @@ function toApiName(spanishName: string): string {
 async function apiFetch(endpoint: string): Promise<Record<string, unknown> | null> {
   const API_KEY = getApiKey();
   if (!API_KEY) {
-    console.warn('FOOTBALL_API_KEY no configurada — usando datos genéricos');
+    console.warn('[football-api] FOOTBALL_API_KEY no configurada — usando datos genéricos');
     return null;
   }
 
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       headers: {
-        'x-rapidapi-host': 'v3.football.api-sports.io',
         'x-apisports-key': API_KEY,
       },
     });
 
     if (!response.ok) {
-      console.error(`API-Football error: ${response.status}`);
+      const body = await response.text().catch(() => '');
+      console.error(`[football-api] HTTP ${response.status}: ${body}`);
       return null;
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // API-Football returns { errors: {...}, results: number, response: [...] }
+    if (data.errors && Object.keys(data.errors).length > 0) {
+      console.error('[football-api] API errors:', JSON.stringify(data.errors));
+      return null;
+    }
+
+    return data;
   } catch (error) {
-    console.error('Error fetching API-Football:', error);
+    console.error('[football-api] Fetch error:', error);
     return null;
   }
 }

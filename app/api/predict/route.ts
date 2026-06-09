@@ -51,9 +51,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. Get real data context (API-Football)
-    const contextData = await getMatchContext(homeTeam, awayTeam);
+    console.log(`[predict] Fetching context for ${homeTeam} vs ${awayTeam}`);
+    let contextData: string;
+    try {
+      contextData = await getMatchContext(homeTeam, awayTeam);
+    } catch (footballError) {
+      console.error('[predict] Football API error:', footballError);
+      // Continue with generic context — Football API is non-critical
+      contextData = `No live data available for ${homeTeam} vs ${awayTeam}. Based on general knowledge only.`;
+    }
 
     // 2. Generate prediction with Gemini 1.5 Flash
+    console.log(`[predict] Calling Gemini for prediction`);
     const prediction = await getPrediction(
       homeTeam,
       awayTeam,
@@ -71,11 +80,36 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error in /api/predict:', error);
+    // Log the ACTUAL error with full details
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[predict] FAILED:', errorMsg);
+    if (errorStack) console.error('[predict] Stack:', errorStack);
+
+    // Return specific error messages based on the failure
+    let userMessage = 'Error generating prediction';
+    let statusCode = 500;
+
+    if (errorMsg.includes('GEMINI_API_KEY')) {
+      userMessage = 'Gemini API key not configured. Check .env.local';
+      statusCode = 503;
+    } else if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('403')) {
+      userMessage = 'Invalid Gemini API key. Regenerate at ai.google.dev';
+      statusCode = 503;
+    } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429')) {
+      userMessage = 'Gemini API quota exceeded. Try again later.';
+      statusCode = 429;
+    } else if (errorMsg.includes('SAFETY') || errorMsg.includes('blocked')) {
+      userMessage = 'Prediction blocked by safety filters. Try different teams.';
+      statusCode = 422;
+    } else if (errorMsg.includes('Could not parse')) {
+      userMessage = 'AI returned invalid prediction data. Please retry.';
+      statusCode = 502;
+    }
 
     return NextResponse.json(
-      { error: 'Error generating prediction' },
-      { status: 500 }
+      { error: userMessage, details: process.env.NODE_ENV === 'development' ? errorMsg : undefined },
+      { status: statusCode }
     );
   }
 }
