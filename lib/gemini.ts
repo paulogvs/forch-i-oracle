@@ -1,40 +1,40 @@
-// FORCH.i ORACLE — Cliente Gemini 1.5 Flash con Grounding
+// FORCH.i ORACLE — Gemini 1.5 Flash client with Grounding
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Inicialización lazy — no crashea en build time sin .env.local
+// Lazy init — no crash at build time without .env.local
 function getGenAI() {
   const API_KEY = process.env.GEMINI_API_KEY;
   if (!API_KEY) {
-    throw new Error('GEMINI_API_KEY no está configurada en .env.local');
+    throw new Error('GEMINI_API_KEY not configured in .env.local');
   }
   return new GoogleGenerativeAI(API_KEY);
 }
 
-// Prompt del sistema para análisis deportivo
-const SYSTEM_PROMPT = `Eres un analista deportivo de élite mundial, especializado en fútbol internacional.
-Tu nombre es FORCH.i Oracle.
+// System prompt for sports analysis
+const SYSTEM_PROMPT = `You are an elite world-class sports analyst specialized in international football.
+Your name is FORCH.i Oracle.
 
-Antes de calcular predicciones, SIEMPRE usa tu herramienta de búsqueda para encontrar:
-1. LESIONES ACTUALES de jugadores clave de ambos equipos
-2. TARJETAS Y AMONESTACIONES recientes que puedan afectar alineaciones
-3. ALINEACIONES PROBABLES del último partido de cada equipo
-4. FORMA RECIENTE — resultados de los últimos 5 partidos oficiales
-5. HISTORIAL DE ENFRENTAMIENTOS directos entre ambos equipos
-6. NOTICIAS RELEVANTES — cambios de entrenador, conflictos internos, motivación
+Before calculating predictions, ALWAYS use your search tool to find:
+1. CURRENT INJURIES of key players on both teams
+2. RECENT CARDS AND BOOKINGS that may affect lineups
+3. LIKELY LINEUPS from each team's last match
+4. RECENT FORM — results from the last 5 official matches
+5. HEAD-TO-HEAD history between both teams
+6. RELEVANT NEWS — coaching changes, internal conflicts, motivation
 
-Luego calcula los porcentajes de probabilidad:
-- homeWin: probabilidad de victoria del equipo local (0-100)
-- draw: probabilidad de empate (0-100)
-- awayWin: probabilidad de victoria del equipo visitante (0-100)
+Then calculate probability percentages:
+- homeWin: home team win probability (0-100)
+- draw: draw probability (0-100)
+- awayWin: away team win probability (0-100)
 
-Y escribe un ANÁLISIS TÁCTICO de 3-5 oraciones cubriendo:
-- Formación esperada y estilo de juego
-- Jugadores clave a vigilar
-- Fortalezas y debilidades de cada equipo
-- Factor local y moral del equipo
-- Predicción cualitativa del partido
+And write a TACTICAL ANALYSIS of 3-5 sentences covering:
+- Expected formation and playing style
+- Key players to watch
+- Strengths and weaknesses of each team
+- Home advantage and team morale
+- Qualitative match prediction
 
-Responde ÚNICAMENTE con este JSON (sin markdown, sin código, sin explicaciones extra):
+Respond ONLY with this JSON (no markdown, no code, no extra explanations):
 {"homeWin": number, "draw": number, "awayWin": number, "analysis": "string"}`;
 
 export interface Prediction {
@@ -44,13 +44,46 @@ export interface Prediction {
   analysis: string;
 }
 
+interface MatchContext {
+  id: string;
+  group: string;
+  matchday: number;
+  date: string;
+  time: string;
+  venue: string;
+  city: string;
+}
+
 /**
- * Genera una predicción usando Gemini 1.5 Flash con Grounding
+ * Build a match context block for the prompt
+ */
+function buildMatchContextBlock(ctx: MatchContext | null): string {
+  if (!ctx) return '';
+
+  const dateFormatted = new Date(`${ctx.date}T${ctx.time}:00Z`).toLocaleDateString(
+    'en-US',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
+  );
+
+  return `
+MATCH CONTEXT (FIFA World Cup 2026 Group Stage):
+- Group: ${ctx.group}
+- Matchday: ${ctx.matchday} of 3
+- Date: ${dateFormatted} at ${ctx.time} UTC
+- Venue: ${ctx.venue}, ${ctx.city}
+- This is a GROUP STAGE match — every point matters for qualification.
+- Top 2 from each group advance directly; best 3rd-place teams also qualify.
+`;
+}
+
+/**
+ * Generate a prediction using Gemini 1.5 Flash with Grounding
  */
 export async function getPrediction(
   homeTeam: string,
   awayTeam: string,
-  contextData: string
+  contextData: string,
+  matchContext: MatchContext | null = null
 ): Promise<Prediction> {
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({
@@ -58,23 +91,24 @@ export async function getPrediction(
     systemInstruction: SYSTEM_PROMPT,
   });
 
-  const prompt = `Predice el resultado de este partido del Mundial FIFA 2026:
+  const matchCtxBlock = buildMatchContextBlock(matchContext);
 
-🏠 EQUIPO LOCAL: ${homeTeam}
-✈️ EQUIPO VISITANTE: ${awayTeam}
+  const prompt = `Predict the result of this FIFA World Cup 2026 match:
 
-📊 DATOS DISPONIBLES:
+HOME TEAM: ${homeTeam}
+AWAY TEAM: ${awayTeam}
+${matchCtxBlock}
+AVAILABLE DATA:
 ${contextData}
 
-Busca noticias recientes sobre ambos equipos y calcula las probabilidades.
-Responde SOLO con el JSON solicitado.`;
+Search for recent news about both teams and calculate probabilities.
+Respond ONLY with the requested JSON.`;
 
   const result = await model.generateContent(prompt);
   const response = result.response.text();
 
-  // Parsear la respuesta JSON
+  // Parse the JSON response
   try {
-    // Limpiar la respuesta de posibles markdown wrappers
     const cleaned = response
       .replace(/```json\n?/g, '')
       .replace(/```\n?/g, '')
@@ -82,17 +116,13 @@ Responde SOLO con el JSON solicitado.`;
 
     const parsed = JSON.parse(cleaned);
 
-    // Validar que los porcentajes sumen ~100
-    const total = (parsed.homeWin || 0) + (parsed.draw || 0) + (parsed.awayWin || 0);
-
     return {
       homeWin: Math.round(parsed.homeWin || 0),
       draw: Math.round(parsed.draw || 0),
       awayWin: Math.round(parsed.awayWin || 0),
-      analysis: parsed.analysis || 'Análisis no disponible.',
+      analysis: parsed.analysis || 'Analysis not available.',
     };
   } catch {
-    // Si el parse falla, intentar extraer JSON del texto
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -100,9 +130,9 @@ Responde SOLO con el JSON solicitado.`;
         homeWin: Math.round(parsed.homeWin || 0),
         draw: Math.round(parsed.draw || 0),
         awayWin: Math.round(parsed.awayWin || 0),
-        analysis: parsed.analysis || 'Análisis no disponible.',
+        analysis: parsed.analysis || 'Analysis not available.',
       };
     }
-    throw new Error('No se pudo parsear la respuesta de Gemini');
+    throw new Error('Could not parse Gemini response');
   }
 }
