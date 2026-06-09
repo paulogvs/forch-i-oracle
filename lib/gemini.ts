@@ -79,7 +79,7 @@ MATCH CONTEXT (FIFA World Cup 2026 Group Stage):
 /**
  * Safely parse JSON from Gemini response, handling markdown fences
  */
-function parseGeminiJson(response: string): Prediction {
+export function parseGeminiJson(response: string): Prediction {
   // Strip markdown code fences if present
   const cleaned = response
     .replace(/```json\s*/g, '')
@@ -101,8 +101,12 @@ function parseGeminiJson(response: string): Prediction {
         // Second regex attempt with more aggressive cleaning
         const aggressiveMatch = response.match(/\{[\s\S]*?\}/);
         if (aggressiveMatch) {
-          const parsed = JSON.parse(aggressiveMatch[0]);
-          return validatePrediction(parsed, 'aggressive extraction');
+          try {
+            const parsed = JSON.parse(aggressiveMatch[0]);
+            return validatePrediction(parsed, 'aggressive extraction');
+          } catch {
+            // Fall through to final error
+          }
         }
       }
     }
@@ -113,7 +117,7 @@ function parseGeminiJson(response: string): Prediction {
 /**
  * Validate and normalize parsed prediction
  */
-function validatePrediction(parsed: Record<string, unknown>, source: string): Prediction {
+export function validatePrediction(parsed: Record<string, unknown>, source: string): Prediction {
   const homeWin = Number(parsed.homeWin);
   const draw = Number(parsed.draw);
   const awayWin = Number(parsed.awayWin);

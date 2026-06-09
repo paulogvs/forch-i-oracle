@@ -25,3 +25,8 @@ export function checkRateLimit(
   record.count++;
   return true;
 }
+
+/** Reset all rate limit state (for testing only) */
+export function resetRateLimit(): void {
+  rateLimit.clear();
+}

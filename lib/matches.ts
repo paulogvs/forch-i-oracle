@@ -1,5 +1,6 @@
 // FORCH.i ORACLE — FIFA World Cup 2026 Official Schedule
 // 48 teams in 12 groups of 4 → 72 group stage matches + 56 knockout matches
+import { getTeamByName } from './teams';
 
 export interface Match {
   id: string;
@@ -237,6 +238,8 @@ const ROUND_OF_16: Match[] = [
   { id: 'R16-6', group: '-', matchday: 0, date: '2026-07-06', time: '22:00', homeTeam: 'Ganador R32-11', awayTeam: 'Ganador R32-12', homeCode: 'W11', awayCode: 'W12', venue: 'Lumen Field', city: 'Seattle', round: 'round-16', isTBD: true },
   // Tuesday July 7
   { id: 'R16-7', group: '-', matchday: 0, date: '2026-07-07', time: '18:00', homeTeam: 'Ganador R32-13', awayTeam: 'Ganador R32-14', homeCode: 'W13', awayCode: 'W14', venue: 'Lincoln Financial Field', city: 'Philadelphia', round: 'round-16', isTBD: true },
+  // Wednesday July 8
+  { id: 'R16-8', group: '-', matchday: 0, date: '2026-07-08', time: '22:00', homeTeam: 'TBD', awayTeam: 'TBD', homeCode: 'TBD', awayCode: 'TBD', venue: 'TBD', city: 'TBD', round: 'round-16', isTBD: true },
 ];
 
 // ─── QUARTER-FINALS (Cuartos) ─────────────────────────────────
@@ -337,8 +340,6 @@ export function formatMatchTime(match: Match): string {
 }
 
 /** Get country flag emoji from team name using teams.ts data */
-import { getTeamByName } from './teams';
-
 export function getTeamFlag(teamName: string): string {
   const team = getTeamByName(teamName);
   return team?.flag || '🏳️';

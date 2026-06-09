@@ -107,8 +107,8 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
           const isSelected = match.id === selectedMatchId;
           const isTBD = match.isTBD;
 
-          const homeName = isTBD ? match.homeTeam : match.homeTeam;
-          const awayName = isTBD ? match.awayTeam : match.awayTeam;
+          const homeName = match.homeTeam;
+          const awayName = match.awayTeam;
 
           const homeFlag = match.homeCode === 'TBD' || match.homeCode.length > 3
             ? '\u{1F3F3}\uFE0F'

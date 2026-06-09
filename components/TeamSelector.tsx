@@ -7,11 +7,10 @@ interface TeamSelectorProps {
   value: string;
   onChange: (value: string) => void;
   label: string;
-  disabled?: boolean;
   disabledTeam?: string;
 }
 
-export default function TeamSelector({ value, onChange, label, disabled, disabledTeam }: TeamSelectorProps) {
+export default function TeamSelector({ value, onChange, label, disabledTeam }: TeamSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const inputRef = useRef<HTMLDivElement>(null);

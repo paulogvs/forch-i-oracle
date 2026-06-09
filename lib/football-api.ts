@@ -1,70 +1,13 @@
 // FORCH.i ORACLE — Fetch de datos de API-Football (gratis: 100 req/día)
+import { getTeamEnglishName } from './teams';
 
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
 
-// Mapeo de nombres en español a códigos API-Football
-const TEAM_NAME_MAP: Record<string, string> = {
-  'alemania': 'Germany',
-  'francia': 'France',
-  'inglaterra': 'England',
-  'españa': 'Spain',
-  'bélgica': 'Belgium',
-  'países bajos': 'Netherlands',
-  'portugal': 'Portugal',
-  'italia': 'Italy',
-  'croacia': 'Croatia',
-  'dinamarca': 'Denmark',
-  'suiza': 'Switzerland',
-  'austria': 'Austria',
-  'escocia': 'Scotland',
-  'serbia': 'Serbia',
-  'ucrania': 'Ukraine',
-  'turquía': 'Turkey',
-  'república checa': 'Czech Republic',
-  'hungría': 'Hungary',
-  'argentina': 'Argentina',
-  'brasil': 'Brazil',
-  'colombia': 'Colombia',
-  'uruguay': 'Uruguay',
-  'ecuador': 'Ecuador',
-  'paraguay': 'Paraguay',
-  'méxico': 'Mexico',
-  'estados unidos': 'USA',
-  'canadá': 'Canada',
-  'costa rica': 'Costa Rica',
-  'jamaica': 'Jamaica',
-  'panamá': 'Panama',
-  'marruecos': 'Morocco',
-  'senegal': 'Senegal',
-  'túnez': 'Tunisia',
-  'camerún': 'Cameroon',
-  'ghana': 'Ghana',
-  'nigeria': 'Nigeria',
-  'argelia': 'Algeria',
-  'costa de marfil': 'Ivory Coast',
-  'japón': 'Japan',
-  'corea del sur': 'South Korea',
-  'australia': 'Australia',
-  'arabia saudita': 'Saudi Arabia',
-  'irán': 'Iran',
-  'qatar': 'Qatar',
-  'irak': 'Iraq',
-  'uzbekistán': 'Uzbekistan',
-  'nueva zelanda': 'New Zealand',
-};
-
 export interface TeamStats {
   injuries: string[];
-  recentForm: string[];
+  recentForm: string[]; // 'W', 'D', 'L' for the queried team
   headToHead: string;
-}
-
-/**
- * Convierte nombre español a inglés para la API
- */
-function toApiName(spanishName: string): string {
-  return TEAM_NAME_MAP[spanishName.toLowerCase()] || spanishName;
 }
 
 /**
@@ -109,7 +52,7 @@ async function apiFetch(endpoint: string): Promise<Record<string, unknown> | nul
  * Obtiene lesiones de un equipo (endpoint: /injuries)
  */
 async function getInjuries(teamName: string): Promise<string[]> {
-  const apiName = toApiName(teamName);
+  const apiName = getTeamEnglishName(teamName);
   const data = await apiFetch(`/injuries?team=${encodeURIComponent(apiName)}&league=1&season=2025`);
 
   if (!data?.response) return [];
@@ -126,44 +69,71 @@ async function getInjuries(teamName: string): Promise<string[]> {
 }
 
 /**
- * Obtiene forma reciente de un equipo (últimos resultados)
+ * Obtiene forma reciente de un equipo (últimos 5 resultados)
+ * Returns 'W', 'D', 'L' for the queried team specifically.
  */
 async function getRecentForm(teamName: string): Promise<string[]> {
-  const apiName = toApiName(teamName);
-  const data = await apiFetch(`/fixtures?team=${encodeURIComponent(apiName)}&last=5&league=1&season=2025`);
+  const apiName = getTeamEnglishName(teamName);
+  const data = await apiFetch(`/fixtures?team=${encodeURIComponent(apiName)}&last=5`);
 
   if (!data?.response) return [];
 
   const form: string[] = [];
   for (const fixture of (data.response as Record<string, unknown>[]).slice(0, 5)) {
-    const teams = fixture.teams as Record<string, Record<string, boolean>> | undefined;
+    const fixtureTeams = fixture.teams as Record<string, Record<string, unknown>> | undefined;
     const goals = fixture.goals as Record<string, number | null> | undefined;
-    if (teams?.home?.winner !== undefined && goals) {
-      const isHome = teams.home.winner;
-      form.push(isHome ? 'W' : 'L');
+
+    if (!fixtureTeams || !goals) continue;
+
+    const homeTeam = fixtureTeams.home as Record<string, unknown> | undefined;
+    const awayTeam = fixtureTeams.away as Record<string, unknown> | undefined;
+
+    // Determine if the queried team was home or away
+    const homeName = homeTeam?.name as string | undefined;
+    const awayName = awayTeam?.name as string | undefined;
+    const isQueriedTeamHome = homeName?.toLowerCase() === apiName.toLowerCase();
+
+    // The winner field tells us which side won
+    const homeWinner = homeTeam?.winner as boolean | null | undefined;
+
+    if (homeWinner === null || homeWinner === undefined) {
+      form.push('D'); // draw
+    } else if (isQueriedTeamHome) {
+      form.push(homeWinner ? 'W' : 'L');
+    } else {
+      // Queried team was away — opposite result
+      form.push(homeWinner ? 'L' : 'W');
     }
   }
   return form;
 }
 
 /**
- * Obtiene enfrentamientos directos
+ * Obtiene enfrentamientos directos con contexto de quién era local/visitante
  */
 async function getHeadToHead(homeTeam: string, awayTeam: string): Promise<string> {
-  const homeApi = toApiName(homeTeam);
-  const awayApi = toApiName(awayTeam);
+  const homeApi = getTeamEnglishName(homeTeam);
+  const awayApi = getTeamEnglishName(awayTeam);
   const data = await apiFetch(`/fixtures/headtohead?h2h=${encodeURIComponent(`${homeApi}-${awayApi}`)}&last=5`);
 
   if (!data?.response) return 'Sin datos de enfrentamientos directos';
 
   const results: string[] = [];
   for (const fixture of (data.response as Record<string, unknown>[]).slice(0, 5)) {
-    const teams = fixture.goals as Record<string, number | null> | undefined;
-    if (teams) {
-      results.push(`${teams.home}-${teams.away}`);
+    const fixtureTeams = fixture.teams as Record<string, Record<string, unknown>> | undefined;
+    const goals = fixture.goals as Record<string, number | null> | undefined;
+
+    if (!fixtureTeams || !goals) continue;
+
+    const homeName = fixtureTeams.home?.name as string | undefined;
+    const homeGoals = goals.home;
+    const awayGoals = goals.away;
+
+    if (homeName && homeGoals !== null && homeGoals !== undefined && awayGoals !== null && awayGoals !== undefined) {
+      results.push(`${homeName} ${homeGoals}-${awayGoals} ${fixtureTeams.away?.name ?? ''}`);
     }
   }
-  return results.length > 0 ? `Últimos H2H: ${results.join(', ')}` : 'Sin enfrentamientos recientes';
+  return results.length > 0 ? `Últimos H2H: ${results.join(' | ')}` : 'Sin enfrentamientos recientes';
 }
 
 /**

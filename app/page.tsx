@@ -192,14 +192,12 @@ export default function Home() {
                   value={homeTeam}
                   onChange={handleManualHome}
                   label="&#x1F3E0; Home Team"
-                  disabled={!!awayTeam}
                   disabledTeam={awayTeam}
                 />
                 <TeamSelector
                   value={awayTeam}
                   onChange={handleManualAway}
                   label="&#x2708;&#xFE0F; Away Team"
-                  disabled={!!homeTeam}
                   disabledTeam={homeTeam}
                 />
               </div>
