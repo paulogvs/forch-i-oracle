@@ -1,0 +1,149 @@
+'use client';
+
+import { useState } from 'react';
+import TeamSelector from '@/components/TeamSelector';
+import ResultCard from '@/components/ResultCard';
+
+interface Prediction {
+  homeWin: number;
+  draw: number;
+  awayWin: number;
+  analysis: string;
+}
+
+export default function Home() {
+  const [homeTeam, setHomeTeam] = useState('');
+  const [awayTeam, setAwayTeam] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [error, setError] = useState('');
+
+  const handlePredict = async () => {
+    if (!homeTeam || !awayTeam) {
+      setError('Selecciona ambos equipos');
+      return;
+    }
+    if (homeTeam === awayTeam) {
+      setError('Los equipos deben ser diferentes');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setPrediction(null);
+
+    try {
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ homeTeam, awayTeam }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al predecir');
+      }
+
+      setPrediction(data.prediction);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* Fondo decorativo */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-forch-gold/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-green-900/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-12">
+        {/* Header */}
+        <header className="text-center mb-12">
+          <div className="inline-block mb-4">
+            <span className="text-6xl">⚽</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+            FORCH.i <span className="text-forch-gold">ORACLE</span>
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Predicciones IA del Mundial FIFA 2026
+          </p>
+          <p className="text-gray-500 text-sm mt-2">
+            Gemini 1.5 Flash + Datos en tiempo real
+          </p>
+        </header>
+
+        {/* Selector de equipos */}
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TeamSelector
+                value={homeTeam}
+                onChange={setHomeTeam}
+                label="🏠 Equipo Local"
+                disabled={awayTeam}
+              />
+              <TeamSelector
+                value={awayTeam}
+                onChange={setAwayTeam}
+                label="✈️ Equipo Visitante"
+                disabled={homeTeam}
+              />
+            </div>
+
+            {/* Botón de predicción */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={handlePredict}
+                disabled={loading || !homeTeam || !awayTeam}
+                className="px-8 py-4 bg-gradient-to-r from-forch-gold to-yellow-500 text-black font-bold
+                           rounded-xl text-lg hover:shadow-lg hover:shadow-forch-gold/25 transition-all
+                           disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
+                           active:scale-95"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Analizando...
+                  </span>
+                ) : (
+                  '🔮 Calcular Predicción'
+                )}
+              </button>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center text-sm">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Resultado */}
+          {prediction && (
+            <ResultCard
+              prediction={prediction}
+              homeTeam={homeTeam}
+              awayTeam={awayTeam}
+            />
+          )}
+        </div>
+
+        {/* Footer */}
+        <footer className="text-center mt-16 text-gray-500 text-sm">
+          <p>Built with <span className="text-forch-gold">FORCH.i</span> by Paulo Velasco</p>
+          <p className="mt-1">Datos: API-Football + Gemini 1.5 Flash + worldcup26.ir</p>
+        </footer>
+      </div>
+    </main>
+  );
+}
