@@ -123,7 +123,7 @@ export default function Home() {
             Predicciones IA del Mundial FIFA 2026
           </p>
           <p className="text-gray-500 text-sm mt-2">
-            Gemini 1.5 Flash + Datos en tiempo real
+            Gemini 2.0 Flash + Datos en tiempo real
           </p>
         </header>
 
@@ -263,7 +263,7 @@ export default function Home() {
             Built with <span className="text-forch-gold">FORCH.i</span> by Paulo Velasco
           </p>
           <p className="mt-1">
-            Datos: API-Football + Gemini 1.5 Flash + worldcup26.ir
+            Datos: API-Football + Gemini 2.0 Flash + worldcup26.ir
           </p>
         </footer>
       </div>

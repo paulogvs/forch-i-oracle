@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       contextData = `No live data available for ${homeTeam} vs ${awayTeam}. Based on general knowledge only.`;
     }
 
-    // 2. Generate prediction with Gemini 1.5 Flash
+    // 2. Generate prediction with Gemini 2.0 Flash
     console.log(`[predict] Calling Gemini for prediction`);
     const prediction = await getPrediction(
       homeTeam,

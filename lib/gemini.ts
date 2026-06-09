@@ -1,4 +1,4 @@
-// FORCH.i ORACLE — Gemini 1.5 Flash client with Grounding
+// FORCH.i ORACLE — Gemini 2.0 Flash client with Grounding
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Lazy init — no crash at build time without .env.local
@@ -135,7 +135,7 @@ export function validatePrediction(parsed: Record<string, unknown>, source: stri
 }
 
 /**
- * Generate a prediction using Gemini 1.5 Flash with Google Search Grounding
+ * Generate a prediction using Gemini 2.0 Flash with Google Search Grounding
  */
 export async function getPrediction(
   homeTeam: string,
@@ -145,7 +145,7 @@ export async function getPrediction(
 ): Promise<Prediction> {
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     systemInstruction: SYSTEM_PROMPT,
   });
 
