@@ -83,28 +83,33 @@ export async function POST(request: NextRequest) {
     // Log the ACTUAL error with full details
     const errorMsg = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorCause = error instanceof Error && (error as Error).cause ? String((error as Error).cause) : '';
     console.error('[predict] FAILED:', errorMsg);
     if (errorStack) console.error('[predict] Stack:', errorStack);
+    if (errorCause) console.error('[predict] Cause:', errorCause);
 
     // Return specific error messages based on the failure
-    let userMessage = 'Error generating prediction';
+    let userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
     let statusCode = 500;
 
-    if (errorMsg.includes('GEMINI_API_KEY')) {
-      userMessage = 'Gemini API key not configured. Check .env.local';
+    if (errorMsg.includes('GEMINI_API_KEY') || errorMsg.includes('API key')) {
+      userMessage = 'Servicio no disponible temporalmente. Estamos trabajando en ello.';
       statusCode = 503;
-    } else if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('403')) {
-      userMessage = 'Invalid Gemini API key. Regenerate at ai.google.dev';
+    } else if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('403') || errorMsg.includes('PERMISSION_DENIED')) {
+      userMessage = 'Servicio no disponible. Contacta al administrador.';
       statusCode = 503;
-    } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429')) {
-      userMessage = 'Gemini API quota exceeded. Try again later.';
+    } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
+      userMessage = 'Demasiadas solicitudes. Intenta de nuevo en un minuto.';
       statusCode = 429;
     } else if (errorMsg.includes('SAFETY') || errorMsg.includes('blocked')) {
-      userMessage = 'Prediction blocked by safety filters. Try different teams.';
+      userMessage = 'Predicción bloqueada. Intenta con otros equipos.';
       statusCode = 422;
     } else if (errorMsg.includes('Could not parse')) {
-      userMessage = 'AI returned invalid prediction data. Please retry.';
+      userMessage = 'Respuesta inválida del servicio. Intenta de nuevo.';
       statusCode = 502;
+    } else if (errorMsg.includes('fetch') || errorMsg.includes('ENOTFOUND') || errorMsg.includes('ECONNREFUSED')) {
+      userMessage = 'Error de conexión con el servicio. Intenta de nuevo.';
+      statusCode = 503;
     }
 
     return NextResponse.json(

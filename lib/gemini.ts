@@ -164,11 +164,7 @@ Then calculate probabilities and provide your analysis.
 Respond ONLY with the requested JSON.`;
 
   try {
-    // Enable Google Search grounding so Gemini can access real-time data
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      tools: [{ googleSearchRetrieval: {} }],
-    });
+    const result = await model.generateContent(prompt);
 
     const response = result.response.text();
     console.log('[gemini] Raw response length:', response.length);
@@ -178,10 +174,10 @@ Respond ONLY with the requested JSON.`;
     const msg = error instanceof Error ? error.message : String(error);
 
     // Re-throw with more context
-    if (msg.includes('API_KEY_INVALID') || msg.includes('403')) {
+    if (msg.includes('API_KEY_INVALID') || msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
       throw new Error('GEMINI_API_KEY_INVALID: The API key is invalid or expired');
     }
-    if (msg.includes('QUOTA') || msg.includes('429')) {
+    if (msg.includes('QUOTA') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
       throw new Error('GEMINI_QUOTA_EXCEEDED: Rate limit or quota exceeded');
     }
     if (msg.includes('SAFETY') || msg.includes('blocked')) {
