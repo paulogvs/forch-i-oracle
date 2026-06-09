@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import TeamSelector from '@/components/TeamSelector';
 import MatchSelector from '@/components/MatchSelector';
 import ResultCard from '@/components/ResultCard';
@@ -119,6 +120,16 @@ export default function Home() {
           <p className="text-gray-500 text-sm mt-2">
             Llama 3.3 70B + Datos en tiempo real
           </p>
+
+          {/* Bracket link */}
+          <Link
+            href="/bracket"
+            className="inline-flex items-center gap-2 mt-4 px-6 py-2.5 bg-white/5 border border-forch-gold/30
+                       rounded-xl text-forch-gold text-sm font-semibold hover:bg-forch-gold/10
+                       hover:border-forch-gold/50 transition-all duration-200"
+          >
+            🏆 Predecir Campeón del Mundo
+          </Link>
         </header>
 
         {/* Selector */}
