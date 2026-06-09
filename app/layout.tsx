@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'FORCH.i ORACLE — Predicciones IA Mundial 2026',
   description:
-    'Predicciones deportivas con inteligencia artificial. Analiza partidos del Mundial FIFA 2026 con Gemini 2.0 Flash y datos en tiempo real.',
+    'Predicciones deportivas con inteligencia artificial. Analiza partidos del Mundial FIFA 2026 con Groq Llama 3.3 y datos en tiempo real.',
   keywords: [
     'mundial 2026',
     'predicciones',

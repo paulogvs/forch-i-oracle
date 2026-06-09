@@ -2,7 +2,7 @@
 name: nextjs-ai-app-review
 description: Systematic review checklist for Next.js apps that integrate external APIs + AI (Gemini/OpenAI) for predictions or analysis
 source: auto-skill
-extracted_at: '2026-06-09T15:47:38.026Z'
+extracted_at: '2026-06-09T16:12:00.000Z'
 ---
 
 # Next.js + AI App Review Checklist
@@ -22,10 +22,15 @@ When reviewing a Next.js app that combines external data APIs with AI model call
 
 ## 2. AI Integration Layer
 
+### Model Availability & SDK Compatibility
+- **Model names change**: AI providers deprecate and rename models. `gemini-1.5-flash` was deprecated (404 Not Found) and replaced by `gemini-2.0-flash`. Always verify the model exists at runtime.
+- **SDK version matters**: In `@google/generative-ai` 0.21.0, `generateContent` accepts a string prompt directly. The `tools` config syntax varies by SDK version — `googleSearchRetrieval` in `generateContent` vs `googleSearch` in `getGenerativeModel`. Match the SDK's expected format.
+- **Test against the SDK you ship**: Don't assume API call formats from documentation apply to your installed version.
+
 ### Prompt & Response Handling
 - **JSON parsing**: AI responses often include markdown code fences. Verify the parser strips ````json` and ```` gracefully, with regex fallback for embedded JSON.
 - **Value validation**: Probabilities should be clamped to 0–100 and checked for NaN before use.
-- **Error mapping**: Different AI failure modes (quota exceeded, safety blocked, invalid key) should map to distinct HTTP status codes and user-facing messages.
+- **Error mapping**: Different AI failure modes (quota exceeded, safety blocked, invalid key, model not found) should map to distinct HTTP status codes and user-facing messages.
 
 ### Grounding / Tool Use
 - If the AI model supports grounding (e.g., `googleSearchRetrieval`), verify the prompt instructs it to search for *current* data, not rely on training data.
@@ -35,6 +40,7 @@ When reviewing a Next.js app that combines external data APIs with AI model call
 - **IP extraction**: `x-forwarded-for` can contain multiple IPs; the first is the real client. Verify parsing.
 - **Non-critical API failures**: External data APIs (sports stats, weather, etc.) should be wrapped in try/catch — the AI can still generate predictions with fallback context.
 - **Error detail exposure**: In production, `details` should only be included when `NODE_ENV === 'development'`.
+- **Generic error messages are debugging blockers**: The catch-all error message must include enough context (or logs) to identify the root cause. Always log `error.stack` and `error.cause` in production logs.
 
 ## 4. Frontend Components
 
@@ -63,3 +69,8 @@ When reviewing a Next.js app that combines external data APIs with AI model call
 - **Env var safety**: `process.env.*` should be validated at startup or typed with Zod/t3-env, not accessed ad-hoc in functions.
 - **Unused theme values**: Check Tailwind config for defined colors/sizes that are never used — they indicate incomplete work or dead code.
 - **Security headers**: Verify both `vercel.json` and `next.config.mjs` aren't duplicating headers (Next.js `headers()` takes precedence for matched routes).
+
+## 8. Production Debugging (Vercel/Serverless)
+
+- **When the user reports a generic error**: The first step is to check Vercel logs, not guess. Generic error messages ("Error generating prediction") hide the real cause. Always check the server-side logs for the actual error message and stack trace.
+- **Common Vercel-only failures**: Cold start import failures, environment variable misconfiguration, model/API deprecation, SDK version incompatibility. These won't show up in local dev.

@@ -84,7 +84,7 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
 
       {/* Footer */}
       <div className="text-center mt-4 text-xs text-gray-500">
-        Datos: API-Football + Gemini 2.0 Flash · FORCH.i by Paulo Velasco
+        Datos: API-Football + Groq Llama 3.3 · FORCH.i by Paulo Velasco
       </div>
     </div>
   );

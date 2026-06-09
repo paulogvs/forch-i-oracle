@@ -1,20 +1,20 @@
-// FORCH.i ORACLE — Gemini 2.0 Flash client with Grounding
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// FORCH.i ORACLE — Groq + Llama 3.3 client
+import Groq from 'groq-sdk';
 
 // Lazy init — no crash at build time without .env.local
-function getGenAI() {
-  const API_KEY = process.env.GEMINI_API_KEY;
+function getGroqClient(): Groq {
+  const API_KEY = process.env.GROQ_API_KEY;
   if (!API_KEY) {
-    throw new Error('GEMINI_API_KEY not configured in .env.local');
+    throw new Error('GROQ_API_KEY not configured in environment variables');
   }
-  return new GoogleGenerativeAI(API_KEY);
+  return new Groq({ apiKey: API_KEY });
 }
 
 // System prompt for sports analysis
 const SYSTEM_PROMPT = `You are an elite world-class sports analyst specialized in international football.
 Your name is FORCH.i Oracle.
 
-You MUST use your Google Search tool to find CURRENT information about both teams:
+You MUST use your web search tool to find CURRENT information about both teams:
 1. CURRENT INJURIES of key players
 2. RECENT CARDS AND BOOKINGS that may affect lineups
 3. LIKELY LINEUPS from each team's last match
@@ -77,7 +77,7 @@ MATCH CONTEXT (FIFA World Cup 2026 Group Stage):
 }
 
 /**
- * Safely parse JSON from Gemini response, handling markdown fences
+ * Safely parse JSON from LLM response, handling markdown fences
  */
 export function parseGeminiJson(response: string): Prediction {
   // Strip markdown code fences if present
@@ -110,7 +110,7 @@ export function parseGeminiJson(response: string): Prediction {
         }
       }
     }
-    throw new Error(`Could not parse Gemini response: ${response.substring(0, 200)}`);
+    throw new Error(`Could not parse response: ${response.substring(0, 200)}`);
   }
 }
 
@@ -135,7 +135,7 @@ export function validatePrediction(parsed: Record<string, unknown>, source: stri
 }
 
 /**
- * Generate a prediction using Gemini 2.0 Flash with Google Search Grounding
+ * Generate a prediction using Groq + Llama 3.3 70B
  */
 export async function getPrediction(
   homeTeam: string,
@@ -143,11 +143,7 @@ export async function getPrediction(
   contextData: string,
   matchContext: MatchContext | null = null
 ): Promise<Prediction> {
-  const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    systemInstruction: SYSTEM_PROMPT,
-  });
+  const groq = getGroqClient();
 
   const matchCtxBlock = buildMatchContextBlock(matchContext);
 
@@ -159,32 +155,44 @@ ${matchCtxBlock}
 AVAILABLE DATA:
 ${contextData}
 
-Use Google Search to find the latest news, injuries, and form for both teams.
+Use web search to find the latest news, injuries, and form for both teams.
 Then calculate probabilities and provide your analysis.
 Respond ONLY with the requested JSON.`;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 1024,
+    });
 
-    const response = result.response.text();
-    console.log('[gemini] Raw response length:', response.length);
+    const response = result.choices[0]?.message?.content;
+    if (!response) {
+      throw new Error('Empty response from LLM');
+    }
+
+    console.log('[groq] Raw response length:', response.length);
 
     return parseGeminiJson(response);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
 
     // Re-throw with more context
-    if (msg.includes('API_KEY_INVALID') || msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
-      throw new Error('GEMINI_API_KEY_INVALID: The API key is invalid or expired');
+    if (msg.includes('API_KEY') || msg.includes('authentication') || msg.includes('401')) {
+      throw new Error('GROQ_API_KEY_INVALID: The API key is invalid or expired');
     }
-    if (msg.includes('QUOTA') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-      throw new Error('GEMINI_QUOTA_EXCEEDED: Rate limit or quota exceeded');
+    if (msg.includes('rate') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error('GROQ_QUOTA_EXCEEDED: Rate limit or quota exceeded');
     }
-    if (msg.includes('SAFETY') || msg.includes('blocked')) {
-      throw new Error('GEMINI_SAFETY_BLOCKED: Prediction blocked by safety filters');
+    if (msg.includes('Could not parse')) {
+      throw new Error(`LLM_PARSE_ERROR: ${msg}`);
     }
 
-    console.error('[gemini] generateContent failed:', msg);
+    console.error('[groq] LLM call failed:', msg);
     throw error;
   }
 }

@@ -4,7 +4,7 @@
 - **Framework:** Next.js 14 (App Router)
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS 3.4
-- **AI:** Google Gemini 1.5 Flash
+- **AI:** Groq Llama 3.3 70B
 - **Data:** API-Football (free tier)
 
 ## Scripts
@@ -28,5 +28,5 @@
 - Include "Built with FORCH.i by Paulo Velasco" badge
 
 ## API Keys Required
-- `GEMINI_API_KEY` — Google AI Studio
+- `GROQ_API_KEY` — Groq Console (https://console.groq.com/keys)
 - `FOOTBALL_API_KEY` — API-Football

@@ -6,8 +6,10 @@ vi.mock('@/lib/gemini', () => ({
     homeWin: 60,
     draw: 25,
     awayWin: 15,
-    analysis: 'Test analysis from Gemini',
+    analysis: 'Test analysis from Groq',
   }),
+  parseGeminiJson: vi.fn(),
+  validatePrediction: vi.fn(),
 }));
 
 vi.mock('@/lib/football-api', () => ({
@@ -68,7 +70,7 @@ describe('POST /api/predict', () => {
     expect(data.prediction.homeWin).toBe(60);
     expect(data.prediction.draw).toBe(25);
     expect(data.prediction.awayWin).toBe(15);
-    expect(data.prediction.analysis).toBe('Test analysis from Gemini');
+    expect(data.prediction.analysis).toBe('Test analysis from Groq');
   });
 
   it('should call getPrediction with correct parameters', async () => {

@@ -42,13 +42,13 @@ describe('parseGeminiJson', () => {
 
   it('should throw on completely invalid response', () => {
     expect(() => parseGeminiJson('This is not JSON at all')).toThrow(
-      'Could not parse Gemini response'
+      'Could not parse response'
     );
   });
 
   it('should throw on malformed JSON without parseable object', () => {
     expect(() => parseGeminiJson('{"homeWin": broken}')).toThrow(
-      'Could not parse Gemini response'
+      'Could not parse response'
     );
   });
 });

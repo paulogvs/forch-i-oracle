@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
       contextData = `No live data available for ${homeTeam} vs ${awayTeam}. Based on general knowledge only.`;
     }
 
-    // 2. Generate prediction with Gemini 2.0 Flash
-    console.log(`[predict] Calling Gemini for prediction`);
+    // 2. Generate prediction with Groq Llama 3.3
+    console.log(`[predict] Calling Groq for prediction`);
     const prediction = await getPrediction(
       homeTeam,
       awayTeam,
@@ -92,13 +92,13 @@ export async function POST(request: NextRequest) {
     let userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
     let statusCode = 500;
 
-    if (errorMsg.includes('GEMINI_API_KEY') || errorMsg.includes('API key')) {
+    if (errorMsg.includes('GEMINI_API_KEY') || errorMsg.includes('API key') || errorMsg.includes('GROQ_API_KEY') || errorMsg.includes('authentication')) {
       userMessage = 'Servicio no disponible temporalmente. Estamos trabajando en ello.';
       statusCode = 503;
     } else if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('403') || errorMsg.includes('PERMISSION_DENIED')) {
       userMessage = 'Servicio no disponible. Contacta al administrador.';
       statusCode = 503;
-    } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED')) {
+    } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('rate limit')) {
       userMessage = 'Demasiadas solicitudes. Intenta de nuevo en un minuto.';
       statusCode = 429;
     } else if (errorMsg.includes('SAFETY') || errorMsg.includes('blocked')) {
