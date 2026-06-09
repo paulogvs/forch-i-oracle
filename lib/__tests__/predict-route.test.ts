@@ -48,7 +48,7 @@ describe('POST /api/predict', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toContain('required');
+    expect(data.error).toContain('Selecciona');
   });
 
   it('should return 400 when teams are the same', async () => {
@@ -57,7 +57,7 @@ describe('POST /api/predict', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toContain('different');
+    expect(data.error).toContain('diferentes');
   });
 
   it('should return 200 with valid prediction', async () => {

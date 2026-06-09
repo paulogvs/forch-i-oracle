@@ -12,13 +12,14 @@ import {
   type Match,
   type Round,
 } from '@/lib/matches';
+import GroupTable from './GroupTable';
 
 interface MatchSelectorProps {
   onMatchSelect: (homeTeam: string, awayTeam: string, match: Match) => void;
   selectedMatchId?: string;
 }
 
-type TabType = 'groups' | Round;
+type TabType = 'groups' | Round | 'table';
 
 const KNOCKOUT_TABS: { id: Round; label: string }[] = [
   { id: 'round-32', label: '1/16' },
@@ -32,21 +33,20 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
   const [activeTab, setActiveTab] = useState<TabType>('groups');
   const [activeGroup, setActiveGroup] = useState<string>('A');
 
-  // Get matches based on active tab
-  const displayMatches = activeTab === 'groups'
+  const displayMatches = activeTab === 'groups' || activeTab === 'table'
     ? getMatchesByGroup(activeGroup)
-    : getMatchesByRound(activeTab);
+    : getMatchesByRound(activeTab as Round);
 
   const handleSelect = (match: Match) => {
     if (match.isTBD) return;
     onMatchSelect(match.homeTeam, match.awayTeam, match);
   };
 
-  const isKnockout = activeTab !== 'groups';
+  const isKnockout = activeTab !== 'groups' && activeTab !== 'table';
 
   return (
     <div className="w-full">
-      {/* Main Tabs: Groups vs Knockout Rounds */}
+      {/* Main Tabs: Groups vs Knockout vs Tables */}
       <div className="flex flex-wrap gap-2 mb-4 justify-center">
         <button
           onClick={() => setActiveTab('groups')}
@@ -71,6 +71,16 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
             {tab.label}
           </button>
         ))}
+        <button
+          onClick={() => setActiveTab('table')}
+          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+            activeTab === 'table'
+              ? 'bg-forch-gold text-black shadow-lg shadow-forch-gold/25'
+              : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10'
+          }`}
+        >
+          &#x1F4CA; Tablas
+        </button>
       </div>
 
       {/* Group Sub-Tabs (only when groups is active) */}
@@ -101,81 +111,85 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
         </div>
       )}
 
+      {/* Group Table view */}
+      {activeTab === 'table' && (
+        <GroupTable />
+      )}
+
       {/* Match Cards */}
-      <div className="space-y-3">
-        {displayMatches.map((match) => {
-          const isSelected = match.id === selectedMatchId;
-          const isTBD = match.isTBD;
+      {activeTab !== 'table' && (
+        <div className="space-y-3">
+          {displayMatches.map((match) => {
+            const isSelected = match.id === selectedMatchId;
+            const isTBD = match.isTBD;
 
-          const homeName = match.homeTeam;
-          const awayName = match.awayTeam;
+            const homeFlag = match.homeCode === 'TBD' || match.homeCode.length > 3
+              ? '\u{1F3F3}\uFE0F'
+              : getTeamFlag(match.homeTeam);
+            const awayFlag = match.awayCode === 'TBD' || match.awayCode.length > 3
+              ? '\u{1F3F3}\uFE0F'
+              : getTeamFlag(match.awayTeam);
 
-          const homeFlag = match.homeCode === 'TBD' || match.homeCode.length > 3
-            ? '\u{1F3F3}\uFE0F'
-            : getTeamFlag(match.homeTeam);
-          const awayFlag = match.awayCode === 'TBD' || match.awayCode.length > 3
-            ? '\u{1F3F3}\uFE0F'
-            : getTeamFlag(match.awayTeam);
-
-          return (
-            <button
-              key={match.id}
-              onClick={() => handleSelect(match)}
-              disabled={isTBD}
-              className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${
-                isSelected
-                  ? 'bg-forch-gold/15 border-forch-gold/50 shadow-lg shadow-forch-gold/10 scale-[1.02]'
-                  : isTBD
-                  ? 'bg-white/[0.03] border-white/5 opacity-40 cursor-not-allowed'
-                  : 'bg-white/5 border-white/10 hover:bg-white/[0.08] hover:border-forch-gold/30 hover:shadow-md'
-              }`}
-            >
-              {/* Header row */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-500 font-medium">
-                  {isKnockout
-                    ? `${formatMatchDate(match)} · ${formatMatchTime(match)}`
-                    : `MD ${match.matchday} · ${formatMatchDate(match)} · ${formatMatchTime(match)}`
-                  }
-                </span>
-                {isTBD && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 font-semibold uppercase tracking-wider">
-                    Por definir
+            return (
+              <button
+                key={match.id}
+                onClick={() => handleSelect(match)}
+                disabled={isTBD}
+                className={`w-full text-left rounded-xl p-4 transition-all duration-300 border ${
+                  isSelected
+                    ? 'bg-forch-gold/15 border-forch-gold/50 shadow-lg shadow-forch-gold/10 scale-[1.02]'
+                    : isTBD
+                    ? 'bg-white/[0.03] border-white/5 opacity-40 cursor-not-allowed'
+                    : 'bg-white/5 border-white/10 hover:bg-white/[0.08] hover:border-forch-gold/30 hover:shadow-md'
+                }`}
+              >
+                {/* Header row */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-500 font-medium">
+                    {isKnockout
+                      ? `${formatMatchDate(match)} · ${formatMatchTime(match)}`
+                      : `J ${match.matchday} · ${formatMatchDate(match)} · ${formatMatchTime(match)}`
+                    }
                   </span>
-                )}
-              </div>
-
-              {/* Teams row */}
-              <div className="flex items-center justify-center gap-3">
-                <div className="flex-1 text-right">
-                  <span className="text-lg font-bold text-white">
-                    {homeFlag} {homeName}
-                  </span>
+                  {isTBD && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 font-semibold uppercase tracking-wider">
+                      Por definir
+                    </span>
+                  )}
                 </div>
-                <div className="flex-shrink-0 px-3">
-                  <span
-                    className={`text-lg font-black ${
-                      isSelected ? 'text-forch-gold' : 'text-gray-600'
-                    }`}
-                  >
-                    VS
-                  </span>
-                </div>
-                <div className="flex-1 text-left">
-                  <span className="text-lg font-bold text-white">
-                    {awayFlag} {awayName}
-                  </span>
-                </div>
-              </div>
 
-              {/* Venue */}
-              <div className="mt-2 text-center text-xs text-gray-500">
-                {match.venue} · {match.city}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+                {/* Teams row */}
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex-1 text-right">
+                    <span className="text-lg font-bold text-white">
+                      {homeFlag} {match.homeTeam}
+                    </span>
+                  </div>
+                  <div className="flex-shrink-0 px-3">
+                    <span
+                      className={`text-lg font-black ${
+                        isSelected ? 'text-forch-gold' : 'text-gray-600'
+                      }`}
+                    >
+                      VS
+                    </span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <span className="text-lg font-bold text-white">
+                      {awayFlag} {match.awayTeam}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Venue */}
+                <div className="mt-2 text-center text-xs text-gray-500">
+                  {match.venue} · {match.city}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

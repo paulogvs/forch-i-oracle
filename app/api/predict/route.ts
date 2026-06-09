@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrediction } from '@/lib/gemini';
 import { getMatchContext } from '@/lib/football-api';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
 
 interface MatchContext {
   id: string;
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     'unknown';
   if (!checkRateLimit(ip, 10, 60000)) {
     return NextResponse.json(
-      { error: 'Too many requests. Try again in a minute.' },
+      { error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' },
       { status: 429 }
     );
   }
@@ -38,37 +39,54 @@ export async function POST(request: NextRequest) {
     // Validations
     if (!homeTeam || !awayTeam) {
       return NextResponse.json(
-        { error: 'homeTeam and awayTeam are required' },
+        { error: 'Selecciona ambos equipos' },
         { status: 400 }
       );
     }
 
     if (homeTeam === awayTeam) {
       return NextResponse.json(
-        { error: 'Teams must be different' },
+        { error: 'Los equipos deben ser diferentes' },
         { status: 400 }
       );
     }
 
+    // Check cache first
+    const cached = getCachedPrediction(homeTeam, awayTeam);
+    if (cached) {
+      console.log(`[predict] Cache hit for ${homeTeam} vs ${awayTeam}`);
+      return NextResponse.json({
+        success: true,
+        homeTeam,
+        awayTeam,
+        matchContext,
+        prediction: cached,
+        fromCache: true,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     // 1. Get real data context (API-Football)
-    console.log(`[predict] Fetching context for ${homeTeam} vs ${awayTeam}`);
+    console.log(`[predict] Obteniendo contexto para ${homeTeam} vs ${awayTeam}`);
     let contextData: string;
     try {
       contextData = await getMatchContext(homeTeam, awayTeam);
     } catch (footballError) {
       console.error('[predict] Football API error:', footballError);
-      // Continue with generic context — Football API is non-critical
-      contextData = `No live data available for ${homeTeam} vs ${awayTeam}. Based on general knowledge only.`;
+      contextData = `No hay datos en vivo disponibles para ${homeTeam} vs ${awayTeam}. Basado en conocimiento general.`;
     }
 
     // 2. Generate prediction with Groq Llama 3.3
-    console.log(`[predict] Calling Groq for prediction`);
+    console.log(`[predict] Llamando a Groq para predicción`);
     const prediction = await getPrediction(
       homeTeam,
       awayTeam,
       contextData,
       matchContext
     );
+
+    // Cache the result
+    setCachedPrediction(homeTeam, awayTeam, prediction);
 
     // 3. Return result
     return NextResponse.json({
@@ -80,15 +98,11 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    // Log the ACTUAL error with full details
     const errorMsg = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
-    const errorCause = error instanceof Error && (error as Error).cause ? String((error as Error).cause) : '';
-    console.error('[predict] FAILED:', errorMsg);
+    console.error('[predict] FALLO:', errorMsg);
     if (errorStack) console.error('[predict] Stack:', errorStack);
-    if (errorCause) console.error('[predict] Cause:', errorCause);
 
-    // Return specific error messages based on the failure
     let userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
     let statusCode = 500;
 
@@ -104,7 +118,7 @@ export async function POST(request: NextRequest) {
     } else if (errorMsg.includes('SAFETY') || errorMsg.includes('blocked')) {
       userMessage = 'Predicción bloqueada. Intenta con otros equipos.';
       statusCode = 422;
-    } else if (errorMsg.includes('Could not parse')) {
+    } else if (errorMsg.includes('No se pudo analizar') || errorMsg.includes('LLM_PARSE_ERROR')) {
       userMessage = 'Respuesta inválida del servicio. Intenta de nuevo.';
       statusCode = 502;
     } else if (errorMsg.includes('fetch') || errorMsg.includes('ENOTFOUND') || errorMsg.includes('ECONNREFUSED')) {

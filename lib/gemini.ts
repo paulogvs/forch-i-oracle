@@ -10,38 +10,67 @@ function getGroqClient(): Groq {
   return new Groq({ apiKey: API_KEY });
 }
 
-// System prompt for sports analysis
-const SYSTEM_PROMPT = `You are an elite world-class sports analyst specialized in international football.
-Your name is FORCH.i Oracle.
+// System prompt for deep sports analysis
+const SYSTEM_PROMPT = `Eres FORCH.i Oracle, un analista deportivo de élite especializado en fútbol internacional.
 
-You MUST use your web search tool to find CURRENT information about both teams:
-1. CURRENT INJURIES of key players
-2. RECENT CARDS AND BOOKINGS that may affect lineups
-3. LIKELY LINEUPS from each team's last match
-4. RECENT FORM — results from the last 5 official matches
-5. HEAD-TO-HEAD history between both teams
-6. RELEVANT NEWS — coaching changes, internal conflicts, motivation
+Tu tarea es analizar partidos del Mundial FIFA 2026 con la máxima precisión posible.
 
-After researching, calculate probability percentages:
-- homeWin: home team win probability (0-100)
-- draw: draw probability (0-100)
-- awayWin: away team win probability (0-100)
+IMPORTANTE: Debes responder ÚNICAMENTE con este formato JSON (sin markdown, sin code fences, sin texto extra):
+{
+  "homeWin": 55,
+  "draw": 25,
+  "awayWin": 20,
+  "predictedScoreHome": 2,
+  "predictedScoreAway": 1,
+  "confidence": "alta",
+  "analysis": "Texto de análisis táctico de 3-5 oraciones.",
+  "keyFactors": [
+    {"label": "Forma reciente", "homeAdvantage": 8, "description": "Descripción breve"},
+    {"label": "Plantel y estrellas", "homeAdvantage": 3, "description": "Descripción breve"},
+    {"label": "Historial directo", "homeAdvantage": -2, "description": "Descripción breve"},
+    {"label": "Ventaja de local", "homeAdvantage": 5, "description": "Descripción breve"}
+  ],
+  "homeKeyPlayers": ["Jugador 1", "Jugador 2"],
+  "awayKeyPlayers": ["Jugador 1", "Jugador 2"],
+  "homeFormLast5": ["W", "W", "D", "L", "W"],
+  "awayFormLast5": ["L", "W", "W", "D", "W"],
+  "homeAttackStrength": 85,
+  "awayAttackStrength": 78,
+  "homeDefenseStrength": 72,
+  "awayDefenseStrength": 80,
+  "homeMidfieldStrength": 80,
+  "awayMidfieldStrength": 75
+}
 
-And write a TACTICAL ANALYSIS of 3-5 sentences covering:
-- Expected formation and playing style
-- Key players to watch
-- Strengths and weaknesses of each team
-- Home advantage and team morale
-- Qualitative match prediction
-
-IMPORTANT: Respond ONLY with this exact JSON format (no markdown, no code fences, no extra text):
-{"homeWin": 55, "draw": 25, "awayWin": 20, "analysis": "Your analysis text here."}`;
+CAMPOS:
+- homeWin/draw/awayWin: Probabilidades 0-100 (deben sumar 100)
+- predictedScoreHome/away: Marcador predicho (0-6)
+- confidence: "alta", "media", o "baja"
+- analysis: Análisis táctico en español (3-5 oraciones)
+- keyFactors: 4 factores clave. homeAdvantage va de -10 (muy a favor visitante) a +10 (muy a favor local)
+- homeKeyPlayers/awayKeyPlayers: 2 jugadores clave de cada equipo
+- homeFormLast5/awayFormLast5: Últimos 5 partidos como array de "W", "D", "L"
+- Attack/Defense/MidfieldStrength: Rating 0-100 para cada área`;
 
 export interface Prediction {
   homeWin: number;
   draw: number;
   awayWin: number;
+  predictedScoreHome: number;
+  predictedScoreAway: number;
+  confidence: 'alta' | 'media' | 'baja';
   analysis: string;
+  keyFactors: { label: string; homeAdvantage: number; description: string }[];
+  homeKeyPlayers: string[];
+  awayKeyPlayers: string[];
+  homeFormLast5: ('W' | 'D' | 'L')[];
+  awayFormLast5: ('W' | 'D' | 'L')[];
+  homeAttackStrength: number;
+  awayAttackStrength: number;
+  homeDefenseStrength: number;
+  awayDefenseStrength: number;
+  homeMidfieldStrength: number;
+  awayMidfieldStrength: number;
 }
 
 interface MatchContext {
@@ -54,89 +83,124 @@ interface MatchContext {
   city: string;
 }
 
-/**
- * Build a match context block for the prompt
- */
 function buildMatchContextBlock(ctx: MatchContext | null): string {
   if (!ctx) return '';
 
   const dateFormatted = new Date(`${ctx.date}T${ctx.time}:00Z`).toLocaleDateString(
-    'en-US',
+    'es-BO',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
   );
 
   return `
-MATCH CONTEXT (FIFA World Cup 2026 Group Stage):
-- Group: ${ctx.group}
-- Matchday: ${ctx.matchday} of 3
-- Date: ${dateFormatted} at ${ctx.time} UTC
-- Venue: ${ctx.venue}, ${ctx.city}
-- This is a GROUP STAGE match — every point matters for qualification.
-- Top 2 from each group advance directly; best 3rd-place teams also qualify.
+CONTEXTO DEL PARTIDO (Fase de Grupos - Mundial FIFA 2026):
+- Grupo: ${ctx.group}
+- Jornada: ${ctx.matchday} de 3
+- Fecha: ${dateFormatted} a las ${ctx.time} UTC
+- Estadio: ${ctx.venue}, ${ctx.city}
+- Es un partido de FASE DE GRUPOS — cada punto cuenta para la clasificación.
 `;
 }
 
-/**
- * Safely parse JSON from LLM response, handling markdown fences
- */
 export function parseGeminiJson(response: string): Prediction {
-  // Strip markdown code fences if present
   const cleaned = response
     .replace(/```json\s*/g, '')
     .replace(/```\s*/g, '')
     .trim();
 
-  // Try direct parse first
   try {
     const parsed = JSON.parse(cleaned);
     return validatePrediction(parsed, 'direct parse');
   } catch {
-    // Fall back to regex extraction
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
         return validatePrediction(parsed, 'regex extraction');
       } catch {
-        // Second regex attempt with more aggressive cleaning
         const aggressiveMatch = response.match(/\{[\s\S]*?\}/);
         if (aggressiveMatch) {
           try {
             const parsed = JSON.parse(aggressiveMatch[0]);
             return validatePrediction(parsed, 'aggressive extraction');
           } catch {
-            // Fall through to final error
+            // Fall through
           }
         }
       }
     }
-    throw new Error(`Could not parse response: ${response.substring(0, 200)}`);
+    throw new Error(`No se pudo analizar la respuesta: ${response.substring(0, 200)}`);
   }
 }
 
-/**
- * Validate and normalize parsed prediction
- */
-export function validatePrediction(parsed: Record<string, unknown>, source: string): Prediction {
-  const homeWin = Number(parsed.homeWin);
-  const draw = Number(parsed.draw);
-  const awayWin = Number(parsed.awayWin);
+function normalizeForm(form: unknown): ('W' | 'D' | 'L')[] {
+  if (!Array.isArray(form) || form.length === 0) return ['D', 'D', 'D', 'D', 'D'];
+  return form.map((f) => {
+    const s = String(f).toUpperCase();
+    if (s === 'W') return 'W';
+    if (s === 'D') return 'D';
+    if (s === 'L') return 'L';
+    return 'D';
+  }).slice(0, 5);
+}
 
-  if (isNaN(homeWin) || isNaN(draw) || isNaN(awayWin)) {
-    throw new Error(`Invalid prediction values from ${source}: homeWin=${parsed.homeWin}, draw=${parsed.draw}, awayWin=${parsed.awayWin}`);
-  }
+function clampRange(val: unknown, min: number, max: number, fallback: number): number {
+  const n = Number(val);
+  if (isNaN(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+export function validatePrediction(parsed: Record<string, unknown>, source: string): Prediction {
+  const homeWin = clampRange(parsed.homeWin, 0, 100, 40);
+  const draw = clampRange(parsed.draw, 0, 100, 30);
+  const awayWin = clampRange(parsed.awayWin, 0, 100, 30);
+
+  // Normalize to sum to 100
+  const total = homeWin + draw + awayWin;
+  const normalizedWin = total > 0 ? Math.round((homeWin / total) * 100) : 40;
+  const normalizedDraw = total > 0 ? Math.round((draw / total) * 100) : 30;
+  const normalizedAway = 100 - normalizedWin - normalizedDraw;
+
+  const confidence = typeof parsed.confidence === 'string' && ['alta', 'media', 'baja'].includes(parsed.confidence)
+    ? parsed.confidence as 'alta' | 'media' | 'baja'
+    : 'media';
+
+  const rawKeyFactors = parsed.keyFactors;
+  const keyFactors = Array.isArray(rawKeyFactors) ? rawKeyFactors.slice(0, 4).map((f: unknown) => {
+    const factor = f as Record<string, unknown>;
+    return {
+      label: String(factor.label || 'Factor'),
+      homeAdvantage: clampRange(factor.homeAdvantage, -10, 10, 0),
+      description: String(factor.description || ''),
+    };
+  }) : [
+    { label: 'Forma reciente', homeAdvantage: 0, description: 'Análisis basado en forma reciente' },
+    { label: 'Plantel', homeAdvantage: 0, description: 'Calidad del plantel' },
+    { label: 'Historial directo', homeAdvantage: 0, description: 'Resultados previos' },
+    { label: 'Ventaja local', homeAdvantage: 5, description: 'Factor local' },
+  ];
 
   return {
-    homeWin: Math.max(0, Math.min(100, Math.round(homeWin))),
-    draw: Math.max(0, Math.min(100, Math.round(draw))),
-    awayWin: Math.max(0, Math.min(100, Math.round(awayWin))),
-    analysis: typeof parsed.analysis === 'string' ? parsed.analysis : 'Analysis not available.',
+    homeWin: normalizedWin,
+    draw: normalizedDraw,
+    awayWin: normalizedAway,
+    predictedScoreHome: clampRange(parsed.predictedScoreHome, 0, 6, 1),
+    predictedScoreAway: clampRange(parsed.predictedScoreAway, 0, 6, 1),
+    confidence,
+    analysis: typeof parsed.analysis === 'string' ? parsed.analysis : 'Análisis no disponible.',
+    keyFactors,
+    homeKeyPlayers: Array.isArray(parsed.homeKeyPlayers) ? parsed.homeKeyPlayers.map(String).slice(0, 2) : [],
+    awayKeyPlayers: Array.isArray(parsed.awayKeyPlayers) ? parsed.awayKeyPlayers.map(String).slice(0, 2) : [],
+    homeFormLast5: normalizeForm(parsed.homeFormLast5),
+    awayFormLast5: normalizeForm(parsed.awayFormLast5),
+    homeAttackStrength: clampRange(parsed.homeAttackStrength, 0, 100, 50),
+    awayAttackStrength: clampRange(parsed.awayAttackStrength, 0, 100, 50),
+    homeDefenseStrength: clampRange(parsed.homeDefenseStrength, 0, 100, 50),
+    awayDefenseStrength: clampRange(parsed.awayDefenseStrength, 0, 100, 50),
+    homeMidfieldStrength: clampRange(parsed.homeMidfieldStrength, 0, 100, 50),
+    awayMidfieldStrength: clampRange(parsed.awayMidfieldStrength, 0, 100, 50),
   };
 }
 
-/**
- * Generate a prediction using Groq + Llama 3.3 70B
- */
 export async function getPrediction(
   homeTeam: string,
   awayTeam: string,
@@ -147,17 +211,17 @@ export async function getPrediction(
 
   const matchCtxBlock = buildMatchContextBlock(matchContext);
 
-  const prompt = `Predict the result of this FIFA World Cup 2026 match:
+  const prompt = `Analiza el siguiente partido del Mundial FIFA 2026:
 
-HOME TEAM: ${homeTeam}
-AWAY TEAM: ${awayTeam}
+EQUIPO LOCAL: ${homeTeam}
+EQUIPO VISITANTE: ${awayTeam}
 ${matchCtxBlock}
-AVAILABLE DATA:
+DATOS DISPONIBLES:
 ${contextData}
 
-Use web search to find the latest news, injuries, and form for both teams.
-Then calculate probabilities and provide your analysis.
-Respond ONLY with the requested JSON.`;
+Usa búsqueda web para encontrar las últimas noticias, lesiones y forma de ambos equipos.
+Calcula probabilidades y proporciona tu análisis completo.
+Responde ÚNICAMENTE con el JSON solicitado en español.`;
 
   try {
     const result = await groq.chat.completions.create({
@@ -167,12 +231,12 @@ Respond ONLY with the requested JSON.`;
         { role: 'user', content: prompt },
       ],
       temperature: 0.3,
-      max_tokens: 1024,
+      max_tokens: 2048,
     });
 
     const response = result.choices[0]?.message?.content;
     if (!response) {
-      throw new Error('Empty response from LLM');
+      throw new Error('Respuesta vacía del modelo');
     }
 
     console.log('[groq] Raw response length:', response.length);
@@ -181,14 +245,13 @@ Respond ONLY with the requested JSON.`;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
 
-    // Re-throw with more context
     if (msg.includes('API_KEY') || msg.includes('authentication') || msg.includes('401')) {
-      throw new Error('GROQ_API_KEY_INVALID: The API key is invalid or expired');
+      throw new Error('GROQ_API_KEY_INVALID: La clave API es inválida o expiró');
     }
     if (msg.includes('rate') || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-      throw new Error('GROQ_QUOTA_EXCEEDED: Rate limit or quota exceeded');
+      throw new Error('GROQ_QUOTA_EXCEEDED: Límite de tasa o cuota excedido');
     }
-    if (msg.includes('Could not parse')) {
+    if (msg.includes('No se pudo analizar')) {
       throw new Error(`LLM_PARSE_ERROR: ${msg}`);
     }
 

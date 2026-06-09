@@ -5,13 +5,7 @@ import TeamSelector from '@/components/TeamSelector';
 import MatchSelector from '@/components/MatchSelector';
 import ResultCard from '@/components/ResultCard';
 import type { Match } from '@/lib/matches';
-
-interface Prediction {
-  homeWin: number;
-  draw: number;
-  awayWin: number;
-  analysis: string;
-}
+import type { Prediction } from '@/lib/gemini';
 
 type SelectionMode = 'match' | 'manual';
 
@@ -55,11 +49,11 @@ export default function Home() {
 
   const handlePredict = async () => {
     if (!homeTeam || !awayTeam) {
-      setError('Select both teams');
+      setError('Selecciona ambos equipos');
       return;
     }
     if (homeTeam === awayTeam) {
-      setError('Teams must be different');
+      setError('Los equipos deben ser diferentes');
       return;
     }
 
@@ -91,12 +85,12 @@ export default function Home() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Prediction error');
+        throw new Error(data.error || 'Error en la predicción');
       }
 
       setPrediction(data.prediction);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
@@ -140,7 +134,7 @@ export default function Home() {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                &#x1F3C6; Select Match
+                &#x1F3C6; Seleccionar Partido
               </button>
               <button
                 onClick={() => handleModeChange('manual')}
@@ -150,7 +144,7 @@ export default function Home() {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                &#x2699;&#xFE0F; Choose Teams
+                &#x2699;&#xFE0F; Elegir Equipos
               </button>
             </div>
 
@@ -160,7 +154,7 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-xs text-forch-gold font-semibold uppercase tracking-wider">
-                      Group {selectedMatch.group} &middot; Matchday {selectedMatch.matchday}
+                      Grupo {selectedMatch.group} &middot; Jornada {selectedMatch.matchday}
                     </span>
                     <p className="text-white font-bold mt-1">
                       {selectedMatch.venue}, {selectedMatch.city}
@@ -191,13 +185,13 @@ export default function Home() {
                 <TeamSelector
                   value={homeTeam}
                   onChange={handleManualHome}
-                  label="&#x1F3E0; Home Team"
+                  label="&#x1F3E0; Equipo Local"
                   disabledTeam={awayTeam}
                 />
                 <TeamSelector
                   value={awayTeam}
                   onChange={handleManualAway}
-                  label="&#x2708;&#xFE0F; Away Team"
+                  label="&#x2708;&#xFE0F; Equipo Visitante"
                   disabledTeam={homeTeam}
                 />
               </div>
@@ -231,10 +225,10 @@ export default function Home() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Analyzing...
+                    Analizando...
                   </span>
                 ) : (
-                  '\u{1F52E} Get Prediction'
+                  '\u{1F52E} Obtener Predicción'
                 )}
               </button>
             </div>
@@ -260,7 +254,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="text-center mt-16 text-gray-500 text-sm">
           <p>
-            Built with <span className="text-forch-gold">FORCH.i</span> by Paulo Velasco
+            Construido con <span className="text-forch-gold">FORCH.i</span> por Paulo Velasco
           </p>
           <p className="mt-1">
             Datos: API-Football + Groq Llama 3.3 + worldcup26.ir
