@@ -1,6 +1,6 @@
 'use client';
 
-import type { Prediction } from '@/lib/gemini';
+import type { Prediction } from '@/lib/groq';
 
 interface ComparisonBarsProps {
   homeTeam: string;

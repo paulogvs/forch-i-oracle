@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import type { Prediction } from '@/lib/gemini';
+import type { Prediction } from '@/lib/groq';
 import { getTeamByName } from '@/lib/teams';
 import ConfidenceMeter from './ConfidenceMeter';
 import FormBubbles from './FormBubbles';
 import ComparisonBars from './ComparisonBars';
 import KeyFactors from './KeyFactors';
+import LensConsensus from './LensConsensus';
 
 interface ResultCardProps {
   prediction: Prediction;
@@ -154,6 +155,9 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
           <FormBubbles form={awayFormLast5} label={awayFlag} />
         </div>
       </div>
+
+      {/* Consenso de Análisis */}
+      <LensConsensus prediction={prediction} homeTeam={homeTeam} awayTeam={awayTeam} />
 
       {/* Comparativa lado a lado */}
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-4">

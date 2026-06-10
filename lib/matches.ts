@@ -19,16 +19,18 @@ export interface Match {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// GROUP A — Mexico, South Africa, Chequia, TBD
+// GROUP A — Mexico, South Africa, Chequia, Italia
 // ═══════════════════════════════════════════════════════════════
 const GROUP_A: Match[] = [
   // Matchday 1
   { id: 'A1', group: 'A', matchday: 1, date: '2026-06-11', time: '02:00', homeTeam: 'México', awayTeam: 'Sudáfrica', homeCode: 'MEX', awayCode: 'RSA', venue: 'Estadio Azteca', city: 'Mexico City', round: 'group' },
+  { id: 'A3', group: 'A', matchday: 1, date: '2026-06-11', time: '20:00', homeTeam: 'Chequia', awayTeam: 'Italia', homeCode: 'CZE', awayCode: 'ITA', venue: 'Estadio Akron', city: 'Guadalajara', round: 'group' },
   // Matchday 2
   { id: 'A2', group: 'A', matchday: 2, date: '2026-06-18', time: '17:00', homeTeam: 'Chequia', awayTeam: 'Sudáfrica', homeCode: 'CZE', awayCode: 'RSA', venue: 'Estadio Akron', city: 'Guadalajara', round: 'group' },
-  // Matchday 3 (TBD based on standings)
+  { id: 'A4', group: 'A', matchday: 2, date: '2026-06-18', time: '23:00', homeTeam: 'México', awayTeam: 'Italia', homeCode: 'MEX', awayCode: 'ITA', venue: 'Estadio Azteca', city: 'Mexico City', round: 'group' },
+  // Matchday 3
   { id: 'A5', group: 'A', matchday: 3, date: '2026-06-24', time: '02:00', homeTeam: 'México', awayTeam: 'Chequia', homeCode: 'MEX', awayCode: 'CZE', venue: 'Estadio Azteca', city: 'Mexico City', round: 'group' },
-  { id: 'A6', group: 'A', matchday: 3, date: '2026-06-24', time: '02:00', homeTeam: 'Sudáfrica', awayTeam: 'TBD-A4', homeCode: 'RSA', awayCode: 'TBD', venue: 'Estadio BBVA', city: 'Monterrey', round: 'group', isTBD: true },
+  { id: 'A6', group: 'A', matchday: 3, date: '2026-06-24', time: '02:00', homeTeam: 'Sudáfrica', awayTeam: 'Italia', homeCode: 'RSA', awayCode: 'ITA', venue: 'Estadio BBVA', city: 'Monterrey', round: 'group' },
 ];
 
 // ═══════════════════════════════════════════════════════════════

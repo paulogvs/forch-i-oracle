@@ -5,46 +5,45 @@ import Link from 'next/link';
 import BracketMatch from '@/components/BracketMatch';
 import ChampionReveal from '@/components/ChampionReveal';
 import SimGroupStandings from '@/components/SimGroupStandings';
-import type { TournamentBracket, SimulatedMatch } from '@/lib/tournament-sim';
+import Top8Ranking from '@/components/Top8Ranking';
+import type { TournamentBracket, SimulatedMatch, ChampionProbability } from '@/lib/tournament-sim';
 
 type ViewMode = 'champion' | 'bracket' | 'groups' | 'all';
 
 export default function BracketPage() {
   const [bracket, setBracket] = useState<TournamentBracket | null>(null);
+  const [top8, setTop8] = useState<ChampionProbability[]>([]);
+  const [totalSims, setTotalSims] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progressMessages, setProgressMessages] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('all');
 
   const handleSimulate = async () => {
     setLoading(true);
-    setProgress(0);
+    setProgressMessages([]);
     setError('');
     setBracket(null);
-
-    // Simulated progress
-    const progressTimer = setInterval(() => {
-      setProgress((p) => Math.min(p + Math.random() * 15, 90));
-    }, 500);
 
     try {
       const res = await fetch('/api/simulate-tournament', { method: 'POST' });
       const data = await res.json();
 
-      clearInterval(progressTimer);
-      setProgress(100);
-
       if (!res.ok) {
         throw new Error(data.error || 'Error en la simulación');
       }
 
-      // Small delay to show 100% progress
-      setTimeout(() => {
-        setBracket(data.bracket);
-        setLoading(false);
-      }, 500);
+      setBracket(data.bracket);
+      setTop8(data.top8 || []);
+      setTotalSims(data.totalSims || 100);
+      setProgressMessages([
+        `✅ Motor estadístico: Poisson + Elo + xG`,
+        `✅ ${data.totalSims || 100} simulaciones ejecutadas`,
+        `✅ ${data.realResultsCount || 0} resultados reales aplicados`,
+        `✅ Simulación completada el ${new Date().toLocaleTimeString('es-BO')}`,
+      ]);
+      setLoading(false);
     } catch (err) {
-      clearInterval(progressTimer);
       setError(err instanceof Error ? err.message : 'Error desconocido');
       setLoading(false);
     }
@@ -94,7 +93,7 @@ export default function BracketPage() {
             </button>
 
             <p className="text-gray-600 text-xs mt-4">
-              Simulación rápida: usa ratings de potencia para fase de grupos + Groq para eliminatorias.
+              Motor estadístico real: Poisson + Elo + xG · Se actualiza con resultados en vivo
             </p>
           </div>
         )}
@@ -103,35 +102,15 @@ export default function BracketPage() {
         {loading && (
           <div className="text-center py-20">
             <div className="text-6xl mb-6 animate-bounce">⚽</div>
-            <h3 className="text-2xl font-bold text-white mb-4">Simulando el torneo...</h3>
-            <p className="text-gray-400 mb-8">Analizando cada partido con inteligencia artificial</p>
+            <h3 className="text-2xl font-bold text-white mb-4">Simulando con motor estadístico real...</h3>
+            <p className="text-gray-400 mb-8">Poisson + Elo + xG calculando cada partido</p>
 
-            {/* Progress bar */}
-            <div className="max-w-md mx-auto">
-              <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-forch-gold to-yellow-500 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-gray-500 text-sm mt-2">{Math.round(progress)}% completado</p>
+            {/* Loading spinner */}
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-forch-gold"></div>
             </div>
 
-            {/* Loading steps */}
-            <div className="mt-8 space-y-2 text-sm text-gray-500">
-              <p className={progress > 10 ? 'text-forch-gold' : ''}>
-                {progress > 10 ? '✓' : '○'} Simulando fase de grupos...
-              </p>
-              <p className={progress > 30 ? 'text-forch-gold' : ''}>
-                {progress > 30 ? '✓' : '○'} Simulando 1/16 y 1/8 de final con IA...
-              </p>
-              <p className={progress > 60 ? 'text-forch-gold' : ''}>
-                {progress > 60 ? '✓' : '○'} Simulando cuartos y semifinales...
-              </p>
-              <p className={progress > 85 ? 'text-forch-gold' : ''}>
-                {progress > 85 ? '✓' : '○'} Simulando la Gran Final...
-              </p>
-            </div>
+            <p className="text-gray-500 text-sm mt-4">Esto toma unos segundos (motor estadístico real, no simulación rápida)</p>
           </div>
         )}
 
@@ -153,6 +132,18 @@ export default function BracketPage() {
         {/* Results */}
         {bracket && (
           <div className="space-y-8">
+            {/* Progress messages */}
+            {progressMessages.length > 0 && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 max-w-lg mx-auto">
+                <h3 className="text-sm font-bold text-green-400 mb-2">✅ Simulación Completada</h3>
+                <ul className="space-y-1">
+                  {progressMessages.map((msg, i) => (
+                    <li key={i} className="text-xs text-green-300">{msg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* View mode toggle */}
             <div className="flex gap-2 justify-center p-1 bg-white/5 rounded-xl max-w-md mx-auto">
               {([
@@ -191,6 +182,18 @@ export default function BracketPage() {
                   fourthPlaceTeam={bracket.fourthPlaceTeam}
                   fourthPlaceFlag={bracket.fourthPlaceFlag}
                 />
+              </section>
+            )}
+
+            {/* Top 8 Probability Ranking */}
+            {(viewMode === 'all' || viewMode === 'champion') && top8.length > 0 && (
+              <section>
+                <h3 className="text-center text-sm text-gray-500 uppercase tracking-widest mb-6">
+                  Probabilidad de Campeón
+                </h3>
+                <div className="max-w-2xl mx-auto">
+                  <Top8Ranking data={top8} totalSims={totalSims} />
+                </div>
               </section>
             )}
 

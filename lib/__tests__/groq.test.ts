@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseGeminiJson, validatePrediction } from '../gemini';
+import { parseGroqJson, validatePrediction } from '../groq';
 
-describe('parseGeminiJson', () => {
+describe('parseGroqJson', () => {
   it('should parse complete prediction JSON', () => {
     const response = JSON.stringify({
       homeWin: 60, draw: 25, awayWin: 15,
@@ -17,7 +17,7 @@ describe('parseGeminiJson', () => {
       homeDefenseStrength: 72, awayDefenseStrength: 80,
       homeMidfieldStrength: 80, awayMidfieldStrength: 75,
     });
-    const result = parseGeminiJson(response);
+    const result = parseGroqJson(response);
     expect(result.homeWin).toBe(60);
     expect(result.predictedScoreHome).toBe(2);
     expect(result.confidence).toBe('alta');
@@ -26,18 +26,18 @@ describe('parseGeminiJson', () => {
 
   it('should strip markdown code fences', () => {
     const response = '```json\n{"homeWin":50,"draw":30,"awayWin":20,"predictedScoreHome":1,"predictedScoreAway":1,"confidence":"media","analysis":"Empate","keyFactors":[],"homeKeyPlayers":[],"awayKeyPlayers":[],"homeFormLast5":["D","D","D","D","D"],"awayFormLast5":["D","D","D","D","D"],"homeAttackStrength":50,"awayAttackStrength":50,"homeDefenseStrength":50,"awayDefenseStrength":50,"homeMidfieldStrength":50,"awayMidfieldStrength":50}\n```';
-    const result = parseGeminiJson(response);
+    const result = parseGroqJson(response);
     expect(result.homeWin).toBe(50);
   });
 
   it('should throw on completely invalid response', () => {
-    expect(() => parseGeminiJson('This is not JSON at all')).toThrow(
+    expect(() => parseGroqJson('This is not JSON at all')).toThrow(
       'No se pudo analizar'
     );
   });
 
   it('should throw on malformed JSON without parseable object', () => {
-    expect(() => parseGeminiJson('{"homeWin": broken}')).toThrow(
+    expect(() => parseGroqJson('{"homeWin": broken}')).toThrow(
       'No se pudo analizar'
     );
   });

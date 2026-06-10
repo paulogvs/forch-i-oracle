@@ -1,9 +1,12 @@
 // FORCH.i ORACLE — API Route: Match prediction
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrediction } from '@/lib/gemini';
+import { getPrediction } from '@/lib/groq';
 import { getMatchContext } from '@/lib/football-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
+import { calculateStatisticalPrediction, getKeyFactors, type RealTeamStats } from '@/lib/predictor-engine';
+import { getComprehensiveTeamStats } from '@/lib/football-api';
+import type { Prediction } from '@/lib/groq';
 
 interface MatchContext {
   id: string;
@@ -66,24 +69,116 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 1. Get real data context (API-Football)
-    console.log(`[predict] Obteniendo contexto para ${homeTeam} vs ${awayTeam}`);
+    // 1. Calculate STATISTICAL prediction INSTANTLY (Poisson + Elo + xG) — 0ms
+    console.log(`[predict] Calculando predicción estadística para ${homeTeam} vs ${awayTeam}`);
+
+    // 1b. Try to get REAL stats from API-Football (timeout 5s, non-blocking)
+    let homeRealStats: RealTeamStats | undefined;
+    let awayRealStats: RealTeamStats | undefined;
+
+    try {
+      const [homeStats, awayStats] = await Promise.all([
+        getComprehensiveTeamStats(homeTeam),
+        getComprehensiveTeamStats(awayTeam),
+      ]);
+      if (homeStats) {
+        homeRealStats = homeStats;
+        console.log(`[predict] Real stats for ${homeTeam}: attack=${homeStats.attackStrength.toFixed(1)}, defense=${homeStats.defenseStrength.toFixed(1)}`);
+      }
+      if (awayStats) {
+        awayRealStats = awayStats;
+        console.log(`[predict] Real stats for ${awayTeam}: attack=${awayStats.attackStrength.toFixed(1)}, defense=${awayStats.defenseStrength.toFixed(1)}`);
+      }
+    } catch (err) {
+      console.warn('[predict] Could not fetch real stats, using Elo fallback:', err);
+    }
+
+    const stats = await calculateStatisticalPrediction(
+      homeTeam, awayTeam,
+      undefined, undefined, // form (will come from API-Football below)
+      undefined, undefined, // injuries (will come from API-Football below)
+      homeRealStats, awayRealStats
+    );
+
+    // 2. Get real data context for Groq analysis (API-Football) — 5s timeout each
+    console.log(`[predict] Obteniendo contexto de API-Football (timeout 5s)`);
     let contextData: string;
+    let homeForm: ('W' | 'D' | 'L')[] | undefined;
+    let awayForm: ('W' | 'D' | 'L')[] | undefined;
+    let homeInjuries: string[] | undefined;
+    let awayInjuries: string[] | undefined;
+
     try {
       contextData = await getMatchContext(homeTeam, awayTeam);
+      // Extract form and injuries from context for re-recalculating key factors
+      const contextMatch = contextData.match(/Forma reciente:\s*([WDL]*)/g);
+      if (contextMatch) {
+        homeForm = (contextMatch[0]?.match(/[WDL]/g) || []) as ('W' | 'D' | 'L')[];
+        awayForm = (contextMatch[1]?.match(/[WDL]/g) || []) as ('W' | 'D' | 'L')[];
+      }
+      const injuryMatch = contextData.match(/Lesiones conocidas:\s*(.+)/g);
+      if (injuryMatch) {
+        homeInjuries = injuryMatch[0]?.split(': ')[1]?.split(', ') || [];
+        awayInjuries = injuryMatch[1]?.split(': ')[1]?.split(', ') || [];
+      }
     } catch (footballError) {
       console.error('[predict] Football API error:', footballError);
       contextData = `No hay datos en vivo disponibles para ${homeTeam} vs ${awayTeam}. Basado en conocimiento general.`;
     }
 
-    // 2. Generate prediction with Groq Llama 3.3
-    console.log(`[predict] Llamando a Groq para predicción`);
-    const prediction = await getPrediction(
-      homeTeam,
-      awayTeam,
-      contextData,
-      matchContext
-    );
+    // 3. Calculate key factors based on statistical data
+    const keyFactors = getKeyFactors(stats, homeTeam, awayTeam, homeForm, awayForm, homeInjuries, awayInjuries);
+
+    // 4. Call Groq ONLY for the textual analysis (numbers are already calculated)
+    //    Timeout: 8s max. If it fails, we still have the stats.
+    console.log(`[predict] Llamando a Groq para análisis narrativo (timeout 8s)`);
+    let groqAnalysis: { analysis: string; homeKeyPlayers: string[]; awayKeyPlayers: string[] } | null = null;
+
+    try {
+      const groqPrediction = await getPrediction(
+        homeTeam,
+        awayTeam,
+        contextData,
+        matchContext,
+        stats  // Pass calculated stats so Groq can write informed analysis
+      );
+      groqAnalysis = {
+        analysis: groqPrediction.analysis,
+        homeKeyPlayers: groqPrediction.homeKeyPlayers,
+        awayKeyPlayers: groqPrediction.awayKeyPlayers,
+      };
+    } catch (groqError) {
+      const groqMsg = groqError instanceof Error ? groqError.message : String(groqError);
+      console.warn(`[predict] Groq fallback: ${groqMsg}`);
+      // Fallback: use stats-based analysis
+      groqAnalysis = {
+        analysis: `Análisis estadístico: ${homeTeam} tiene ${stats.homeWin}% de probabilidad de victoria con un marcador más probable de ${stats.predictedScoreHome}-${stats.predictedScoreAway}. Goles esperados: ${homeTeam} ${stats.homeExpectedGoals} xG vs ${awayTeam} ${stats.awayExpectedGoals} xG. Confianza del modelo: ${stats.confidence}.`,
+        homeKeyPlayers: [],
+        awayKeyPlayers: [],
+      };
+    }
+
+    // 5. MERGE: statistical numbers + Groq text analysis (or fallback)
+    const prediction: Prediction = {
+      homeWin: stats.homeWin,
+      draw: stats.draw,
+      awayWin: stats.awayWin,
+      predictedScoreHome: stats.predictedScoreHome,
+      predictedScoreAway: stats.predictedScoreAway,
+      confidence: stats.confidence,
+      analysis: groqAnalysis?.analysis || `Predicción estadística: ${homeTeam} ${stats.homeWin}% | Empate ${stats.draw}% | ${awayTeam} ${stats.awayWin}%`,
+      keyFactors,                          // Calculated from stats
+      homeKeyPlayers: groqAnalysis?.homeKeyPlayers || [],
+      awayKeyPlayers: groqAnalysis?.awayKeyPlayers || [],
+      homeFormLast5: homeForm || ['D', 'D', 'D', 'D', 'D'],
+      awayFormLast5: awayForm || ['D', 'D', 'D', 'D', 'D'],
+      homeAttackStrength: stats.homeAttack,
+      awayAttackStrength: stats.awayAttack,
+      homeDefenseStrength: stats.homeDefense,
+      awayDefenseStrength: stats.awayDefense,
+      homeMidfieldStrength: stats.homeMidfield,
+      awayMidfieldStrength: stats.awayMidfield,
+    };
 
     // Cache the result
     setCachedPrediction(homeTeam, awayTeam, prediction);
@@ -106,10 +201,10 @@ export async function POST(request: NextRequest) {
     let userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
     let statusCode = 500;
 
-    if (errorMsg.includes('GEMINI_API_KEY') || errorMsg.includes('API key') || errorMsg.includes('GROQ_API_KEY') || errorMsg.includes('authentication')) {
+    if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('GROQ_API_KEY') || errorMsg.includes('authentication') || errorMsg.includes('401')) {
       userMessage = 'Servicio no disponible temporalmente. Estamos trabajando en ello.';
       statusCode = 503;
-    } else if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('403') || errorMsg.includes('PERMISSION_DENIED')) {
+    } else if (errorMsg.includes('403') || errorMsg.includes('PERMISSION_DENIED')) {
       userMessage = 'Servicio no disponible. Contacta al administrador.';
       statusCode = 503;
     } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('rate limit')) {

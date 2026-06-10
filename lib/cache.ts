@@ -1,7 +1,7 @@
 // FORCH.i ORACLE — Server-side prediction cache (in-memory)
 // Avoids re-querying Groq for the same match within a time window
 
-import type { Prediction } from './gemini';
+import type { Prediction } from './groq';
 
 interface CacheEntry {
   prediction: Prediction;
@@ -9,7 +9,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-const CACHE_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+const CACHE_WINDOW_MS = 2 * 60 * 60 * 1000; // 2 hours — aggressive caching to save API calls
 const cache = new Map<string, CacheEntry>();
 
 function makeCacheKey(homeTeam: string, awayTeam: string): string {

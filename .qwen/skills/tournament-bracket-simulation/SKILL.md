@@ -218,6 +218,85 @@ if (isMatchPlayed(match)) {
 return await getPrediction(match.homeTeam, match.awayTeam);
 ```
 
+## 10. Multi-Simulation — Top 8 Champion Probability
+
+A single tournament simulation produces ONE outcome. To show **probabilities**, run the simulation N times (100+) and count how often each team wins:
+
+```ts
+export interface ChampionProbability {
+  team: string;
+  flag: string;
+  wins: number;
+  pct: number;
+}
+
+export async function simulateTournamentMulti(
+  numSims = 100,
+  realResults: RealMatchResult[] = [],
+  onProgress?: (msg: string) => void
+): Promise<{ top8: ChampionProbability[]; totalSims: number; bracket: TournamentBracket }> {
+  const championCounts = new Map<string, number>();
+  let lastBracket: TournamentBracket | null = null;
+
+  for (let i = 0; i < numSims; i++) {
+    const standings = await simulateGroups(resultsMap);
+    const knockout = await simulateKnockout(standings, resultsMap);
+    const champion = knockout.final.winner;
+
+    if (champion && champion !== 'TBD') {
+      championCounts.set(champion, (championCounts.get(champion) || 0) + 1);
+    }
+
+    // Save last simulation for bracket display
+    if (i === numSims - 1) lastBracket = buildBracket(standings, knockout);
+  }
+
+  // Build Top 8
+  const sorted = Array.from(championCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  const totalWins = Array.from(championCounts.values()).reduce((s, v) => s + v, 0);
+  const top8 = sorted.map(([team, wins]) => ({
+    team,
+    flag: getFlag(team),
+    wins,
+    pct: totalWins > 0 ? Math.round((wins / totalWins) * 1000) / 10 : 0,
+  }));
+
+  return { top8, totalSims: numSims, bracket: lastBracket! };
+}
+```
+
+**UI: Top 8 Ranking Component**
+
+```tsx
+// Top8Ranking.tsx
+// Props: ChampionProbability[], totalSims
+
+// Features:
+// - Animated bars with count-up percentages (eased animation)
+// - Rank badges: gold (#1), silver (#2), bronze (#3), gray (4-8)
+// - Insight cards: "Favorito principal" + "Dark Horse"
+// - Footer: "Las probabilidades se basan en simulaciones estadísticas"
+```
+
+**API Response:**
+
+```ts
+return NextResponse.json({
+  success: true,
+  bracket: result.bracket,
+  top8: result.top8,
+  totalSims: result.totalSims,
+});
+```
+
+**Why 100 simulations?**
+- 10-20: Too noisy — random variance dominates
+- 100: Stable enough for top-4, good for 100-run in <30s with Poisson model
+- 1000: More precise but slow — only needed for production-grade accuracy
+
 ## Gotchas
 
 | Issue | Solution |

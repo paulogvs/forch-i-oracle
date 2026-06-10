@@ -2,7 +2,7 @@
   "name": "forch-i-oracle",
   "version": "1.0.0",
   "private": true,
-  "description": "FORCH.i ORACLE — Predicciones IA Deportivas con Gemini + Datos en tiempo real",
+  "description": "FORCH.i ORACLE — Predicciones IA Deportivas con Groq Llama 3.3 + Datos en tiempo real",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

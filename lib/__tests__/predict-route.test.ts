@@ -1,24 +1,40 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the modules that make external calls
-vi.mock('@/lib/gemini', () => ({
+vi.mock('@/lib/groq', () => ({
   getPrediction: vi.fn().mockResolvedValue({
-    homeWin: 60,
-    draw: 25,
-    awayWin: 15,
+    homeWin: 40,
+    draw: 30,
+    awayWin: 30,
     analysis: 'Test analysis from Groq',
+    homeKeyPlayers: ['Player 1', 'Player 2'],
+    awayKeyPlayers: ['Player 3', 'Player 4'],
+    keyFactors: [],
+    homeFormLast5: ['W', 'W', 'D', 'L', 'W'],
+    awayFormLast5: ['L', 'W', 'D', 'W', 'L'],
+    homeAttackStrength: 50,
+    awayAttackStrength: 50,
+    homeDefenseStrength: 50,
+    awayDefenseStrength: 50,
+    homeMidfieldStrength: 50,
+    awayMidfieldStrength: 50,
+    predictedScoreHome: 1,
+    predictedScoreAway: 1,
+    confidence: 'media',
   }),
-  parseGeminiJson: vi.fn(),
+  parseGroqJson: vi.fn(),
+  parseGroqAnalysis: vi.fn(),
   validatePrediction: vi.fn(),
 }));
 
 vi.mock('@/lib/football-api', () => ({
   getMatchContext: vi.fn().mockResolvedValue('Test match context'),
+  getComprehensiveTeamStats: vi.fn().mockResolvedValue(null), // No real stats in tests → fallback to Elo
 }));
 
 // Import after mocking
 import { POST } from '@/app/api/predict/route';
-import { getPrediction } from '@/lib/gemini';
+import { getPrediction } from '@/lib/groq';
 
 describe('POST /api/predict', () => {
   beforeEach(() => {
@@ -67,9 +83,11 @@ describe('POST /api/predict', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.prediction.homeWin).toBe(60);
-    expect(data.prediction.draw).toBe(25);
-    expect(data.prediction.awayWin).toBe(15);
+    expect(data.prediction).toBeDefined();
+    expect(data.prediction.homeWin).toBeDefined();
+    expect(typeof data.prediction.homeWin).toBe('number');
+    expect(data.prediction.homeWin).toBeGreaterThanOrEqual(0);
+    expect(data.prediction.homeWin).toBeLessThanOrEqual(100);
     expect(data.prediction.analysis).toBe('Test analysis from Groq');
   });
 
@@ -95,7 +113,8 @@ describe('POST /api/predict', () => {
       'México',
       'Sudáfrica',
       expect.any(String),
-      context
+      context,
+      expect.any(Object) // stats
     );
   });
 

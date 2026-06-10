@@ -6,7 +6,7 @@ import TeamSelector from '@/components/TeamSelector';
 import MatchSelector from '@/components/MatchSelector';
 import ResultCard from '@/components/ResultCard';
 import type { Match } from '@/lib/matches';
-import type { Prediction } from '@/lib/gemini';
+import type { Prediction } from '@/lib/groq';
 
 type SelectionMode = 'match' | 'manual';
 

@@ -10,7 +10,8 @@ export const metadata: Metadata = {
     'predicciones',
     'inteligencia artificial',
     'fútbol',
-    'Gemini',
+    'Groq',
+    'Llama 3.3',
     'FORCH.i',
   ],
   icons: {

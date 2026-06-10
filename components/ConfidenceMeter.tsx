@@ -1,6 +1,6 @@
 'use client';
 
-import type { Prediction } from '@/lib/gemini';
+import type { Prediction } from '@/lib/groq';
 
 interface ConfidenceMeterProps {
   confidence: Prediction['confidence'];

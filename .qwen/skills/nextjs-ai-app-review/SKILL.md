@@ -54,9 +54,15 @@ When reviewing a Next.js app that combines external data APIs with AI model call
 
 ## 5. Data Files (lib/matches.ts, lib/teams.ts, etc.)
 
-- **Completeness checks**: Tournament brackets have fixed structures. Verify: Round of 16 = 8 matches, Quarter-finals = 4, etc.
+- **Completeness checks**: Tournament brackets have fixed structures. Verify: Round of 16 = 8 matches, Quarter-finals = 4, etc. Also verify **every group has exactly N*(N-1)/2 matches** (e.g., 6 for a 4-team group). Incomplete groups break simulations.
 - **TBD handling**: Matches with undetermined teams should be visually disabled AND excluded from actionable operations.
 - **Import placement**: All imports should be at the top of the file, not interleaved with helper functions.
+- **Cross-file data consistency (CRITICAL)**: When team-group assignments exist in multiple files (e.g., `teams.ts` and `matches.ts`), they **will drift**. The simulation engine reads from one source while the UI reads from another, producing contradictory group tables vs. match lists. **Pick one file as the single source of truth** for team→group mapping and derive everything else from it. Add a build-time assertion or test that cross-references both files.
+- **Stale naming after tech migration**: When a LLM backend changes (e.g., Gemini → Groq), verify that file names (`gemini.ts` → `groq.ts`), function names (`parseGeminiJson`), comments, and documentation (`CONTEXT.md`, `package.json` description) are all updated. Leftover references confuse future developers and reviewers.
+- **Power rating deduplication**: If a simulation uses team names as keys in a rating/power map, ensure there are no duplicate entries for the same team under different names (e.g., `'Cameroon': 65, 'Camerún': 65`). This masks normalization bugs — the code should map both to a single canonical name.
+- **Star player accuracy**: Verify star players belong to the correct national team. Cross-reference with a reliable source. (Found: Iraq listed Sardar Azmoun, who is Iranian.)
+- **`isPlayed` field lifecycle**: If a `SimulatedMatch` has an `isPlayed` boolean, verify it actually transitions from `false` to `true` somewhere in the code. A field that never changes is dead state and misleads consumers.
+- **Separate cache systems**: If the app has a shared cache module (`lib/cache.ts`) but also declares ad-hoc caches in individual API routes (e.g., `tournament-simulation/route.ts` with its own `Map`), consolidate them. Duplicated cache logic leads to inconsistent TTLs and stale data.
 
 ## 6. Tests
 
