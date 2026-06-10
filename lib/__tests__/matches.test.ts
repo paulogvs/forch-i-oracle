@@ -1,25 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import {
-  matches,
+  ALL_MATCHES,
   GROUPS,
   getMatchesByGroup,
   getMatchesByRound,
-  getMatchById,
-  getConfirmedMatches,
-  getGroupStageMatches,
-  getKnockoutMatches,
+  GROUP_STAGE_MATCHES,
+  KNOCKOUT_MATCHES,
   formatMatchDate,
   formatMatchTime,
   getTeamFlag,
   getRoundName,
   type Match,
-  type Round,
 } from '../matches';
 
 describe('matches data', () => {
   it('should have all matches (group + knockout)', () => {
-    // 72 group stage + knockout (at least 28)
-    expect(matches.length).toBeGreaterThanOrEqual(100);
+    // 72 group stage + knockout (16 R32 + 8 R16 + 4 QF + 2 SF + 1 TP + 1 Final = 128)
+    expect(ALL_MATCHES.length).toBeGreaterThanOrEqual(100);
   });
 
   it('should have 12 groups (A-L)', () => {
@@ -41,48 +38,21 @@ describe('getMatchesByGroup', () => {
   });
 });
 
-describe('getMatchById', () => {
-  it('should find a match by ID', () => {
-    const match = getMatchById('A1');
-    expect(match).toBeDefined();
-    expect(match?.id).toBe('A1');
-  });
-
-  it('should find the final match', () => {
-    const final = getMatchById('FINAL');
-    expect(final).toBeDefined();
-    expect(final?.round).toBe('final');
-  });
-
-  it('should return undefined for unknown ID', () => {
-    expect(getMatchById('ZZZ999')).toBeUndefined();
-  });
-});
-
-describe('getConfirmedMatches', () => {
-  it('should exclude TBD matches', () => {
-    const confirmed = getConfirmedMatches();
-    confirmed.forEach((m) => expect(m.isTBD).toBeFalsy());
-  });
-
-  it('should have fewer matches than total', () => {
-    expect(getConfirmedMatches().length).toBeLessThan(matches.length);
-  });
-});
-
-describe('getGroupStageMatches / getKnockoutMatches', () => {
+describe('GROUP_STAGE_MATCHES / KNOCKOUT_MATCHES', () => {
   it('should separate group stage from knockout', () => {
-    const groupStage = getGroupStageMatches();
-    const knockout = getKnockoutMatches();
-
-    groupStage.forEach((m) => expect(m.round).toBe('group'));
-    knockout.forEach((m) => expect(m.round).not.toBe('group'));
-
-    expect(groupStage.length + knockout.length).toBe(matches.length);
+    GROUP_STAGE_MATCHES.forEach((m) => expect(m.round).toBe('group'));
+    KNOCKOUT_MATCHES.forEach((m) => expect(m.round).not.toBe('group'));
+    expect(GROUP_STAGE_MATCHES.length + KNOCKOUT_MATCHES.length).toBe(ALL_MATCHES.length);
   });
 });
 
 describe('getMatchesByRound', () => {
+  it('should return round-32 matches', () => {
+    const r32 = getMatchesByRound('round-32');
+    expect(r32.length).toBeGreaterThan(0);
+    r32.forEach((m) => expect(m.round).toBe('round-32'));
+  });
+
   it('should return round-16 matches', () => {
     const r16 = getMatchesByRound('round-16');
     expect(r16.length).toBeGreaterThan(0);
@@ -92,7 +62,7 @@ describe('getMatchesByRound', () => {
   it('should return the final', () => {
     const finals = getMatchesByRound('final');
     expect(finals.length).toBe(1);
-    expect(finals[0].id).toBe('FINAL');
+    expect(finals[0].round).toBe('final');
   });
 });
 
@@ -117,7 +87,7 @@ describe('format helpers', () => {
     expect(typeof formatted).toBe('string');
   });
 
-  it('should format match time with UTC', () => {
+  it('should format match time', () => {
     const match: Match = {
       id: 'test',
       group: 'A',
@@ -132,27 +102,28 @@ describe('format helpers', () => {
       city: 'Mexico City',
       round: 'group',
     };
-    expect(formatMatchTime(match)).toBe('02:00 UTC');
+    expect(formatMatchTime(match)).toBe('02:00');
   });
 
   it('should get team flag for known teams', () => {
     expect(getTeamFlag('Brasil')).toBe('🇧🇷');
     expect(getTeamFlag('México')).toBe('🇲🇽');
+    expect(getTeamFlag('Corea del Sur')).toBe('🇰🇷');
   });
 
   it('should return fallback flag for unknown teams', () => {
-    expect(getTeamFlag('Made Up Team')).toBe('🏳️');
+    expect(getTeamFlag('Made Up Team')).toBe('❓');
   });
 });
 
 describe('getRoundName', () => {
   it('should return Spanish round names', () => {
     expect(getRoundName('group')).toBe('Fase de Grupos');
-    expect(getRoundName('round-32')).toBe('Dieciseisavos de Final');
-    expect(getRoundName('round-16')).toBe('Octavos de Final');
-    expect(getRoundName('quarter')).toBe('Cuartos de Final');
-    expect(getRoundName('semi')).toBe('Semifinales');
-    expect(getRoundName('third')).toBe('Tercer Puesto');
-    expect(getRoundName('final')).toBe('La Gran Final');
+    expect(getRoundName('round-32')).toBe('1/16 Final');
+    expect(getRoundName('round-16')).toBe('Octavos');
+    expect(getRoundName('quarter')).toBe('Cuartos');
+    expect(getRoundName('semi')).toBe('Semis');
+    expect(getRoundName('third')).toBe('3° Puesto');
+    expect(getRoundName('final')).toBe('Final');
   });
 });

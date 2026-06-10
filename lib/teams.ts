@@ -1,5 +1,6 @@
-// FORCH.i ORACLE — 48 Equipos del Mundial FIFA 2026
-// Organizados por confederación con banderas
+// FORCH.i ORACLE — 48 Equipos del Mundial FIFA 2026 (OFICIALES)
+// Sorteo oficial completado — 12 grupos A-L
+// Fuente: FIFA.com
 
 export interface Team {
   name: string;
@@ -12,11 +13,11 @@ export interface Team {
 }
 
 export const WORLD_CUP_TEAMS: Team[] = [
-  // ═══════════════ GROUP A — México, Sudáfrica, Chequia, Italia ═══════════════
+  // ═══════════════ GROUP A — México, Sudáfrica, Corea del Sur, Chequia ═══════════════
   { name: 'México', englishName: 'Mexico', code: 'MEX', flag: '🇲🇽', confederation: 'CONCACAF', group: 'A', starPlayers: ['Santiago Giménez', 'Edson Álvarez', 'Guillermo Ochoa'] },
   { name: 'Sudáfrica', englishName: 'South Africa', code: 'RSA', flag: '🇿🇦', confederation: 'CAF', group: 'A', starPlayers: ['Percy Tau', 'Themba Zwane', 'Lyle Foster'] },
+  { name: 'Corea del Sur', englishName: 'South Korea', code: 'KOR', flag: '🇰🇷', confederation: 'AFC', group: 'A', starPlayers: ['Son Heung-min', 'Hwang Hee-chan', 'Kim Min-jae'] },
   { name: 'Chequia', englishName: 'Czech Republic', code: 'CZE', flag: '🇨🇿', confederation: 'UEFA', group: 'A', starPlayers: ['Patrik Schick', 'Tomáš Souček', 'Vladimír Coufal'] },
-  { name: 'Italia', englishName: 'Italy', code: 'ITA', flag: '🇮🇹', confederation: 'UEFA', group: 'A', starPlayers: ['Federico Chiesa', 'Nicolò Barella', 'Gianluigi Donnarumma'] },
 
   // ═══════════════ GROUP B — Canadá, Bosnia, Qatar, Suiza ═══════════════
   { name: 'Canadá', englishName: 'Canada', code: 'CAN', flag: '🇨🇦', confederation: 'CONCACAF', group: 'B', starPlayers: ['Alphonso Davies', 'Jonathan David', 'Cyle Larin'] },
@@ -54,11 +55,11 @@ export const WORLD_CUP_TEAMS: Team[] = [
   { name: 'Irán', englishName: 'Iran', code: 'IRN', flag: '🇮🇷', confederation: 'AFC', group: 'G', starPlayers: ['Mehdi Taremi', 'Sardar Azmoun', 'Alireza Jahanbakhsh'] },
   { name: 'Nueva Zelanda', englishName: 'New Zealand', code: 'NZL', flag: '🇳🇿', confederation: 'OFC', group: 'G', starPlayers: ['Chris Wood', 'Liberato Cacace', 'Joe Bell'] },
 
-  // ═══════════════ GROUP H — España, Arabia Saudita, Uruguay, Cabo Verde ═══════════════
+  // ═══════════════ GROUP H — España, Cabo Verde, Arabia Saudita, Uruguay ═══════════════
   { name: 'España', englishName: 'Spain', code: 'ESP', flag: '🇪🇸', confederation: 'UEFA', group: 'H', starPlayers: ['Lamine Yamal', 'Pedri', 'Rodri'] },
+  { name: 'Cabo Verde', englishName: 'Cape Verde', code: 'CPV', flag: '🇨🇻', confederation: 'CAF', group: 'H', starPlayers: ['Bebé', 'Garry Rodrigues', 'Ryan Mendes'] },
   { name: 'Arabia Saudita', englishName: 'Saudi Arabia', code: 'KSA', flag: '🇸🇦', confederation: 'AFC', group: 'H', starPlayers: ['Salem Al-Dawsari', 'Saleh Al-Shehri', 'Mohammed Al-Owais'] },
   { name: 'Uruguay', englishName: 'Uruguay', code: 'URU', flag: '🇺🇾', confederation: 'CONMEBOL', group: 'H', starPlayers: ['Federico Valverde', 'Darwin Núñez', 'Ronald Araújo'] },
-  { name: 'Cabo Verde', englishName: 'Cape Verde', code: 'CPV', flag: '🇨🇻', confederation: 'CAF', group: 'H', starPlayers: ['Bebé', 'Garry Rodrigues', 'Ryan Mendes'] },
 
   // ═══════════════ GROUP I — Francia, Senegal, Irak, Noruega ═══════════════
   { name: 'Francia', englishName: 'France', code: 'FRA', flag: '🇫🇷', confederation: 'UEFA', group: 'I', starPlayers: ['Kylian Mbappé', 'Aurélien Tchouaméni', 'William Saliba'] },
@@ -84,6 +85,138 @@ export const WORLD_CUP_TEAMS: Team[] = [
   { name: 'Ghana', englishName: 'Ghana', code: 'GHA', flag: '🇬🇭', confederation: 'CAF', group: 'L', starPlayers: ['Mohammed Kudus', 'Thomas Partey', 'Inaki Williams'] },
   { name: 'Panamá', englishName: 'Panama', code: 'PAN', flag: '🇵🇦', confederation: 'CONCACAF', group: 'L', starPlayers: ['José Fajardo', 'César Blackman', 'Aníbal Godoy'] },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// ELO RATINGS — FIFA 2026 oficiales / estimados
+// ═══════════════════════════════════════════════════════════════
+export const ELO_RATINGS: Record<string, number> = {
+  // Tier 1 — Élite (2100+)
+  'Argentina': 2127,
+  'Francia': 2112,
+  'Brasil': 2103,
+  'Inglaterra': 2098,
+  'España': 2087,
+  'Portugal': 2069,
+  'Alemania': 2061,
+  'Países Bajos': 2058,
+
+  // Tier 2 — Top (2000-2050)
+  'Bélgica': 2044,
+  'Colombia': 2032,
+  'Uruguay': 2027,
+  'Italia': 1992,  // No clasificó pero mantenido para referencias históricas
+  'Croacia': 1998,
+  'Marruecos': 1988,
+  'Japón': 1978,
+
+  // Tier 3 — Competitivo (1900-1980)
+  'México': 1945,
+  'Estados Unidos': 1935,
+  'Suiza': 1932,
+  'Austria': 1928,
+  'Noruega': 1924,
+  'Corea del Sur': 1918,
+  'Ecuador': 1912,
+  'Senegal': 1908,
+  'Dinamarca': 1905,
+
+  // Tier 4 — Medio (1850-1900)
+  'Irán': 1895,
+  'Australia': 1889,
+  'Turquía': 1885,
+  'Egipto': 1878,
+  'Argelia': 1872,
+  'Túnez': 1865,
+  'Suecia': 1862,
+  'Chequia': 1855,
+  'Paraguay': 1848,
+  'Arabia Saudita': 1842,
+  'Bosnia y Herzegovina': 1835,
+  'Canadá': 1832,
+  'Escocia': 1825,
+
+  // Tier 5 — Emergente (1750-1820)
+  'Sudáfrica': 1818,
+  'Nigeria': 1812,
+  'Costa de Marfil': 1808,
+  'Cabo Verde': 1802,
+  'Qatar': 1795,
+  'Ghana': 1792,
+  'Jordania': 1785,
+  'Irak': 1778,
+  'Nueva Zelanda': 1772,
+  'Uzbekistán': 1768,
+  'Haití': 1762,
+  'RD Congo': 1758,
+  'Curazao': 1745,
+  'Panamá': 1738,
+};
+
+// ═══════════════════════════════════════════════════════════════
+// POWER RATINGS — Attack / Defense / Midfield (0-100)
+// ═══════════════════════════════════════════════════════════════
+export const POWER_RATINGS: Record<string, { attack: number; defense: number; midfield: number }> = {
+  // Tier 1 — Élite
+  'Argentina': { attack: 95, defense: 88, midfield: 94 },
+  'Francia': { attack: 96, defense: 90, midfield: 92 },
+  'Brasil': { attack: 94, defense: 85, midfield: 90 },
+  'Inglaterra': { attack: 90, defense: 87, midfield: 91 },
+  'España': { attack: 92, defense: 88, midfield: 95 },
+  'Portugal': { attack: 93, defense: 86, midfield: 89 },
+  'Alemania': { attack: 91, defense: 87, midfield: 90 },
+  'Países Bajos': { attack: 89, defense: 88, midfield: 90 },
+
+  // Tier 2 — Top
+  'Bélgica': { attack: 88, defense: 82, midfield: 86 },
+  'Colombia': { attack: 85, defense: 82, midfield: 84 },
+  'Uruguay': { attack: 83, defense: 85, midfield: 82 },
+  'Italia': { attack: 82, defense: 85, midfield: 84 },
+  'Croacia': { attack: 78, defense: 82, midfield: 88 },
+  'Marruecos': { attack: 80, defense: 86, midfield: 78 },
+  'Japón': { attack: 79, defense: 78, midfield: 80 },
+
+  // Tier 3 — Competitivo
+  'México': { attack: 74, defense: 72, midfield: 73 },
+  'Estados Unidos': { attack: 73, defense: 71, midfield: 72 },
+  'Suiza': { attack: 72, defense: 76, midfield: 74 },
+  'Austria': { attack: 75, defense: 73, midfield: 74 },
+  'Noruega': { attack: 80, defense: 70, midfield: 72 },
+  'Corea del Sur': { attack: 76, defense: 72, midfield: 73 },
+  'Ecuador': { attack: 72, defense: 74, midfield: 70 },
+  'Senegal': { attack: 75, defense: 76, midfield: 72 },
+  'Dinamarca': { attack: 73, defense: 75, midfield: 76 },
+
+  // Tier 4 — Medio
+  'Irán': { attack: 68, defense: 72, midfield: 67 },
+  'Australia': { attack: 67, defense: 70, midfield: 66 },
+  'Turquía': { attack: 72, defense: 68, midfield: 70 },
+  'Egipto': { attack: 72, defense: 68, midfield: 67 },
+  'Argelia': { attack: 70, defense: 69, midfield: 68 },
+  'Túnez': { attack: 66, defense: 70, midfield: 67 },
+  'Suecia': { attack: 68, defense: 70, midfield: 69 },
+  'Chequia': { attack: 66, defense: 68, midfield: 67 },
+  'Paraguay': { attack: 64, defense: 68, midfield: 63 },
+  'Arabia Saudita': { attack: 63, defense: 65, midfield: 64 },
+  'Bosnia y Herzegovina': { attack: 65, defense: 64, midfield: 63 },
+  'Canadá': { attack: 68, defense: 62, midfield: 64 },
+  'Escocia': { attack: 62, defense: 66, midfield: 63 },
+
+  // Tier 5 — Emergente
+  'Sudáfrica': { attack: 60, defense: 62, midfield: 58 },
+  'Nigeria': { attack: 66, defense: 62, midfield: 60 },
+  'Costa de Marfil': { attack: 65, defense: 60, midfield: 58 },
+  'Cabo Verde': { attack: 58, defense: 60, midfield: 57 },
+  'Qatar': { attack: 55, defense: 56, midfield: 54 },
+  'Ghana': { attack: 62, defense: 60, midfield: 59 },
+  'Jordania': { attack: 58, defense: 56, midfield: 55 },
+  'Irak': { attack: 57, defense: 56, midfield: 54 },
+  'Nueva Zelanda': { attack: 54, defense: 56, midfield: 52 },
+  'Uzbekistán': { attack: 55, defense: 54, midfield: 53 },
+  'Haití': { attack: 52, defense: 52, midfield: 50 },
+  'RD Congo': { attack: 56, defense: 55, midfield: 52 },
+  'Curazao': { attack: 50, defense: 48, midfield: 48 },
+  'Panamá': { attack: 52, defense: 54, midfield: 50 },
+};
 
 // Lookup: Spanish name → English API name (derived from team data, not hardcoded)
 const englishNameMap = new Map<string, string>(

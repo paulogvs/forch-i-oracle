@@ -131,14 +131,14 @@ forch-i-oracle/
 
 | Group | Teams |
 |-------|-------|
-| A | México 🇲🇽, Sudáfrica 🇿🇦, Chequia 🇨🇿, Italia 🇮🇹 |
+| A | México 🇲🇽, Sudáfrica 🇿🇦, Corea del Sur 🇰🇷, Chequia 🇨🇿 |
 | B | Canadá 🇨🇦, Bosnia 🇧🇦, Qatar 🇶🇦, Suiza 🇨🇭 |
 | C | Brasil 🇧🇷, Marruecos 🇲🇦, Haití 🇭🇹, Escocia 🏴 |
 | D | EE.UU. 🇺🇸, Paraguay 🇵🇾, Australia 🇦🇺, Turquía 🇹🇷 |
 | E | Alemania 🇩🇪, Curazao 🇨🇼, Costa de Marfil 🇨🇮, Ecuador 🇪🇨 |
 | F | Países Bajos 🇳🇱, Japón 🇯🇵, Suecia 🇸🇪, Túnez 🇹🇳 |
 | G | Bélgica 🇧🇪, Egipto 🇪🇬, Irán 🇮🇷, Nueva Zelanda 🇳🇿 |
-| H | España 🇪🇸, Arabia Saudita 🇸🇦, Uruguay 🇺🇾, Cabo Verde 🇨🇻 |
+| H | España 🇪🇸, Cabo Verde 🇨🇻, Arabia Saudita 🇸🇦, Uruguay 🇺🇾 |
 | I | Francia 🇫🇷, Senegal 🇸🇳, Irak 🇮🇶, Noruega 🇳🇴 |
 | J | Argentina 🇦🇷, Argelia 🇩🇿, Austria 🇦🇹, Jordania 🇯🇴 |
 | K | Portugal 🇵🇹, RD Congo 🇨🇩, Uzbekistán 🇺🇿, Colombia 🇨🇴 |

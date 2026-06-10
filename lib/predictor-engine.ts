@@ -75,11 +75,8 @@ const ELO_RATINGS: Record<string, EloEntry> = {
   'Argelia':        { elo: 1735, attack: 1.1, defense: 1.0 },
   'Costa de Marfil':{ elo: 1732, attack: 1.2, defense: 1.2 },
   'Ghana':          { elo: 1728, attack: 1.1, defense: 1.2 },
-  'Costa Rica':     { elo: 1722, attack: 0.9, defense: 1.1 },
   'Paraguay':       { elo: 1718, attack: 0.9, defense: 1.1 },
-  'Camerún':        { elo: 1715, attack: 1.0, defense: 1.2 },
   'Sudáfrica':      { elo: 1708, attack: 0.9, defense: 1.1 },
-  'Jamaica':        { elo: 1702, attack: 1.0, defense: 1.3 },
 
   // ── Nivel medio (Elo 1660-1730) ──
   'Panamá':        { elo: 1698, attack: 0.8, defense: 1.2 },
@@ -99,13 +96,20 @@ const ELO_RATINGS: Record<string, EloEntry> = {
   'Curazao':       { elo: 1618, attack: 0.8, defense: 1.4 },
 };
 
+// Aliases de nombre — los nombres en teams.ts pueden diferir del ELO
+const TEAM_ALIASES: Record<string, string> = {
+  'Chequia': 'República Checa',
+};
+
 // Fallback para equipos sin rating
 const DEFAULT_ELO = 1500;
 const DEFAULT_ATTACK = 0.7;
 const DEFAULT_DEFENSE = 1.5;
 
 function getElo(teamName: string): EloEntry {
-  return ELO_RATINGS[teamName] || {
+  // Intentar alias primero
+  const resolved = TEAM_ALIASES[teamName] || teamName;
+  return ELO_RATINGS[resolved] || {
     elo: DEFAULT_ELO,
     attack: DEFAULT_ATTACK,
     defense: DEFAULT_DEFENSE,

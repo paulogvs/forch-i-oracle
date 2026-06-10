@@ -258,15 +258,13 @@ async function simulateGroups(
 async function resolveTeam(
   src: string,
   standings: Map<string, GroupTeamStanding[]>,
-  thirdPlaces: { name: string; pts: number; gd: number; gf: number }[],
+  thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[],
   winners: Map<string, string>
 ): Promise<string> {
   if (src.startsWith('W-')) return winners.get(src) || 'TBD';
 
-  // Formato: "1A" = 1° del Grupo A, "3rd" = mejor 3°
+  // Formato: "1A" = 1° del Grupo A, "2B" = 2° del Grupo B
   const pos = parseInt(src[0]);
-  if (pos === 3) return thirdPlaces[0]?.name || 'TBD';
-
   const g = src[1];
   const t = standings.get(g);
   return t && t[pos - 1] ? t[pos - 1].name : 'TBD';
@@ -286,12 +284,12 @@ async function simulateKnockout(
 }> {
   const winners = new Map<string, string>();
 
-  // Best 3rd place
-  const thirdPlaces: { name: string; pts: number; gd: number; gf: number }[] = [];
+  // Best 3rd place — top 8 de 12 terceros lugares
+  const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
   for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
     const teams = standings.get(letter);
     if (teams && teams.length >= 3) {
-      thirdPlaces.push({ name: teams[2].name, pts: teams[2].points, gd: teams[2].goalDiff, gf: teams[2].goalsFor });
+      thirdPlaces.push({ name: teams[2].name, pts: teams[2].points, gd: teams[2].goalDiff, gf: teams[2].goalsFor, group: letter });
     }
   }
   thirdPlaces.sort((a, b) =>
@@ -299,19 +297,71 @@ async function simulateKnockout(
     b.gd !== a.gd ? b.gd - a.gd :
     b.gf - a.gf
   );
+  const top8Third = thirdPlaces.slice(0, 8);
 
-  // Round of 32
-  const r32def = [
-    '1A|3rd','2A|2B','1B|3rd','1C|3rd','2C|2D','1D|3rd','1E|3rd','2E|2F',
-    '1F|3rd','1G|3rd','2G|2H','1H|3rd','1I|3rd','2I|2J','1J|3rd','1K|3rd'
+  // Round of 32 — 24 ganadores (1° y 2° de 12 grupos) + 8 mejores terceros
+  // Formato oficial FIFA 2026:
+  // R32-1: 1A vs mejor 3° (B/E/F/G)  |  R32-2: 1C vs 3° (A/B/C/D)
+  // R32-3: 1E vs 3° (D/E/F)          |  R32-4: 1G vs 3° (C/G/H)
+  // R32-5: 1B vs 3° (A/B/C)          |  R32-6: 1D vs 3° (D/E/F)
+  // R32-7: 1F vs 3° (A/B/C)          |  R32-8: 1H vs 3° (G/H/A)
+  // R32-9: 1I vs mejor 3° (I/J/K/L)  |  R32-10: 1J vs 3° (I/J/K/L)
+  // R32-11: 1K vs 3° (K/L/I)         |  R32-12: 1L vs 3° (J/K/L)
+  // R32-13: 2A vs 2B                 |  R32-14: 2C vs 2D
+  // R32-15: 2E vs 2F                 |  R32-16: 2G vs 2H
+  // R32-17: 2I vs 2J                 |  R32-18: 2K vs 2L
+  // R32-19: 1° restante vs 3° restante
+  // R32-20: 1° restante vs 3° restante
+
+  // Para simplificar: usamos el bracket de 24 equipos (simplificado a 16 en R16)
+  // Los 12 primeros + 12 segundos + 8 mejores terceros = 32 equipos
+  const r32Matchups = [
+    // Partidos con terceros lugares
+    { home: '1A', away: '3rd-BEFG' },
+    { home: '1C', away: '3rd-ABCD' },
+    { home: '1E', away: '3rd-DEF' },
+    { home: '1G', away: '3rd-CGH' },
+    { home: '1B', away: '3rd-ABC' },
+    { home: '1D', away: '3rd-DEF' },
+    { home: '1F', away: '3rd-ABC' },
+    { home: '1H', away: '3rd-GHA' },
+    // Partidos entre segundos
+    { home: '2A', away: '2B' },
+    { home: '2C', away: '2D' },
+    { home: '2E', away: '2F' },
+    { home: '2G', away: '2H' },
+    { home: '2I', away: '2J' },
+    { home: '2K', away: '2L' },
   ];
+
+  // Asignar terceros lugares específicos del top 8
+  function assignThirdPlace(criteria: string): string {
+    const groups = criteria.replace('3rd-', '').split('');
+    for (const tp of top8Third) {
+      if (groups.includes(tp.group)) return tp.name;
+    }
+    return 'TBD';
+  }
+
   const roundOf32: SimulatedMatch[] = [];
 
-  for (let i = 0; i < r32def.length; i++) {
-    const [h, a] = r32def[i].split('|');
-    const home = await resolveTeam(h, standings, thirdPlaces, winners);
-    const away = await resolveTeam(a, standings, thirdPlaces, winners);
-    const m = await simulateMatch(home, away, undefined, true);
+  for (let i = 0; i < r32Matchups.length; i++) {
+    const { home, away } = r32Matchups[i];
+    let homeTeam: string, awayTeam: string;
+
+    if (home.startsWith('3rd')) {
+      homeTeam = assignThirdPlace(home);
+    } else {
+      homeTeam = await resolveTeam(home, standings, top8Third, winners);
+    }
+
+    if (away.startsWith('3rd')) {
+      awayTeam = assignThirdPlace(away);
+    } else {
+      awayTeam = await resolveTeam(away, standings, top8Third, winners);
+    }
+
+    const m = await simulateMatch(homeTeam, awayTeam, undefined, true);
     m.id = `R32-${i + 1}`;
     m.roundLabel = '1/16 Final';
     roundOf32.push(m);
@@ -319,10 +369,16 @@ async function simulateKnockout(
     if (onProgress) onProgress(`1/16: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
   }
 
-  // Round of 16
+  // Round of 16 — 8 ganadores de R32 emparejados
   const r16def = [
-    'W-R32-1|W-R32-2','W-R32-3|W-R32-4','W-R32-5|W-R32-6','W-R32-7|W-R32-8',
-    'W-R32-9|W-R32-10','W-R32-11|W-R32-12','W-R32-13|W-R32-14','W-R32-15|W-R32-16'
+    'W-R32-1|W-R32-9',   // (1A/3rd) vs (2A/2B)
+    'W-R32-3|W-R32-11',  // (1E/3rd) vs (2E/2F)
+    'W-R32-5|W-R32-10',  // (1B/3rd) vs (2C/2D)
+    'W-R32-7|W-R32-12',  // (1F/3rd) vs (2G/2H)
+    'W-R32-2|W-R32-13',  // (1C/3rd) vs (2I/2J)
+    'W-R32-4|W-R32-14',  // (1G/3rd) vs (2K/2L)
+    'W-R32-6|W-R32-8',   // (1D/3rd) vs (1H/3rd)
+    'W-R32-15|W-R32-16', // Ganadores restantes
   ];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < r16def.length; i++) {

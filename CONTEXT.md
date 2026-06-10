@@ -51,6 +51,6 @@
 - Cache window: 2 hours per team pair
 
 ## Teams
-- 48 World Cup teams across 12 groups (A-L), 4 teams per group
-- Group A: México, Sudáfrica, Chequia, Italia
+- 48 World Cup teams across 12 groups (A-L), 4 teams per group — OFFICIAL FIFA qualified teams
+- Group A: México, Sudáfrica, Corea del Sur, Chequia
 - All teams have: Elo rating, attack/defense strength, star players, English API name mapping
