@@ -117,13 +117,70 @@ export interface Team {
 }
 ```
 
-## 6. Share Feature
+## 7. Progressive Disclosure UI Pattern
 
-Add a clipboard copy that formats the prediction as shareable text:
+Don't overwhelm the user with all prediction details at once. Use a **hero + expandable tabs** pattern:
 
-```ts
-const shareText = `🔮 FORCH.i Oracle\n${homeFlag} ${homeTeam} ${scoreHome} - ${scoreAway} ${awayFlag} ${awayFlag}\nVictoria: ${homeTeam} (${homeWin}%)\nConfianza: ${confidence}\n\n${analysis}`;
+```tsx
+// ResultCard: Hero (always visible) + Expanded (on demand)
+
+<div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
+  {/* HERO — Always visible: score, confidence, probabilities, key factors */}
+  <div className="p-6 md:p-8">
+    <div className="flex items-center justify-between mb-6">
+      <h2>Predicción FORCH.i</h2>
+      <div>{confidencePct}% confianza</div>
+    </div>
+    
+    <div className="flex items-center justify-center gap-4">
+      {/* Home flag + name */}
+      {/* Score display (large gold numbers) */}
+      {/* Away flag + name */}
+    </div>
+    
+    {/* Win probability bar (3-color segmented) */}
+    {/* Key factors (compact 2x2 grid) */}
+    
+    <button onClick={() => setExpanded(!expanded)}>
+      {expanded ? 'Ver menos' : 'Ver análisis completo'}
+    </button>
+  </div>
+
+  {/* EXPANDED — Tab-based progressive disclosure */}
+  {expanded && (
+    <div className="border-t border-white/10">
+      <div className="flex border-b border-white/10">
+        <button onClick={() => setActiveTab('consensus')}>🔮 Consenso</button>
+        <button onClick={() => setActiveTab('form')}>📈 Forma</button>
+        <button onClick={() => setActiveTab('stats')}>⚡ Stats</button>
+        <button onClick={() => setActiveTab('analysis')}>📝 Análisis</button>
+      </div>
+      <div className="p-6">
+        {activeTab === 'consensus' && <LensConsensus />}
+        {activeTab === 'form' && <FormBubbles />}
+        {activeTab === 'stats' && <ComparisonBars />}
+        {activeTab === 'analysis' && <AnalysisText />}
+      </div>
+    </div>
+  )}
+</div>
 ```
+
+**Tab strategy:**
+| Tab | Content | When to show |
+|-----|---------|-------------|
+| Consenso | Multi-lens agreement (5 perspectives) | Always — builds trust |
+| Forma | W/D/L bubbles for both teams | When form data available |
+| Stats | Attack/midfield/defense comparison bars | Always — quick visual scan |
+| Análisis | LLM narrative text + key players | When Groq/LLM response succeeds |
+
+**Hero design principles:**
+- Score is the PRIMARY visual (largest, gold color, monospace font)
+- Confidence is a badge, not a meter (saves vertical space)
+- Win probabilities are a single 3-color bar with labels below
+- Key factors are compact cards (icon + label + number), not full analysis
+- "Ver análisis completo" is a clear CTA that expands below
+
 
 ## Gotchas
 

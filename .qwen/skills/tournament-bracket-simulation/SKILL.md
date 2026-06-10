@@ -86,23 +86,107 @@ Sorting rules (FIFA standard):
 3. Goals scored
 4. Head-to-head
 
-## 3. Best 3rd Place Teams
+## 3. Best 3rd Place Teams — 48-Team World Cup Format
 
-In a 48-team World Cup, the 8 best 3rd-place teams advance:
+In a 48-team World Cup with 12 groups of 4:
+- 12 first-place teams advance automatically
+- 12 second-place teams advance automatically
+- **8 best 3rd-place teams** advance
+- Total: 32 teams in Round of 32
 
 ```ts
-function getBestThirdPlaceTeams(standings): string[] {
-  const thirdPlaces = [];
-  for (const [group, teams] of standings) {
-    const sorted = sortGroupStandings(teams);
-    thirdPlaces.push({ name: sorted[2].name, points: sorted[2].points, goalDiff: sorted[2].goalDiff, goalsFor: sorted[2].goalsFor });
+const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
+for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
+  const teams = standings.get(letter);
+  if (teams && teams.length >= 3) {
+    thirdPlaces.push({
+      name: teams[2].name, pts: teams[2].points,
+      gd: teams[2].goalDiff, gf: teams[2].goalsFor, group: letter
+    });
   }
-  thirdPlaces.sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff || b.goalsFor - a.goalsFor);
-  return thirdPlaces.slice(0, 8).map(t => t.name);
+}
+thirdPlaces.sort((a, b) => b.pts !== a.pts ? b.pts - a.pts : b.gd !== a.gd ? b.gd - a.gd : b.gf - a.gf);
+const top8Third = thirdPlaces.slice(0, 8);
+```
+
+### R32 Matchup Pattern (16 total matches)
+
+```
+// 12 matches: 1st place vs 3rd place (based on FIFA bracket mapping)
+// 4 matches: 2nd place vs 2nd place (within paired groups)
+// Total: 16 matches → 16 winners → Round of 16
+
+const r32Matchups = [
+  { home: '1A', away: '3rd-BEFG' },  // 1st A vs best 3rd from B/E/F/G
+  { home: '1B', away: '3rd-ABC' },   // etc.
+  // ... 12 total 1st-vs-3rd matchups
+  { home: '2A', away: '2B' },        // 2nd A vs 2nd B
+  { home: '2C', away: '2D' },        // etc.
+  // ... 4 total 2nd-vs-2nd matchups
+];
+```
+
+### Third Place Assignment Function
+
+```ts
+function assignThirdPlace(
+  criteria: string,        // e.g. "3rd-BEFG"
+  top8Third: { name: string; group: string }[]
+): string {
+  const groups = criteria.replace('3rd-', '').split('');
+  for (const tp of top8Third) {
+    if (groups.includes(tp.group)) return tp.name;
+  }
+  return 'TBD';
 }
 ```
 
-## 4. Knockout Bracket Resolution
+## 4. Knockout Bracket Resolution — CRITICAL: Use Same ThirdPlace Array
+
+**Gotcha: TBD cascading through bracket**
+
+After R32, the `resolveTeam` function must use the SAME `top8Third` array throughout R16, QF, and SF. If you pass the original `thirdPlaces` (all 12) instead of `top8Third` (top 8 only), the resolution logic breaks because the third-place criteria won't match.
+
+```ts
+// WRONG — causes TBD cascade:
+const home = await resolveTeam(h, standings, thirdPlaces, winners);
+
+// CORRECT — use top8Third everywhere after R32 setup:
+const home = await resolveTeam(h, standings, top8Third, winners);
+```
+
+Also ensure `resolveTeam` signature is consistent:
+
+```ts
+async function resolveTeam(
+  src: string,
+  standings: Map<string, GroupTeamStanding[]>,
+  thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[],
+  winners: Map<string, string>
+): Promise<string> {
+  if (src.startsWith('W-')) return winners.get(src) || 'TBD';
+  const pos = parseInt(src[0]);
+  const g = src[1];
+  const t = standings.get(g);
+  return t && t[pos - 1] ? t[pos - 1].name : 'TBD';
+}
+```
+
+**R16 pairing pattern** (symmetrical to R32):
+
+```ts
+const r16def = [
+  'W-R32-1|W-R32-13',  // (1A/3rd) vs (2A/2B)
+  'W-R32-5|W-R32-14',  // (1E/3rd) vs (2C/2D)
+  'W-R32-3|W-R32-15',  // (1C/3rd) vs (2E/2F)
+  'W-R32-7|W-R32-16',  // (1G/3rd) vs (2G/2H)
+  'W-R32-9|W-R32-12',  // (1I/3rd) vs (1L/3rd)
+  'W-R32-2|W-R32-10',  // (1B/3rd) vs (1J/3rd)
+  'W-R32-6|W-R32-4',   // (1F/3rd) vs (1D/3rd)
+  'W-R32-11|W-R32-8',  // (1K/3rd) vs (1H/3rd)
+];
+```
+
 
 Use a **source resolution** pattern to track who advances:
 
