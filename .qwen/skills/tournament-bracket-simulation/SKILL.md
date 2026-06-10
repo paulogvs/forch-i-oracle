@@ -233,7 +233,95 @@ export async function POST() {
 }
 ```
 
-## 6. Frontend: Progress Tracking
+## 7. Frontend: Tab-Based Fixture View (Mobile-First)
+
+**Problem:** 128 matches on a single page = unusable on mobile. Collapsible sections help but still require too much scrolling.
+
+**Solution:** Tab-based navigation with one phase per view, sticky header, responsive grid.
+
+```tsx
+// FixtureView.tsx — Tab-based fixture viewer
+type FixtureTab = 'grupos' | 'r32' | 'r16' | 'cuartos' | 'semis' | 'finales';
+
+const TABS = [
+  { id: 'grupos', label: 'Grupos', icon: '📋' },
+  { id: 'r32', label: '1/16', icon: '🏟️' },
+  { id: 'r16', label: 'Octavos', icon: '⚡' },
+  { id: 'cuartos', label: 'Cuartos', icon: '🔥' },
+  { id: 'semis', label: 'Semis', icon: '💎' },
+  { id: 'finales', label: 'Finales', icon: '🏆' },
+];
+
+// Sticky tab bar — scrollable on mobile
+<div className="sticky top-0 z-50 bg-navy/90 backdrop-blur-xl border-b border-white/5">
+  <div className="flex overflow-x-auto">
+    {TABS.map(tab => (
+      <button
+        key={tab.id}
+        onClick={() => setActiveTab(tab.id)}
+        className={activeTab === tab.id ? 'active' : ''}
+      >
+        {tab.icon} {tab.label}
+      </button>
+    ))}
+  </div>
+</div>
+
+// Content with grid responsive
+<div className="animate-fade-in" key={activeTab}>
+  {activeTab === 'grupos' && (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {bracket.groups.map(g => <GroupCard key={g.group} group={g} />)}
+    </div>
+  )}
+  {activeTab === 'r32' && <BracketPhase matches={bracket.roundOf32} />}
+  // ... etc
+</div>
+```
+
+**Responsive breakpoints:**
+| Screen | Group Cards | Bracket Matches |
+|--------|-------------|-----------------|
+| Mobile (<640px) | 1 col | 1 col |
+| Tablet (640-1024px) | 2 col | 2 col |
+| Desktop (1024-1280px) | 3 col | 2 col |
+| Large (>1280px) | 4 col | 2 col |
+
+**Auto-select finales tab when champion known:**
+```tsx
+useEffect(() => {
+  if (bracket.champion && bracket.champion !== 'TBD') {
+    setActiveTab('finales');
+  }
+}, [bracket.champion]);
+```
+
+## 8. Champion Podium Component
+
+```tsx
+// ChampionPodium.tsx — Premium champion reveal
+function ChampionPodium({ champion, championFlag, runnerUp, runnerUpFlag }) {
+  return (
+    <>
+      {/* Champion */}
+      <div className="champion-podium">
+        <div className="text-5xl animate-bounce-subtle">{championFlag}</div>
+        <h3>🏆 Campeón Mundial 🏆</h3>
+        <div className="text-2xl font-black">{champion}</div>
+      </div>
+      
+      {/* Runner up */}
+      <div className="glass-card text-center">
+        <div className="text-3xl">{runnerUpFlag}</div>
+        <h4>Subcampeón</h4>
+        <div className="text-lg">{runnerUp}</div>
+      </div>
+    </>
+  );
+}
+```
+
+## 9. Frontend: Progress Tracking
 
 Long simulations need a progress indicator. Use simulated progress since we can't get real progress from server:
 
@@ -264,7 +352,7 @@ Provide view modes for different levels of detail:
 | **Groups** | All 12 group standings tables |
 | **All** | Everything combined |
 
-## 8. Champion Reveal Animation
+## 10. Champion Reveal Animation
 
 Use staggered phase transitions for dramatic effect:
 
@@ -282,7 +370,7 @@ useEffect(() => {
 </div>
 ```
 
-## 9. Real Match Results Integration
+## 11. Real Match Results Integration
 
 For matches that have already been played:
 
@@ -302,7 +390,7 @@ if (isMatchPlayed(match)) {
 return await getPrediction(match.homeTeam, match.awayTeam);
 ```
 
-## 10. Multi-Simulation — Top 8 Champion Probability
+## 12. Multi-Simulation — Top 8 Champion Probability
 
 A single tournament simulation produces ONE outcome. To show **probabilities**, run the simulation N times (100+) and count how often each team wins:
 
@@ -385,10 +473,15 @@ return NextResponse.json({
 
 | Issue | Solution |
 |-------|----------|
+| **"TBD" cascades through entire bracket** | 1) Ensure R32 has exactly 16 matches (12× 1st-vs-3rd + 4× 2nd-vs-2nd). 2) Pass `top8Third` (not `thirdPlaces`) to `resolveTeam` in R16/QF/SF. 3) Check `assignThirdPlace` returns actual team names, not "TBD" |
+| **R32 has fewer than 16 matches** | Missing matchups cause R16 to reference non-existent winners (W-R32-15, W-R32-16). Must have exactly 16 R32 matches for 32-team knockout |
+| **Wrong thirdPlaces array passed to resolveTeam** | After computing `top8Third = thirdPlaces.slice(0, 8)`, ALL calls to `resolveTeam` in R16/QF/SF must use `top8Third`, not the original 12-item array |
+| `assignThirdPlace` returns "TBD" | Check that criteria groups (e.g., "BEFG") actually overlap with `top8Third` groups. If no 3rd-place team from those groups made top 8, result is TBD |
 | Simulation takes too long | Cache entire tournament result for 2h; show progress UI |
-| "TBD" teams cascade through bracket | Check for TBD before calling AI; skip with placeholder match |
 | Group stage order matters | Process matchday by matchday, not all at once |
 | 3rd place team mapping is complex | Use FIFA's official bracket mapping for which 3rd places play which 1st places |
 | Knockout draws need resolution | Simulate penalties with random winner; note it in prediction text |
 | Serverless timeout (50s limit) | If 100+ AI calls, batch parallel calls per group; consider edge runtime |
 | Map iteration in TypeScript | Use array of keys instead of `for (const [k,v] of map)` if target < ES2015 |
+| 128 matches on mobile = unusable | Use tab-based fixture view (Grupos → 1/16 → Octavos → Cuartos → Semis → Finales) with sticky scrollable tabs |
+| Grid too wide on desktop | Use `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` for responsive scaling |

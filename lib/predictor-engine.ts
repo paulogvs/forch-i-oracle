@@ -6,6 +6,11 @@
 // 1. ELO_RATINGS (fallback) — ratings manuales basados en elofootball.com
 // 2. API-Football (primario) — stats reales cuando FOOTBALL_API_KEY está configurada
 //    (se pasan como parámetro opcional desde la API route)
+// 3. VENUES — altitud de estadios para ajuste de rendimiento
+// 4. H2H — historial head-to-head entre equipos
+
+import { getAltitudeFactor } from './venues';
+import { computeH2H } from './h2h';
 
 export interface RealTeamStats {
   attackStrength: number;
@@ -396,6 +401,25 @@ export async function calculateStatisticalPrediction(
   }
 
   // Clamp a valores realistas
+  homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
+  awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
+
+  // 2b. Altitude adjustment (si hay venue disponible)
+  // Se aplica como factor adicional al lambda
+  const altFactor = getAltitudeFactor(homeTeam, ''); // Default 1.0 sin venue específico
+  const altFactorAway = getAltitudeFactor(awayTeam, '');
+  homeLambda *= altFactor;
+  awayLambda *= altFactorAway;
+
+  // 2c. H2H correlation
+  const homeEloEntry = getElo(homeTeam);
+  const awayEloEntry = getElo(awayTeam);
+  const eloDiff = homeEloEntry.elo - awayEloEntry.elo;
+  const h2h = computeH2H(homeTeam, awayTeam, eloDiff);
+  homeLambda *= h2h.factor;
+  awayLambda *= (2 - h2h.factor); // Invertir para away
+
+  // Clamp again after adjustments
   homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
   awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
 
