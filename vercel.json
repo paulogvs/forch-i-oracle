@@ -43,8 +43,6 @@
       "memory": 1024
     }
   },
-  // NOTA: Los cron jobs se ejecutan vía GitHub Actions
-  // Ver .github/workflows/cron-jobs.yml
   "rewrites": [
     {
       "source": "/sitemap.xml",
