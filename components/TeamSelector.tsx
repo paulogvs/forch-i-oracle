@@ -74,7 +74,8 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
                 key={team}
                 type="button"
                 onClick={() => {
-                  onChange(team);
+                  const cleanName = team.includes(' ') ? team.slice(team.indexOf(' ') + 1) : team;
+                  onChange(cleanName);
                   setIsOpen(false);
                   setSearch('');
                 }}

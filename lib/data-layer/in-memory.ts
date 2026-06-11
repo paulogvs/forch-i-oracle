@@ -39,7 +39,7 @@ function ensureInitialized(): void {
 
   // Seed teams
   for (const t of WORLD_CUP_TEAMS) {
-    const elo = ELO_RATINGS[t.name] ?? 1500;
+    const elo = ELO_RATINGS[t.name]?.elo ?? 1500;
     const power = POWER_RATINGS[t.name] ?? { attack: 50, defense: 50, midfield: 50 };
     teamsStore.set(t.name, {
       id: t.name,

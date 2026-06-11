@@ -158,7 +158,7 @@ const TEAM_TIMEZONES: Record<string, number> = {
   'Portugal': 0, 'Países Bajos': 1, 'Bélgica': 1, 'Italia': 1,
   'Croacia': 1, 'Suiza': 1, 'Austria': 1, 'Dinamarca': 1,
   'Suecia': 1, 'Noruega': 1, 'Serbia': 1, 'Turquía': 3,
-  'Escocia': 0, 'República Checa': 1, 'Grecia': 2, 'Polonia': 1,
+  'Escocia': 0, 'Chequia': 1, 'Grecia': 2, 'Polonia': 1,
   'Ucrania': 2, 'Hungría': 1, 'Rumanía': 2, 'Irlanda': 0,
   // África
   'Marruecos': 1, 'Senegal': 0, 'Egipto': 2, 'Argelia': 1,
@@ -207,7 +207,7 @@ export function calculateHomeAdvantage(teamCode: string, venueName: string): num
 function getTeamContinent(code: string): string {
   const concacaf = ['Estados Unidos', 'Canadá', 'México', 'Panamá', 'Costa Rica', 'Jamaica', 'Haití', 'Curazao', 'Honduras', 'Guatemala'];
   const southAmerica = ['Argentina', 'Brasil', 'Colombia', 'Ecuador', 'Uruguay', 'Paraguay', 'Chile', 'Perú', 'Venezuela', 'Bolivia'];
-  const europe = ['España', 'Francia', 'Alemania', 'Inglaterra', 'Portugal', 'Países Bajos', 'Bélgica', 'Italia', 'Croacia', 'Suiza', 'Austria', 'Dinamarca', 'Suecia', 'Noruega', 'Serbia', 'Turquía', 'Escocia', 'República Checa', 'Grecia', 'Polonia', 'Ucrania', 'Hungría', 'Rumanía', 'Irlanda'];
+  const europe = ['España', 'Francia', 'Alemania', 'Inglaterra', 'Portugal', 'Países Bajos', 'Bélgica', 'Italia', 'Croacia', 'Suiza', 'Austria', 'Dinamarca', 'Suecia', 'Noruega', 'Serbia', 'Turquía', 'Escocia', 'Chequia', 'Grecia', 'Polonia', 'Ucrania', 'Hungría', 'Rumanía', 'Irlanda'];
   const africa = ['Marruecos', 'Senegal', 'Egipto', 'Argelia', 'Túnez', 'Nigeria', 'Ghana', 'Costa de Marfil', 'Sudáfrica', 'Cabo Verde', 'RD Congo', 'Camerún'];
   const asia = ['Japón', 'Corea del Sur', 'Australia', 'Irán', 'Arabia Saudita', 'Irak', 'Uzbekistán', 'Qatar', 'Jordania', 'Nueva Zelanda'];
 

@@ -3,7 +3,7 @@
 // Los números vienen de MATEMÁTICAS, no del LLM
 //
 // FUENTES DE DATOS:
-// 1. ELO_RATINGS (fallback) — ratings manuales basados en elofootball.com
+// 1. ELO_RATINGS (fallback) — importados de teams.ts (fuente única de verdad)
 // 2. API-Football (primario) — stats reales cuando FOOTBALL_API_KEY está configurada
 //    (se pasan como parámetro opcional desde la API route)
 // 3. VENUES — altitud de estadios para ajuste de rendimiento
@@ -11,6 +11,7 @@
 
 import { getAltitudeFactor } from './venues';
 import { computeH2H } from './h2h';
+import { ELO_RATINGS, type EloEntry } from './teams';
 
 export interface RealTeamStats {
   attackStrength: number;
@@ -22,99 +23,13 @@ export interface RealTeamStats {
   form: string;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ELO RATINGS — Fuente: elofootball.com, actualizado a Junio 2026
-// ═══════════════════════════════════════════════════════════════
-
-interface EloEntry {
-  elo: number;
-  attack: number;   // goles anotados promedio (últimos 12 meses)
-  defense: number;  // goles concedidos promedio (últimos 12 meses)
-}
-
-const ELO_RATINGS: Record<string, EloEntry> = {
-  // ── Élite mundial (Elo 2000+) ──
-  'Argentina': { elo: 2109, attack: 2.1, defense: 0.6 },
-  'Francia':    { elo: 2087, attack: 2.3, defense: 0.7 },
-  'España':     { elo: 2065, attack: 2.4, defense: 0.8 },
-  'Brasil':     { elo: 2043, attack: 2.0, defense: 0.9 },
-  'Inglaterra': { elo: 2011, attack: 1.9, defense: 0.7 },
-
-  // ── Top 10 (Elo 1950-2000) ──
-  'Alemania':       { elo: 1998, attack: 2.1, defense: 0.9 },
-  'Portugal':       { elo: 1989, attack: 2.0, defense: 0.8 },
-  'Países Bajos':   { elo: 1976, attack: 1.8, defense: 0.8 },
-  'Bélgica':        { elo: 1954, attack: 1.6, defense: 1.0 },
-  'Colombia':       { elo: 1948, attack: 1.7, defense: 0.8 },
-  'Italia':         { elo: 1942, attack: 1.5, defense: 0.8 },
-  'Uruguay':        { elo: 1934, attack: 1.6, defense: 0.9 },
-  'Croacia':        { elo: 1928, attack: 1.4, defense: 0.9 },
-
-  // ── Nivel alto (Elo 1880-1950) ──
-  'Marruecos':   { elo: 1912, attack: 1.3, defense: 0.7 },
-  'Japón':       { elo: 1898, attack: 1.5, defense: 0.9 },
-  'Suiza':       { elo: 1891, attack: 1.4, defense: 1.0 },
-  'Dinamarca':   { elo: 1885, attack: 1.5, defense: 1.1 },
-  'Senegal':     { elo: 1878, attack: 1.4, defense: 0.9 },
-  'México':      { elo: 1865, attack: 1.3, defense: 1.0 },
-  'Austria':     { elo: 1858, attack: 1.5, defense: 1.2 },
-  'Irán':        { elo: 1845, attack: 1.3, defense: 0.9 },
-  'Estados Unidos': { elo: 1838, attack: 1.4, defense: 1.1 },
-  'Corea del Sur':  { elo: 1832, attack: 1.2, defense: 1.0 },
-  'Serbia':      { elo: 1825, attack: 1.3, defense: 1.2 },
-  'Turquía':     { elo: 1818, attack: 1.4, defense: 1.3 },
-  'Ecuador':     { elo: 1812, attack: 1.3, defense: 1.0 },
-  'Nigeria':     { elo: 1805, attack: 1.2, defense: 1.1 },
-  'Escocia':     { elo: 1798, attack: 1.2, defense: 1.1 },
-  'Ucrania':     { elo: 1792, attack: 1.1, defense: 1.1 },
-  'Noruega':     { elo: 1785, attack: 1.5, defense: 1.3 },
-  'Hungría':     { elo: 1778, attack: 1.2, defense: 1.1 },
-  'República Checa': { elo: 1772, attack: 1.1, defense: 1.1 },
-  'Canadá':      { elo: 1765, attack: 1.2, defense: 1.2 },
-
-  // ── Nivel medio-alto (Elo 1730-1780) ──
-  'Australia':      { elo: 1768, attack: 1.1, defense: 1.0 },
-  'Egipto':         { elo: 1758, attack: 1.2, defense: 1.1 },
-  'Túnez':          { elo: 1748, attack: 1.0, defense: 1.0 },
-  'Arabia Saudita': { elo: 1738, attack: 1.0, defense: 1.1 },
-  'Argelia':        { elo: 1735, attack: 1.1, defense: 1.0 },
-  'Costa de Marfil':{ elo: 1732, attack: 1.2, defense: 1.2 },
-  'Ghana':          { elo: 1728, attack: 1.1, defense: 1.2 },
-  'Paraguay':       { elo: 1718, attack: 0.9, defense: 1.1 },
-  'Sudáfrica':      { elo: 1708, attack: 0.9, defense: 1.1 },
-
-  // ── Nivel medio (Elo 1660-1730) ──
-  'Panamá':        { elo: 1698, attack: 0.8, defense: 1.2 },
-  'Uzbekistán':    { elo: 1688, attack: 1.0, defense: 1.2 },
-  'Qatar':         { elo: 1678, attack: 0.9, defense: 1.3 },
-  'Irak':          { elo: 1672, attack: 0.9, defense: 1.2 },
-  'Jordania':      { elo: 1665, attack: 0.9, defense: 1.1 },
-  'Bosnia y Herzegovina': { elo: 1695, attack: 1.0, defense: 1.3 },
-  'Chequia':       { elo: 1772, attack: 1.1, defense: 1.1 },
-  'Suecia':        { elo: 1752, attack: 1.3, defense: 1.2 },
-
-  // ── Nivel bajo-medio (Elo 1600-1660) ──
-  'Cabo Verde':    { elo: 1658, attack: 0.8, defense: 1.0 },
-  'RD Congo':      { elo: 1648, attack: 0.9, defense: 1.3 },
-  'Nueva Zelanda': { elo: 1638, attack: 0.8, defense: 1.2 },
-  'Haití':         { elo: 1628, attack: 0.7, defense: 1.4 },
-  'Curazao':       { elo: 1618, attack: 0.8, defense: 1.4 },
-};
-
-// Aliases de nombre — los nombres en teams.ts pueden diferir del ELO
-const TEAM_ALIASES: Record<string, string> = {
-  'Chequia': 'República Checa',
-};
-
 // Fallback para equipos sin rating
 const DEFAULT_ELO = 1500;
 const DEFAULT_ATTACK = 0.7;
 const DEFAULT_DEFENSE = 1.5;
 
 function getElo(teamName: string): EloEntry {
-  // Intentar alias primero
-  const resolved = TEAM_ALIASES[teamName] || teamName;
-  return ELO_RATINGS[resolved] || {
+  return ELO_RATINGS[teamName] || {
     elo: DEFAULT_ELO,
     attack: DEFAULT_ATTACK,
     defense: DEFAULT_DEFENSE,

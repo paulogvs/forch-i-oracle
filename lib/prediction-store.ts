@@ -7,25 +7,8 @@
 // 3. Form decay: Recent matches weigh more (exponential decay)
 // 4. xG tracking: Expected goals vs actual to identify over/under-performers
 
-import { getTeamEnglishName } from './teams';
+import { getTeamEnglishName, ELO_RATINGS } from './teams';
 import { POWER_RATINGS } from './teams';
-
-// Internal ELO lookup for prediction-store
-const TEAM_ELO: Record<string, number> = {
-  'Argentina': 2127, 'Francia': 2112, 'Brasil': 2103, 'Inglaterra': 2098,
-  'España': 2087, 'Portugal': 2069, 'Alemania': 2061, 'Países Bajos': 2058,
-  'Bélgica': 2044, 'Colombia': 2032, 'Uruguay': 2027, 'Croacia': 1998,
-  'Marruecos': 1988, 'Japón': 1978, 'México': 1945, 'Estados Unidos': 1935,
-  'Suiza': 1932, 'Austria': 1928, 'Noruega': 1924, 'Corea del Sur': 1918,
-  'Ecuador': 1912, 'Senegal': 1908, 'Irán': 1895, 'Australia': 1889,
-  'Turquía': 1885, 'Egipto': 1878, 'Argelia': 1872, 'Túnez': 1865,
-  'Suecia': 1862, 'Chequia': 1855, 'Paraguay': 1848, 'Arabia Saudita': 1842,
-  'Bosnia y Herzegovina': 1835, 'Canadá': 1832, 'Escocia': 1825,
-  'Sudáfrica': 1818, 'Costa de Marfil': 1808, 'Cabo Verde': 1802,
-  'Qatar': 1795, 'Ghana': 1792, 'Jordania': 1785, 'Irak': 1778,
-  'Nueva Zelanda': 1772, 'Uzbekistán': 1768, 'Haití': 1762,
-  'RD Congo': 1758, 'Curazao': 1745, 'Panamá': 1738,
-};
 
 // ═══════════════════════════════════════════════════════════════
 // DATA TYPES
@@ -260,7 +243,7 @@ export function predictMatchDynamic(
 
 export function getAllTeamStats(): Map<string, TeamDynamicStats> {
   const stats = new Map<string, TeamDynamicStats>();
-  const allTeams = Object.keys(TEAM_ELO);
+  const allTeams = Object.keys(ELO_RATINGS);
   for (const team of allTeams) {
     stats.set(team, getDynamicStats(team));
   }
@@ -289,7 +272,8 @@ export function resetEngine(): void {
 // ═══════════════════════════════════════════════════════════════
 
 function getTeamEloFallback(team: string): number {
-  if (TEAM_ELO[team]) return TEAM_ELO[team];
+  const entry = ELO_RATINGS[team];
+  if (entry) return entry.elo;
   return 1650;
 }
 

@@ -87,69 +87,78 @@ export const WORLD_CUP_TEAMS: Team[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// ELO RATINGS — FIFA 2026 oficiales / estimados
+// ELO RATINGS — FUENTE ÚNICA DE VERDAD
 // ═══════════════════════════════════════════════════════════════
-export const ELO_RATINGS: Record<string, number> = {
+// Todos los motores (predictor-engine, prediction-store) deben importar
+// de aquí. NO duplicar estos datos en otros archivos.
+
+export interface EloEntry {
+  elo: number;
+  attack: number;   // goles anotados promedio (últimos 12 meses)
+  defense: number;  // goles concedidos promedio (últimos 12 meses)
+}
+
+export const ELO_RATINGS: Record<string, EloEntry> = {
   // Tier 1 — Élite (2100+)
-  'Argentina': 2127,
-  'Francia': 2112,
-  'Brasil': 2103,
-  'Inglaterra': 2098,
-  'España': 2087,
-  'Portugal': 2069,
-  'Alemania': 2061,
-  'Países Bajos': 2058,
+  'Argentina':     { elo: 2127, attack: 2.1, defense: 0.6 },
+  'Francia':       { elo: 2112, attack: 2.3, defense: 0.7 },
+  'Brasil':        { elo: 2103, attack: 2.0, defense: 0.9 },
+  'Inglaterra':    { elo: 2098, attack: 1.9, defense: 0.7 },
+  'España':        { elo: 2087, attack: 2.4, defense: 0.8 },
+  'Portugal':      { elo: 2069, attack: 2.0, defense: 0.8 },
+  'Alemania':      { elo: 2061, attack: 2.1, defense: 0.9 },
+  'Países Bajos':  { elo: 2058, attack: 1.8, defense: 0.8 },
 
   // Tier 2 — Top (2000-2050)
-  'Bélgica': 2044,
-  'Colombia': 2032,
-  'Uruguay': 2027,
-  'Italia': 1992,  // No clasificó pero mantenido para referencias históricas
-  'Croacia': 1998,
-  'Marruecos': 1988,
-  'Japón': 1978,
+  'Bélgica':       { elo: 2044, attack: 1.6, defense: 1.0 },
+  'Colombia':      { elo: 2032, attack: 1.7, defense: 0.8 },
+  'Uruguay':       { elo: 2027, attack: 1.6, defense: 0.9 },
+  'Italia':        { elo: 1992, attack: 1.5, defense: 0.8 },
+  'Croacia':       { elo: 1998, attack: 1.4, defense: 0.9 },
+  'Marruecos':     { elo: 1988, attack: 1.3, defense: 0.7 },
+  'Japón':         { elo: 1978, attack: 1.5, defense: 0.9 },
 
   // Tier 3 — Competitivo (1900-1980)
-  'México': 1945,
-  'Estados Unidos': 1935,
-  'Suiza': 1932,
-  'Austria': 1928,
-  'Noruega': 1924,
-  'Corea del Sur': 1918,
-  'Ecuador': 1912,
-  'Senegal': 1908,
-  'Dinamarca': 1905,
+  'México':        { elo: 1945, attack: 1.3, defense: 1.0 },
+  'Estados Unidos':{ elo: 1935, attack: 1.4, defense: 1.1 },
+  'Suiza':         { elo: 1932, attack: 1.4, defense: 1.0 },
+  'Austria':       { elo: 1928, attack: 1.5, defense: 1.2 },
+  'Noruega':       { elo: 1924, attack: 1.5, defense: 1.3 },
+  'Corea del Sur': { elo: 1918, attack: 1.2, defense: 1.0 },
+  'Ecuador':       { elo: 1912, attack: 1.3, defense: 1.0 },
+  'Senegal':       { elo: 1908, attack: 1.4, defense: 0.9 },
+  'Dinamarca':     { elo: 1905, attack: 1.5, defense: 1.1 },
 
   // Tier 4 — Medio (1850-1900)
-  'Irán': 1895,
-  'Australia': 1889,
-  'Turquía': 1885,
-  'Egipto': 1878,
-  'Argelia': 1872,
-  'Túnez': 1865,
-  'Suecia': 1862,
-  'Chequia': 1855,
-  'Paraguay': 1848,
-  'Arabia Saudita': 1842,
-  'Bosnia y Herzegovina': 1835,
-  'Canadá': 1832,
-  'Escocia': 1825,
+  'Irán':          { elo: 1895, attack: 1.3, defense: 0.9 },
+  'Australia':     { elo: 1889, attack: 1.1, defense: 1.0 },
+  'Turquía':       { elo: 1885, attack: 1.4, defense: 1.3 },
+  'Egipto':        { elo: 1878, attack: 1.2, defense: 1.1 },
+  'Argelia':       { elo: 1872, attack: 1.1, defense: 1.0 },
+  'Túnez':         { elo: 1865, attack: 1.0, defense: 1.0 },
+  'Suecia':        { elo: 1862, attack: 1.3, defense: 1.2 },
+  'Chequia':       { elo: 1855, attack: 1.1, defense: 1.1 },
+  'Paraguay':      { elo: 1848, attack: 0.9, defense: 1.1 },
+  'Arabia Saudita':{ elo: 1842, attack: 1.0, defense: 1.1 },
+  'Bosnia y Herzegovina': { elo: 1835, attack: 1.0, defense: 1.3 },
+  'Canadá':        { elo: 1832, attack: 1.2, defense: 1.2 },
+  'Escocia':       { elo: 1825, attack: 1.2, defense: 1.1 },
 
   // Tier 5 — Emergente (1750-1820)
-  'Sudáfrica': 1818,
-  'Nigeria': 1812,
-  'Costa de Marfil': 1808,
-  'Cabo Verde': 1802,
-  'Qatar': 1795,
-  'Ghana': 1792,
-  'Jordania': 1785,
-  'Irak': 1778,
-  'Nueva Zelanda': 1772,
-  'Uzbekistán': 1768,
-  'Haití': 1762,
-  'RD Congo': 1758,
-  'Curazao': 1745,
-  'Panamá': 1738,
+  'Sudáfrica':     { elo: 1818, attack: 0.9, defense: 1.1 },
+  'Nigeria':       { elo: 1812, attack: 1.2, defense: 1.1 },
+  'Costa de Marfil': { elo: 1808, attack: 1.2, defense: 1.2 },
+  'Cabo Verde':    { elo: 1802, attack: 0.8, defense: 1.0 },
+  'Qatar':         { elo: 1795, attack: 0.9, defense: 1.3 },
+  'Ghana':         { elo: 1792, attack: 1.1, defense: 1.2 },
+  'Jordania':      { elo: 1785, attack: 0.9, defense: 1.1 },
+  'Irak':          { elo: 1778, attack: 0.9, defense: 1.2 },
+  'Nueva Zelanda': { elo: 1772, attack: 0.8, defense: 1.2 },
+  'Uzbekistán':    { elo: 1768, attack: 1.0, defense: 1.2 },
+  'Haití':         { elo: 1762, attack: 0.7, defense: 1.4 },
+  'RD Congo':      { elo: 1758, attack: 0.9, defense: 1.3 },
+  'Curazao':       { elo: 1745, attack: 0.8, defense: 1.4 },
+  'Panamá':        { elo: 1738, attack: 0.8, defense: 1.2 },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -244,6 +253,9 @@ export function getTeamStarPlayers(teamName: string): string[] {
 export const TEAM_NAMES = WORLD_CUP_TEAMS.map((t) => `${t.flag} ${t.name}`).sort();
 
 /** Función para obtener equipo por nombre */
+// Constante compartida para forma por defecto (evita hardcodear en múltiples archivos)
+export const DEFAULT_FORM: ('W' | 'D' | 'L')[] = ['D', 'D', 'D', 'D', 'D'];
+
 export function getTeamByName(name: string): Team | undefined {
   return WORLD_CUP_TEAMS.find(
     (t) => t.name.toLowerCase() === name.toLowerCase()

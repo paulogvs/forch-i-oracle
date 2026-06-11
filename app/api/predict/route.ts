@@ -13,6 +13,7 @@ import {
 } from '@/lib/predictor-engine';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
 import { getDataLayer } from '@/lib/data-layer';
+import { DEFAULT_FORM } from '@/lib/teams';
 import type { Prediction } from '@/lib/groq';
 
 interface MatchContext {
@@ -85,8 +86,8 @@ export async function POST(request: NextRequest) {
             keyFactors: cachedPred.keyFactors || [],
             homeKeyPlayers: cachedPred.homeKeyPlayers || [],
             awayKeyPlayers: cachedPred.awayKeyPlayers || [],
-            homeFormLast5: ['D', 'D', 'D', 'D', 'D'],
-            awayFormLast5: ['D', 'D', 'D', 'D', 'D'],
+            homeFormLast5: DEFAULT_FORM,
+            awayFormLast5: DEFAULT_FORM,
             homeAttackStrength: cachedPred.homeAttack ?? 50,
             awayAttackStrength: cachedPred.awayAttack ?? 50,
             homeDefenseStrength: cachedPred.homeDefense ?? 50,
@@ -238,8 +239,8 @@ export async function POST(request: NextRequest) {
       keyFactors,
       homeKeyPlayers: groqAnalysis?.homeKeyPlayers || [],
       awayKeyPlayers: groqAnalysis?.awayKeyPlayers || [],
-      homeFormLast5: homeForm?.last5?.map(f => f.result) || ['D', 'D', 'D', 'D', 'D'],
-      awayFormLast5: awayForm?.last5?.map(f => f.result) || ['D', 'D', 'D', 'D', 'D'],
+      homeFormLast5: homeForm?.last5?.map(f => f.result) || DEFAULT_FORM,
+      awayFormLast5: awayForm?.last5?.map(f => f.result) || DEFAULT_FORM,
       homeAttackStrength: enhanced.homeAttack,
       awayAttackStrength: enhanced.awayAttack,
       homeDefenseStrength: enhanced.homeDefense,

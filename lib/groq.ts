@@ -1,6 +1,7 @@
 // FORCH.i ORACLE — Groq + Llama 3.3 client
 import Groq from 'groq-sdk';
 import type { StatisticalPrediction } from './predictor-engine';
+import { DEFAULT_FORM } from './teams';
 
 // Lazy init — no crash at build time without .env.local
 function getGroqClient(): Groq {
@@ -153,7 +154,7 @@ export function parseGroqJson(response: string): Prediction {
 }
 
 function normalizeForm(form: unknown): ('W' | 'D' | 'L')[] {
-  if (!Array.isArray(form) || form.length === 0) return ['D', 'D', 'D', 'D', 'D'];
+  if (!Array.isArray(form) || form.length === 0) return DEFAULT_FORM;
   return form.map((f) => {
     const s = String(f).toUpperCase();
     if (s === 'W') return 'W';
@@ -400,8 +401,8 @@ IMPORTANTE: Responde ÚNICAMENTE con este formato JSON:
       keyFactors: [],         // Overridden by caller with stats
       homeKeyPlayers: analysis.homeKeyPlayers,
       awayKeyPlayers: analysis.awayKeyPlayers,
-      homeFormLast5: ['D', 'D', 'D', 'D', 'D'],
-      awayFormLast5: ['D', 'D', 'D', 'D', 'D'],
+      homeFormLast5: DEFAULT_FORM,
+      awayFormLast5: DEFAULT_FORM,
       homeAttackStrength: 50,
       awayAttackStrength: 50,
       homeDefenseStrength: 50,

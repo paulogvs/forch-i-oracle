@@ -1,6 +1,5 @@
 // FORCH.i ORACLE — Data Layer Factory
 // Automatically selects Supabase or in-memory based on environment.
-// Uses eval-based dynamic loading to completely avoid webpack build analysis.
 
 import type { IDataLayer } from './interface';
 import { inMemoryDataLayer } from './in-memory';
@@ -20,7 +19,7 @@ export function getDataLayer(): IDataLayer {
 
 /**
  * Async version that dynamically loads Supabase if configured.
- * Uses runtime-only detection to avoid build-time module resolution.
+ * Uses dynamic import() to avoid build-time module resolution.
  */
 export async function getDataLayerAsync(): Promise<IDataLayer> {
   if (dataLayerInstance) return dataLayerInstance;
@@ -29,24 +28,16 @@ export async function getDataLayerAsync(): Promise<IDataLayer> {
 
   if (hasEnv) {
     try {
-      // Runtime-only SDK check — webpack cannot statically analyze eval('require')
       let sdkAvailable = false;
       try {
-        // eslint-disable-next-line no-eval
-        const _require = eval('require') as NodeRequire | undefined;
-        if (_require) {
-          _require.resolve('@supabase/supabase-js');
-          sdkAvailable = true;
-        }
+        await import('@supabase/supabase-js');
+        sdkAvailable = true;
       } catch {
         sdkAvailable = false;
       }
 
       if (sdkAvailable) {
-        // eslint-disable-next-line no-eval
-        const _require = eval('require') as NodeRequire;
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { supabaseDataLayer } = _require('./supabase');
+        const { supabaseDataLayer } = await import('./supabase');
         console.log('[data-layer] Using Supabase data layer');
         supabaseActive = true;
         dataLayerInstance = supabaseDataLayer as IDataLayer;
