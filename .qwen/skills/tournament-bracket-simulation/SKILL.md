@@ -213,6 +213,94 @@ if (homeScore === awayScore) {
 }
 ```
 
+### Third Place Match — Track Losers Separately
+
+The third place match uses `L-SF-1` and `L-SF-2` (losers of the semifinals). You must track losers alongside winners, otherwise the third place match stays TBD.
+
+```ts
+const winners = new Map<string, string>();
+const losers = new Map<string, string>();
+
+// After each SF match:
+const winner = pred.homeGoals >= pred.awayGoals ? home : away;
+const loser = winner === home ? away : home;
+winners.set(`W-SF-${i}`, winner);
+losers.set(`L-SF-${i}`, loser);
+
+// Third place match resolution:
+const sf1Loser = losers.get('L-SF-1');
+const sf2Loser = losers.get('L-SF-2');
+if (sf1Loser && sf2Loser && sf1Loser !== 'TBD' && sf2Loser !== 'TBD') {
+  await predictSingleMatch(sf1Loser, sf2Loser, '3rd', ...);
+}
+
+// Final resolution uses winners:
+const sf1Winner = winners.get('W-SF-1');
+const sf2Winner = winners.get('W-SF-2');
+if (sf1Winner && sf2Winner && sf1Winner !== 'TBD' && sf2Winner !== 'TBD') {
+  await predictSingleMatch(sf1Winner, sf2Winner, 'Final', ...);
+}
+```
+
+The `resolveTeam` function must handle both prefixes:
+
+```ts
+function resolveTeamSlot(
+  slot: string,
+  qualified: QualifiedTeams,
+  winners: Map<string, string>,
+  losers?: Map<string, string>
+): string {
+  if (slot.startsWith('W-')) return winners.get(slot) || 'TBD';
+  if (slot.startsWith('L-') && losers) return losers.get(slot) || 'TBD';
+  // ... handle group positions like "1A", "2B", third place criteria
+  return 'TBD';
+}
+```
+
+## 4b. Fixture API Route Pattern — Predict ALL 128 Matches
+
+When you need an API endpoint that returns predictions for the **entire tournament** (group stage + knockout), not just a simulation bracket, use this pattern:
+
+```ts
+// app/api/fixture/route.ts
+
+export async function POST(request: NextRequest) {
+  // Phase 1: Predict all group stage matches
+  const groupStandings: Record<string, any[]> = {};
+  for (const group of ['A','B','C',...]) {
+    const standings = simulateGroup(group);
+    groupStandings[group] = standings;
+  }
+
+  // Phase 2: Resolve knockout placeholders from group results
+  const qualified = resolveGroupQualifiers(groupStandings);
+  // { groupWinners, groupRunnersUp, bestThirdPlaces }
+
+  // Phase 3: Simulate knockout bracket to resolve all slots
+  const knockoutResults = await simulateKnockoutPhase(qualified, ...);
+
+  // Phase 4: Build unified fixture array (all 128 matches)
+  const fixture = [
+    ...groupStageMatches.map(m => ({ ...m, predictedScore, confidence, ... })),
+    ...knockoutMatches.map(m => {
+      const ko = knockoutMap.get(m.id);
+      return {
+        ...m,
+        homeTeam: ko?.homeTeam || m.homeTeam,  // resolved from placeholder
+        awayTeam: ko?.awayTeam || m.awayTeam,
+        predictedScore: ko?.predictedScore,
+        // ...
+      };
+    }),
+  ];
+
+  return NextResponse.json({ success: true, fixture, groupStandings });
+}
+```
+
+Key difference from tournament simulation: this returns **one deterministic prediction** for each match (not a multi-sim probability distribution), suitable for the fixture view UI.
+
 ## 5. API Route with Tournament Caching
 
 Simulating 100+ matches with AI is slow. Cache the entire result:
@@ -694,6 +782,8 @@ awayLambda *= (2 - h2h.factor); // Inverted for away team
 | **R32 has fewer than 16 matches** | Missing matchups cause R16 to reference non-existent winners (W-R32-15, W-R32-16). Must have exactly 16 R32 matches for 32-team knockout |
 | **Wrong thirdPlaces array passed to resolveTeam** | After computing `top8Third = thirdPlaces.slice(0, 8)`, ALL calls to `resolveTeam` in R16/QF/SF must use `top8Third`, not the original 12-item array |
 | `assignThirdPlace` returns "TBD" | Check that criteria groups (e.g., "BEFG") actually overlap with `top8Third` groups. If no 3rd-place team from those groups made top 8, result is TBD |
+| **Knockout predictions return null/undefined** | The fixture API route must resolve group stage placeholders BEFORE predicting knockout matches. Don't just return the raw match list — run the full bracket resolution first |
+| **Third place match stays TBD** | You must track losers separately from winners. After each SF match, store both `W-SF-N` and `L-SF-N` in separate maps. The `resolveTeam` function must handle `L-` prefix |
 | Simulation takes too long | Cache entire tournament result for 2h; show progress UI |
 | Group stage order matters | Process matchday by matchday, not all at once |
 | 3rd place team mapping is complex | Use FIFA's official bracket mapping for which 3rd places play which 1st places |

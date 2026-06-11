@@ -61,10 +61,11 @@ function ensureInitialized(): void {
       matchNumber: m.matchday,
       groupChar: m.group,
       round: m.round === 'group' ? 'group' :
-        m.round === 'R32' ? 'R32' :
-        m.round === 'R16' ? 'R16' :
-        m.round === 'QF' ? 'QF' :
-        m.round === 'SF' ? 'SF' : 'F',
+        m.round === 'round-32' ? 'R32' :
+        m.round === 'round-16' ? 'R16' :
+        m.round === 'quarter' ? 'QF' :
+        m.round === 'semi' ? 'SF' :
+        m.round === 'third' ? 'F' : 'F',
       homeTeamId: m.homeTeam,
       awayTeamId: m.awayTeam,
       matchDate: m.date,
@@ -73,7 +74,7 @@ function ensureInitialized(): void {
       city: m.city,
       status: 'scheduled',
       createdAt: new Date().toISOString(),
-    });
+    } as any);
   }
 
   initialized = true;

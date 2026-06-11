@@ -10,7 +10,7 @@ import { getDataLayer } from '@/lib/data-layer';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { useDynamic = true, useEnhanced = true, realResults = [] } = body;
+    const { useDynamic = true, useEnhanced: useEnhancedFlag = true, realResults = [] } = body;
 
     const db = getDataLayer();
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       for (const match of groupMatches) {
         let prediction;
 
-        if (useEnhanced) {
+        if (useEnhancedFlag) {
           // Use enhanced engine with data layer context
           const homeForm = await getTeamFormCached(match.homeTeam);
           const awayForm = await getTeamFormCached(match.awayTeam);
@@ -204,12 +204,26 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════
-    // PHASE 2: Predict knockout (TBD until group results)
+    // PHASE 2: Predict knockout (resolve group stage placeholders first)
     // ═══════════════════════════════════════════════════
 
+    // Build resolved knockout teams from simulated group standings
     const knockoutMatches = ALL_MATCHES.filter(m => m.round !== 'group');
 
+    // Resolve group stage to get qualified teams
+    const groupQualified = resolveGroupQualifiers(groupStandings);
+
+    // Simulate knockout bracket to resolve all placeholders
+    const knockoutResults = await simulateKnockoutPhase(groupQualified, getTeamFormCached, useEnhancedFlag);
+
+    // Map knockout results back to fixture entries
+    const knockoutMap = new Map<string, any>();
+    for (const result of knockoutResults) {
+      knockoutMap.set(result.id, result);
+    }
+
     for (const match of knockoutMatches) {
+      const koResult = knockoutMap.get(match.id);
       fixture.push({
         id: match.id,
         group: match.group,
@@ -217,15 +231,15 @@ export async function POST(request: NextRequest) {
         time: match.time,
         venue: match.venue,
         city: match.city,
-        homeTeam: match.homeTeam,
-        awayTeam: match.awayTeam,
+        homeTeam: koResult?.homeTeam || match.homeTeam,
+        awayTeam: koResult?.awayTeam || match.awayTeam,
         round: match.round,
-        predictedScore: null,
-        confidence: null,
-        homeWinPct: null,
-        drawPct: null,
-        awayWinPct: null,
-        xG: null,
+        predictedScore: koResult?.predictedScore || null,
+        confidence: koResult?.confidence || null,
+        homeWinPct: koResult?.homeWinPct || null,
+        drawPct: koResult?.drawPct || null,
+        awayWinPct: koResult?.awayWinPct || null,
+        xG: koResult?.xG || null,
       });
     }
 
@@ -237,7 +251,7 @@ export async function POST(request: NextRequest) {
       groupStageMatches: 72,
       knockoutMatches: fixture.length - 72,
       useDynamic,
-      useEnhanced,
+      useEnhanced: useEnhancedFlag,
       realResultsIngested: realResults.length,
       totalRealResults: getResultsCount(),
     });
@@ -249,4 +263,327 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KNOCKOUT RESOLUTION HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+interface QualifiedTeams {
+  groupWinners: Map<string, string>;     // Group letter → team name
+  groupRunnersUp: Map<string, string>;   // Group letter → team name
+  bestThirdPlaces: string[];              // Team names
+}
+
+function resolveGroupQualifiers(groupStandings: Record<string, any[]>): QualifiedTeams {
+  const qualified: QualifiedTeams = {
+    groupWinners: new Map(),
+    groupRunnersUp: new Map(),
+    bestThirdPlaces: [],
+  };
+
+  const allGroups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
+
+  for (const group of allGroups) {
+    const standings = groupStandings[group];
+    if (!standings || standings.length < 3) continue;
+
+    qualified.groupWinners.set(group, standings[0].name);
+    qualified.groupRunnersUp.set(group, standings[1].name);
+    thirdPlaces.push({
+      name: standings[2].name,
+      pts: standings[2].pts,
+      gd: standings[2].gd,
+      gf: standings[2].gf,
+      group,
+    });
+  }
+
+  // Top 8 third places
+  thirdPlaces.sort((a, b) =>
+    b.pts !== a.pts ? b.pts - a.pts :
+    b.gd !== a.gd ? b.gd - a.gd :
+    b.gf - a.gf
+  );
+  qualified.bestThirdPlaces = thirdPlaces.slice(0, 8).map(tp => tp.name);
+
+  return qualified;
+}
+
+function resolveTeamSlot(
+  slot: string,
+  qualified: QualifiedTeams,
+  winners: Map<string, string>,
+  losers?: Map<string, string>
+): string {
+  // Already resolved winner from previous knockout round
+  if (slot.startsWith('W-')) {
+    return winners.get(slot) || 'TBD';
+  }
+  // Loser from previous knockout round (for third place match)
+  if (slot.startsWith('L-') && losers) {
+    return losers.get(slot) || 'TBD';
+  }
+
+  // Group position: "1A" = 1st of Group A, "2B" = 2nd of Group B
+  if (slot.length >= 2 && /^[123]/.test(slot)) {
+    const pos = parseInt(slot[0]);
+    const group = slot[1];
+    if (pos === 1) return qualified.groupWinners.get(group) || 'TBD';
+    if (pos === 2) return qualified.groupRunnersUp.get(group) || 'TBD';
+    if (pos === 3) {
+      // Third place - need to find which third place slot
+      const criteria = slot.substring(1); // e.g., "B/3E/3F/3G"
+      // For simplicity, return the best third place that matches
+      for (const tp of qualified.bestThirdPlaces) {
+        return tp;
+      }
+      return 'TBD';
+    }
+  }
+
+  // Third place criteria like "3B/3E/3F/3G"
+  if (slot.includes('3')) {
+    const groups = slot.match(/3([A-L])/g)?.map(g => g[1]) || [];
+    for (const tp of qualified.bestThirdPlaces) {
+      // Find which group this third place team came from
+      for (const g of groups) {
+        const thirdFromGroup = qualified.groupWinners.has(g) ? 
+          undefined : undefined; // Already resolved
+      }
+    }
+    // Return first available best third place
+    for (const tp of qualified.bestThirdPlaces) {
+      return tp;
+    }
+    return 'TBD';
+  }
+
+  return 'TBD';
+}
+
+async function predictSingleMatch(
+  homeTeam: string,
+  awayTeam: string,
+  matchId: string,
+  getTeamFormCached: (name: string) => Promise<any>,
+  useEnhanced: boolean
+): Promise<any> {
+  if (homeTeam === 'TBD' || awayTeam === 'TBD') {
+    return {
+      id: matchId,
+      homeTeam: homeTeam,
+      awayTeam: awayTeam,
+      predictedScore: null,
+      confidence: null,
+      homeWinPct: null,
+      drawPct: null,
+      awayWinPct: null,
+      xG: null,
+    };
+  }
+
+  let prediction;
+
+  if (useEnhanced) {
+    const homeForm = await getTeamFormCached(homeTeam);
+    const awayForm = await getTeamFormCached(awayTeam);
+
+    const homeContext: EnhancedPredictionContext = {
+      teamName: homeTeam,
+      recentMatches: homeForm?.last5?.map((f: any) => ({
+        opponent: f.opponent,
+        goalsFor: f.goalsFor,
+        goalsAgainst: f.goalsAgainst,
+        result: f.result,
+        date: f.date,
+      })),
+    };
+
+    const awayContext: EnhancedPredictionContext = {
+      teamName: awayTeam,
+      recentMatches: awayForm?.last5?.map((f: any) => ({
+        opponent: f.opponent,
+        goalsFor: f.goalsFor,
+        goalsAgainst: f.goalsAgainst,
+        result: f.result,
+        date: f.date,
+      })),
+    };
+
+    const enhanced = await calculateEnhancedPrediction(homeTeam, awayTeam, homeContext, awayContext);
+    prediction = {
+      homeWin: enhanced.homeWin,
+      draw: enhanced.draw,
+      awayWin: enhanced.awayWin,
+      homeGoals: enhanced.predictedScoreHome,
+      awayGoals: enhanced.predictedScoreAway,
+      confidence: enhanced.confidence,
+      homeXG: enhanced.homeExpectedGoals,
+      awayXG: enhanced.awayExpectedGoals,
+    };
+  } else {
+    const stat = await calculateStatisticalPrediction(homeTeam, awayTeam);
+    prediction = {
+      homeWin: stat.homeWin,
+      draw: stat.draw,
+      awayWin: stat.awayWin,
+      homeGoals: stat.predictedScoreHome,
+      awayGoals: stat.predictedScoreAway,
+      confidence: stat.confidence,
+      homeXG: stat.homeExpectedGoals,
+      awayXG: stat.awayExpectedGoals,
+    };
+  }
+
+  return {
+    id: matchId,
+    homeTeam,
+    awayTeam,
+    predictedScore: [prediction.homeGoals, prediction.awayGoals],
+    confidence: prediction.confidence,
+    homeWinPct: prediction.homeWin,
+    drawPct: prediction.draw,
+    awayWinPct: prediction.awayWin,
+    xG: [prediction.homeXG, prediction.awayXG],
+    winner: prediction.homeGoals > prediction.awayGoals ? homeTeam :
+            prediction.homeGoals < prediction.awayGoals ? awayTeam : homeTeam, // Home wins draws in knockout
+  };
+}
+
+async function simulateKnockoutPhase(
+  qualified: QualifiedTeams,
+  getTeamFormCached: (name: string) => Promise<any>,
+  useEnhanced: boolean
+): Promise<any[]> {
+  const results: any[] = [];
+  const winners = new Map<string, string>();
+  const losers = new Map<string, string>();
+
+  // ═══════════════════════════════════════════════════
+  // ROUND OF 32 — 16 matches
+  // ═══════════════════════════════════════════════════
+
+  const r32Slots = [
+    { id: 'R32-1', home: '1A', away: '3B/3E/3F/3G' },
+    { id: 'R32-2', home: '1C', away: '3A/3B/3C/3D' },
+    { id: 'R32-3', home: '1E', away: '3D/3E/3F' },
+    { id: 'R32-4', home: '1G', away: '3C/3G/3H' },
+    { id: 'R32-5', home: '1B', away: '3A/3B/3C' },
+    { id: 'R32-6', home: '1D', away: '3D/3E/3F' },
+    { id: 'R32-7', home: '1F', away: '3A/3B/3C' },
+    { id: 'R32-8', home: '1H', away: '3G/3H/3A' },
+    { id: 'R32-9', home: '2A', away: '2B' },
+    { id: 'R32-10', home: '2C', away: '2D' },
+    { id: 'R32-11', home: '2E', away: '2F' },
+    { id: 'R32-12', home: '2G', away: '2H' },
+    { id: 'R32-13', home: '1I', away: '3I/3J/3K/3L' },
+    { id: 'R32-14', home: '1J', away: '3I/3J/3K/3L' },
+    { id: 'R32-15', home: '1K', away: '3K/3L/3I' },
+    { id: 'R32-16', home: '1L', away: '3J/3K/3L' },
+  ];
+
+  for (const slot of r32Slots) {
+    const home = resolveTeamSlot(slot.home, qualified, winners, losers);
+    const away = resolveTeamSlot(slot.away, qualified, winners, losers);
+    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    results.push(result);
+    if (result.winner && result.winner !== 'TBD') {
+      winners.set(`W-${slot.id}`, result.winner);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // ROUND OF 16 — 8 matches
+  // ═══════════════════════════════════════════════════
+
+  const r16Slots = [
+    { id: 'R16-1', home: 'W-R32-1', away: 'W-R32-2' },
+    { id: 'R16-2', home: 'W-R32-3', away: 'W-R32-4' },
+    { id: 'R16-3', home: 'W-R32-5', away: 'W-R32-6' },
+    { id: 'R16-4', home: 'W-R32-7', away: 'W-R32-8' },
+    { id: 'R16-5', home: 'W-R32-9', away: 'W-R32-10' },
+    { id: 'R16-6', home: 'W-R32-11', away: 'W-R32-12' },
+    { id: 'R16-7', home: 'W-R32-13', away: 'W-R32-14' },
+    { id: 'R16-8', home: 'W-R32-15', away: 'W-R32-16' },
+  ];
+
+  for (const slot of r16Slots) {
+    const home = resolveTeamSlot(slot.home, qualified, winners, losers);
+    const away = resolveTeamSlot(slot.away, qualified, winners, losers);
+    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    results.push(result);
+    if (result.winner && result.winner !== 'TBD') {
+      winners.set(`W-${slot.id}`, result.winner);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // QUARTERFINALS — 4 matches
+  // ═══════════════════════════════════════════════════
+
+  const qfSlots = [
+    { id: 'QF-1', home: 'W-R16-1', away: 'W-R16-2' },
+    { id: 'QF-2', home: 'W-R16-3', away: 'W-R16-4' },
+    { id: 'QF-3', home: 'W-R16-5', away: 'W-R16-6' },
+    { id: 'QF-4', home: 'W-R16-7', away: 'W-R16-8' },
+  ];
+
+  for (const slot of qfSlots) {
+    const home = resolveTeamSlot(slot.home, qualified, winners, losers);
+    const away = resolveTeamSlot(slot.away, qualified, winners, losers);
+    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    results.push(result);
+    if (result.winner && result.winner !== 'TBD') {
+      winners.set(`W-${slot.id}`, result.winner);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // SEMIFINALS — 2 matches
+  // ═══════════════════════════════════════════════════
+
+  const sfSlots = [
+    { id: 'SF-1', home: 'W-QF-1', away: 'W-QF-2' },
+    { id: 'SF-2', home: 'W-QF-3', away: 'W-QF-4' },
+  ];
+
+  for (const slot of sfSlots) {
+    const home = resolveTeamSlot(slot.home, qualified, winners, losers);
+    const away = resolveTeamSlot(slot.away, qualified, winners, losers);
+    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    results.push(result);
+    if (result.winner && result.winner !== 'TBD') {
+      winners.set(`W-${slot.id}`, result.winner);
+      const loser = result.winner === result.homeTeam ? result.awayTeam : result.homeTeam;
+      losers.set(`L-${slot.id}`, loser);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // THIRD PLACE — 1 match (losers of SF)
+  // ═══════════════════════════════════════════════════
+
+  const sf1Loser = losers.get('L-SF-1');
+  const sf2Loser = losers.get('L-SF-2');
+
+  if (sf1Loser && sf2Loser && sf1Loser !== 'TBD' && sf2Loser !== 'TBD') {
+    const thirdResult = await predictSingleMatch(sf1Loser, sf2Loser, '3rd', getTeamFormCached, useEnhanced);
+    results.push(thirdResult);
+  }
+
+  // ═══════════════════════════════════════════════════
+  // FINAL — 1 match
+  // ═══════════════════════════════════════════════════
+
+  const sf1Winner = winners.get('W-SF-1');
+  const sf2Winner = winners.get('W-SF-2');
+
+  if (sf1Winner && sf2Winner && sf1Winner !== 'TBD' && sf2Winner !== 'TBD') {
+    const finalResult = await predictSingleMatch(sf1Winner, sf2Winner, 'Final', getTeamFormCached, useEnhanced);
+    results.push(finalResult);
+  }
+
+  return results;
 }

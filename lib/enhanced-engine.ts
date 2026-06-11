@@ -345,6 +345,66 @@ export function calculateH2HFactorWeighted(
 }
 
 // ═══════════════════════════════════════════════════════════════
+// TRAVEL DISTANCE — Fatigue from venue changes
+// ═══════════════════════════════════════════════════════════════
+
+// Approximate coordinates of WC2026 venues [lat, lng]
+const VENUE_COORDS: Record<string, [number, number]> = {
+  'Estadio Azteca': [19.304, -99.138],
+  'Estadio Akron': [20.668, -103.458],
+  'Estadio BBVA': [25.726, -100.173],
+  "Levi's Stadium": [37.403, -121.970],
+  'SoFi Stadium': [33.954, -118.339],
+  'Hard Rock Stadium': [25.958, -80.239],
+  'MetLife Stadium': [40.813, -74.074],
+  'AT&T Stadium': [32.747, -97.093],
+  'NRG Stadium': [29.685, -95.411],
+  'Lumen Field': [47.596, -122.332],
+  'Lincoln Financial Field': [39.901, -75.167],
+  'Mercedes-Benz Stadium': [33.755, -84.401],
+  'Arrowhead Stadium': [39.049, -94.484],
+  'Gillette Stadium': [42.091, -71.264],
+  'BMO Field': [43.633, -79.418],
+  'BC Place': [49.277, -123.112],
+};
+
+/**
+ * Haversine distance between two venues in km.
+ */
+function venueDistance(venueA: string, venueB: string): number {
+  const a = VENUE_COORDS[venueA];
+  const b = VENUE_COORDS[venueB];
+  if (!a || !b) return 0;
+
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(b[0] - a[0]);
+  const dLng = toRad(b[1] - a[1]);
+  const h = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/**
+ * Fatigue penalty from travel distance.
+ * > 2000km = significant fatigue, < 500km = negligible.
+ */
+export function calculateTravelFatigue(
+  previousVenue: string | undefined,
+  currentVenue: string | undefined
+): number {
+  if (!previousVenue || !currentVenue) return 0;
+  if (previousVenue === currentVenue) return 0;
+
+  const dist = venueDistance(previousVenue, currentVenue);
+  if (dist < 500) return 0;
+  if (dist < 1500) return -0.03;
+  if (dist < 3000) return -0.06;
+  return -0.10; // Cross-country or international
+}
+
+// ═══════════════════════════════════════════════════════════════
 // PREDICTION CONTEXT — Structured data for cron jobs
 // ═══════════════════════════════════════════════════════════════
 

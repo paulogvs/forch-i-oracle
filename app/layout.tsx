@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import MainNav from '@/components/MainNav';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -11,14 +12,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'FORCH.i ORACLE — Predicciones IA Mundial 2026',
   description:
-    'Predicciones deportivas con inteligencia artificial. Analiza partidos del Mundial FIFA 2026 con Groq Llama 3.3 y datos en tiempo real.',
+    'Predicciones deportivas con inteligencia artificial. Analiza partidos del Mundial FIFA 2026 con Poisson + Elo + xG.',
   keywords: [
     'mundial 2026',
     'predicciones',
     'inteligencia artificial',
     'fútbol',
-    'Groq',
-    'Llama 3.3',
     'FORCH.i',
   ],
   icons: {
@@ -36,12 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body className="antialiased">
-        {/* Background layer — subtle radial gradients */}
         <div className="bg-mesh" aria-hidden="true" />
-        {/* Content */}
-        <main className="relative z-10">
-          {children}
-        </main>
+        <div className="flex min-h-screen relative">
+          <MainNav />
+          <main className="flex-1 lg:ml-0 pt-14">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

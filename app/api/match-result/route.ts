@@ -13,9 +13,13 @@ import { getDataLayer } from '@/lib/data-layer';
 import {
   calculateMomentum,
   calculateAdjustedXG,
+  calculateCompositeAdjustment,
   type MatchResult as EngineMatchResult,
+  type EnhancedPredictionContext,
 } from '@/lib/enhanced-engine';
+import { calculateEnhancedPrediction } from '@/lib/enhanced-engine';
 import { addMatchResult, getDynamicStats } from '@/lib/prediction-store';
+import { getKeyFactors } from '@/lib/predictor-engine';
 
 export async function POST(request: NextRequest) {
   try {
@@ -164,19 +168,93 @@ export async function POST(request: NextRequest) {
       eloDynamic: awayDynamic.elo,
     });
 
-    // Step 4: Find future matches for both teams and mark predictions as needing recalculation
+    // Step 4: Find future matches for both teams and recalculate predictions
     const upcomingMatches = await db.getUpcomingMatches();
     const affectedMatches = upcomingMatches.filter(
       m => m.homeTeamId === homeTeam || m.awayTeamId === homeTeam ||
            m.homeTeamId === awayTeam || m.awayTeamId === awayTeam
     );
 
-    // Delete stale predictions for affected matches
+    // Recalculate predictions for affected matches (auto-recalculate)
+    let recalculated = 0;
     for (const match of affectedMatches) {
-      await db.deletePrediction(match.id);
+      try {
+        // Delete stale prediction first
+        await db.deletePrediction(match.id);
+
+        // Get updated team forms
+        const mHomeForm = await db.getTeamForm(match.homeTeamId);
+        const mAwayForm = await db.getTeamForm(match.awayTeamId);
+
+        const homeCtx: EnhancedPredictionContext = {
+          teamName: match.homeTeamId,
+          venue: match.venue,
+          recentMatches: mHomeForm?.last5?.map(f => ({
+            opponent: f.opponent,
+            goalsFor: f.goalsFor,
+            goalsAgainst: f.goalsAgainst,
+            result: f.result,
+            date: f.date,
+            competition: (f as any).competition || 'World Cup',
+          })),
+          daysSinceLastMatch: mHomeForm?.updatedAt
+            ? Math.floor((Date.now() - new Date(mHomeForm.updatedAt).getTime()) / 86400000)
+            : undefined,
+        };
+
+        const awayCtx: EnhancedPredictionContext = {
+          teamName: match.awayTeamId,
+          venue: match.venue,
+          recentMatches: mAwayForm?.last5?.map(f => ({
+            opponent: f.opponent,
+            goalsFor: f.goalsFor,
+            goalsAgainst: f.goalsAgainst,
+            result: f.result,
+            date: f.date,
+            competition: (f as any).competition || 'World Cup',
+          })),
+          daysSinceLastMatch: mAwayForm?.updatedAt
+            ? Math.floor((Date.now() - new Date(mAwayForm.updatedAt).getTime()) / 86400000)
+            : undefined,
+        };
+
+        const enhanced = await calculateEnhancedPrediction(match.homeTeamId, match.awayTeamId, homeCtx, awayCtx);
+        const homeFormArray = mHomeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
+        const awayFormArray = mAwayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
+        const factors = getKeyFactors(enhanced, match.homeTeamId, match.awayTeamId, homeFormArray, awayFormArray);
+
+        await db.savePrediction({
+          matchId: match.id,
+          homeWin: enhanced.homeWin,
+          draw: enhanced.draw,
+          awayWin: enhanced.awayWin,
+          mostLikelyScore: `${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`,
+          expectedGoalsHome: enhanced.homeExpectedGoals,
+          expectedGoalsAway: enhanced.awayExpectedGoals,
+          over25Probability: enhanced.over25Probability,
+          bttsProbability: enhanced.bttsProbability,
+          keyFactors: factors,
+          confidence: enhanced.confidence,
+          dataQualityScore: enhanced.dataQualityScore,
+          modelVersion: '2.0',
+          homeAttack: enhanced.homeAttack,
+          homeDefense: enhanced.homeDefense,
+          homeMidfield: enhanced.homeMidfield,
+          awayAttack: enhanced.awayAttack,
+          awayDefense: enhanced.awayDefense,
+          awayMidfield: enhanced.awayMidfield,
+          homeElo: enhanced.homeElo,
+          awayElo: enhanced.awayElo,
+          topScores: enhanced.topScores,
+        });
+
+        recalculated++;
+      } catch {
+        // Skip failed recalculations — non-critical
+      }
     }
 
-    console.log(`[match-result] Deleted ${affectedMatches.length} stale predictions for affected teams`);
+    console.log(`[match-result] Auto-recalculated ${recalculated} predictions for affected teams`);
 
     // Step 5: Re-simulate tournament if this is a group stage match
     const match = await db.getMatch(matchId);
@@ -191,7 +269,7 @@ export async function POST(request: NextRequest) {
       affectedMatches: affectedMatches.map(m => m.id),
       homeFormUpdated: true,
       awayFormUpdated: true,
-      predictionsInvalidated: affectedMatches.length,
+      predictionsRecalculated: recalculated,
       homeDynamic: {
         elo: homeDynamic.elo,
         momentum: homeMomentum,
