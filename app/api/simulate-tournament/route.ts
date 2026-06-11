@@ -131,15 +131,17 @@ export async function GET() {
   try {
     const db = getDataLayer();
     const results = await db.getMatchResults();
-
-    // Also get tournament probabilities
     const probs = await db.getTournamentProbs();
+    const liveStandings = await getLiveStandings();
+    const liveBracket = await getLiveBracket();
 
     return NextResponse.json({
       success: true,
       results,
       total: results.length,
       championProbs: probs,
+      liveStandings,
+      liveBracket,
     });
   } catch {
     return NextResponse.json({
@@ -147,6 +149,8 @@ export async function GET() {
       results: [],
       total: 0,
       championProbs: [],
+      liveStandings: {},
+      liveBracket: null,
     });
   }
 }

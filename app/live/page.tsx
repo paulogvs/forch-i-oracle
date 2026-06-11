@@ -151,15 +151,16 @@ export default function LivePage() {
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-5 animate-fade-in">
-        <div className="flex items-end justify-between">
-          <div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">📈 Mundial en Vivo</h1>
             <p className="text-xs sm:text-sm text-text-secondary">
               Resultados reales auto-actualizados · Tabla y bracket recalculados dinámicamente
             </p>
           </div>
-          <div className="text-right shrink-0 ml-4 hidden sm:block">
-            {lastUpdate && <div className="text-[10px] text-text-muted">Actualizado: {lastUpdate}</div>}
+          <div className="flex items-center gap-3 shrink-0">
+            {lastUpdate && <div className="text-[10px] text-text-muted hidden sm:block">Actualizado: {lastUpdate}</div>}
+            <button onClick={loadData} className="btn-premium text-xs px-4 py-2">🔄 Actualizar</button>
           </div>
         </div>
 
@@ -169,7 +170,6 @@ export default function LivePage() {
             <span className="text-accent-emerald font-semibold">✅ {correctCount}/{playedMatches.length} correctas ({accuracy}%)</span>
             <span className="text-text-muted">·</span>
             <span className="text-accent-blue">⏳ {matches.length - playedMatches.length} pendientes</span>
-            <button onClick={loadData} className="ml-auto text-text-muted hover:text-white transition-colors">🔄</button>
           </div>
         )}
       </div>

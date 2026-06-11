@@ -270,9 +270,11 @@ export async function POST(request: NextRequest) {
 // ═══════════════════════════════════════════════════════════════
 
 interface QualifiedTeams {
-  groupWinners: Map<string, string>;     // Group letter → team name
-  groupRunnersUp: Map<string, string>;   // Group letter → team name
-  bestThirdPlaces: string[];              // Team names
+  groupWinners: Map<string, string>;
+  groupRunnersUp: Map<string, string>;
+  bestThirdPlaces: string[];
+  groupStandings: Record<string, any[]>;
+  thirdPlaceGroups: { name: string; group: string }[];
 }
 
 function resolveGroupQualifiers(groupStandings: Record<string, any[]>): QualifiedTeams {
@@ -280,6 +282,8 @@ function resolveGroupQualifiers(groupStandings: Record<string, any[]>): Qualifie
     groupWinners: new Map(),
     groupRunnersUp: new Map(),
     bestThirdPlaces: [],
+    groupStandings,
+    thirdPlaceGroups: [],
   };
 
   const allGroups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
@@ -300,13 +304,11 @@ function resolveGroupQualifiers(groupStandings: Record<string, any[]>): Qualifie
     });
   }
 
-  // Top 8 third places
   thirdPlaces.sort((a, b) =>
-    b.pts !== a.pts ? b.pts - a.pts :
-    b.gd !== a.gd ? b.gd - a.gd :
-    b.gf - a.gf
+    b.pts !== a.pts ? b.pts - a.pts : b.gd !== a.gd ? b.gd - a.gd : b.gf - a.gf
   );
   qualified.bestThirdPlaces = thirdPlaces.slice(0, 8).map(tp => tp.name);
+  qualified.thirdPlaceGroups = thirdPlaces.slice(0, 8).map(tp => ({ name: tp.name, group: tp.group }));
 
   return qualified;
 }
@@ -327,33 +329,39 @@ function resolveTeamSlot(
   }
 
   // Group position: "1A" = 1st of Group A, "2B" = 2nd of Group B
-  if (slot.length >= 2 && /^[123]/.test(slot)) {
+  if (slot.length === 2 && /^[12]/.test(slot[0]) && /[A-L]/.test(slot[1])) {
     const pos = parseInt(slot[0]);
     const group = slot[1];
     if (pos === 1) return qualified.groupWinners.get(group) || 'TBD';
     if (pos === 2) return qualified.groupRunnersUp.get(group) || 'TBD';
-    if (pos === 3) {
-      // Third place - need to find which third place slot
-      const criteria = slot.substring(1); // e.g., "B/3E/3F/3G"
-      // For simplicity, return the best third place that matches
-      for (const tp of qualified.bestThirdPlaces) {
-        return tp;
-      }
-      return 'TBD';
-    }
   }
 
-  // Third place criteria like "3B/3E/3F/3G"
-  if (slot.includes('3')) {
-    const groups = slot.match(/3([A-L])/g)?.map(g => g[1]) || [];
+  // Third place slots: "3B", "3E", "3F", "3G" etc.
+  // These are single group references, not criteria strings
+  if (slot.length === 2 && slot[0] === '3') {
+    const group = slot[1];
+    const standings = (qualified as any).groupStandings?.[group];
+    if (standings && standings.length >= 3) {
+      return standings[2].name;
+    }
+    // Fallback: find the third-place team from that group
     for (const tp of qualified.bestThirdPlaces) {
-      // Find which group this third place team came from
-      for (const g of groups) {
-        const thirdFromGroup = qualified.groupWinners.has(g) ? 
-          undefined : undefined; // Already resolved
+      return tp;
+    }
+    return 'TBD';
+  }
+
+  // Third place criteria like "3B/3E/3F/3G" — return the best third from those groups
+  if (slot.includes('3')) {
+    const groupLetters = slot.match(/3([A-L])/g)?.map(g => g[1]) || [];
+    for (const tp of qualified.bestThirdPlaces) {
+      // Check if this third-place team's group is in the criteria
+      const tpGroupInfo = (qualified as any).thirdPlaceGroups?.find((t: any) => t.name === tp);
+      if (tpGroupInfo && groupLetters.includes(tpGroupInfo.group)) {
+        return tp;
       }
     }
-    // Return first available best third place
+    // Fallback: return first best third that matches any group
     for (const tp of qualified.bestThirdPlaces) {
       return tp;
     }
