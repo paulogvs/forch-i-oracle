@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased bg-[#050B14] min-h-screen">
         <div className="bg-mesh" aria-hidden="true" />
         <MainNav />
-        <main className="lg:ml-64 min-h-screen pt-14">
+        <main className="lg:ml-56 min-h-screen pt-14">
           <div className="px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>

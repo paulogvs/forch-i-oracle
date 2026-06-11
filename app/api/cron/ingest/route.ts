@@ -3,13 +3,14 @@
 // Schedule: Every 6 hours
 // Trigger: GET /api/cron/ingest
 //
-// FIX: Now searches World Cup fixtures (league ID 9, season 2026) for real match results
-// instead of club leagues. During the tournament, this will ingest actual WC2026 results.
+// AUTO-RECALCULATE: After ingesting real results, triggers full re-simulation
+// of remaining bracket with updated predictions and drift tracking.
 
 import { NextResponse } from 'next/server';
 import { getDataLayer } from '@/lib/data-layer';
 import { getTeamEnglishName } from '@/lib/teams';
 import { validateCronAuth } from '@/lib/cron-auth';
+import { recalculateAfterResult } from '@/lib/prediction-history';
 
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
@@ -80,6 +81,25 @@ export async function GET(request: Request) {
       }
     } else {
       results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results);
+    }
+
+    // AUTO-RECALCULATE: If new results were ingested, re-simulate the bracket
+    if (results.resultsIngested > 0) {
+      console.log(`[cron:ingest] ${results.resultsIngested} new results found — triggering re-simulation...`);
+
+      const allResults = await db.getMatchResults();
+      for (const r of allResults) {
+        try {
+          // Only process results that haven't been recalculated yet
+          // (In production, you'd track this with a flag; for now, re-process all)
+          await recalculateAfterResult(r.matchId, r.homeScore, r.awayScore);
+          console.log(`[cron:ingest] Re-simulated after: ${r.matchId}`);
+        } catch (err) {
+          console.warn(`[cron:ingest] Re-simulation failed for ${r.matchId}:`, err);
+        }
+      }
+
+      results.resultsIngested += allResults.length; // Count re-simulations
     }
 
     const duration = Date.now() - startTime;

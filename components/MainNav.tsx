@@ -6,10 +6,8 @@ import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
   { href: '/', icon: '📊', label: 'Dashboard' },
-  { href: '/fixture', icon: '⚡', label: 'Pronósticos' },
+  { href: '/fixture', icon: '⚡', label: 'Predicción' },
   { href: '/live', icon: '📈', label: 'En Vivo' },
-  { href: '/veredicto', icon: '🏆', label: 'Veredicto' },
-  { href: '/torneo', icon: '🎮', label: 'Simulador' },
   { href: '/benchmark', icon: '🤖', label: 'Benchmark' },
 ];
 
@@ -32,11 +30,11 @@ export default function MainNav() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 z-40 h-full w-64 bg-[#08101C] border-r border-white/[0.06] transform transition-transform duration-300 ease-out ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+      <aside className={`fixed top-0 left-0 z-40 h-full w-56 bg-[#08101C] border-r border-white/[0.06] transform transition-transform duration-300 ease-out ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="flex items-center justify-between h-14 px-4 border-b border-white/[0.06]">
           <Link href="/" className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-white">FORCH.i</span>
-            <span className="text-sm font-bold text-gradient-gold">ORACLE</span>
+            <span className="text-xs font-bold text-white">FORCH.i</span>
+            <span className="text-xs font-bold text-gradient-gold">ORACLE</span>
           </Link>
           <button onClick={() => setOpen(false)} className="lg:hidden p-1.5 rounded-lg hover:bg-white/[0.06] text-text-secondary transition-colors" aria-label="Cerrar menú">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -72,7 +70,7 @@ export default function MainNav() {
       </aside>
 
       {/* Top bar */}
-      <header className="fixed top-0 left-0 right-0 z-20 h-14 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-3 sm:px-4 lg:px-6 lg:pl-[272px]">
+      <header className="fixed top-0 left-0 right-0 z-20 h-14 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-3 sm:px-4 lg:px-6 lg:pl-[240px]">
         <button onClick={() => setOpen(true)} className="lg:hidden p-2 -ml-1 rounded-lg hover:bg-white/[0.06] text-text-secondary transition-colors" aria-label="Abrir menú">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
