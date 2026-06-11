@@ -1,0 +1,120 @@
+# FORCH.i ORACLE — Cron Jobs via GitHub Actions
+# Reemplaza los Vercel Cron Jobs (plan Hobby limitado a 1/día)
+# La app sigue en Vercel; GitHub solo dispara HTTP requests a las APIs.
+#
+# Configuración requerida en GitHub Secrets:
+#   VERCEL_URL   — https://forch-i-oracle.vercel.app (o tu dominio personalizado)
+#   CRON_SECRET  — Mismo valor que en Vercel Environment Variables
+#
+# Schedules (UTC):
+#   Ingest:      cada 6 horas   → 0 */6 * * *
+#   Recalculate: cada 12 horas  → 0 */12 * * *
+#   Simulate:    diario 00:00   → 0 0 * * *
+
+name: Cron Jobs - FORCH.i ORACLE
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'      # Ingest: cada 6h
+    - cron: '0 */12 * * *'     # Recalculate: cada 12h
+    - cron: '0 0 * * *'        # Simulate: diario a medianoche UTC
+  workflow_dispatch:            # Permite ejecución manual desde UI de GitHub
+
+concurrency:
+  group: cron-jobs
+  cancel-in-progress: false
+
+env:
+  VERCEL_URL: ${{ secrets.VERCEL_URL || 'https://forch-i-oracle.vercel.app' }}
+  CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════
+  # JOB 1: DATA INGESTION — cada 6 horas
+  # ═══════════════════════════════════════════════════════════════════
+  cron-ingest:
+    if: github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 🔄 Llamar /api/cron/ingest
+        id: ingest
+        run: |
+          echo "Iniciando ingesta de datos..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+            "${VERCEL_URL}/api/cron/ingest?secret=${CRON_SECRET}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          echo "status=$HTTP_CODE" >> $GITHUB_OUTPUT
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Ingest failed with status $HTTP_CODE"
+            exit 1
+          fi
+      - name: 📊 Mostrar resultado
+        if: always()
+        run: |
+          echo "✅ Ingest completado (status: ${{ steps.ingest.outputs.status }})"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # JOB 2: RECALCULATE PREDICTIONS — cada 12 horas
+  # ═══════════════════════════════════════════════════════════════════
+  cron-recalculate:
+    if: github.event.schedule == '0 */12 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 🔄 Llamar /api/cron/recalculate
+        id: recalc
+        run: |
+          echo "Recalculando predicciones..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+            "${VERCEL_URL}/api/cron/recalculate?secret=${CRON_SECRET}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          echo "status=$HTTP_CODE" >> $GITHUB_OUTPUT
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Recalculate failed with status $HTTP_CODE"
+            exit 1
+          fi
+      - name: 📊 Mostrar resultado
+        if: always()
+        run: |
+          echo "✅ Recalculate completado (status: ${{ steps.recalc.outputs.status }})"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # JOB 3: TOURNAMENT SIMULATION — diario a medianoche
+  # ═══════════════════════════════════════════════════════════════════
+  cron-simulate:
+    if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 🔄 Llamar /api/cron/simulate
+        id: simulate
+        run: |
+          echo "Ejecutando simulación de torneo..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+            "${VERCEL_URL}/api/cron/simulate?secret=${CRON_SECRET}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          echo "status=$HTTP_CODE" >> $GITHUB_OUTPUT
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Simulate failed with status $HTTP_CODE"
+            exit 1
+          fi
+      - name: 🏆 Mostrar resultado
+        if: always()
+        run: |
+          echo "✅ Simulación completada (status: ${{ steps.simulate.outputs.status }})"
