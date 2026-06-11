@@ -12,6 +12,35 @@
 import { getAltitudeFactor } from './venues';
 import { computeH2H } from './h2h';
 import { ELO_RATINGS, type EloEntry } from './teams';
+import { calculateMatchProbabilitiesDixonColes } from './poisson-dixon-coles';
+
+// ═══════════════════════════════════════════════════════════════
+// ENGINE CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+
+/** Use Dixon-Coles dependency correction (recommended: true) */
+const USE_DIXON_COLES = true;
+
+/**
+ * Global calibration factor for lambdas.
+ * Adjust so average total goals across all group matches ≈ 2.65.
+ * Run scripts/calibrate-model.ts to determine the correct value.
+ * Current value: 1.0 (pending calibration)
+ */
+const CALIBRATION_FACTOR = 1.04;
+
+/**
+ * Apply global calibration to lambda values.
+ * @param homeLambda Raw home expected goals
+ * @param awayLambda Raw away expected goals
+ * @returns Calibrated lambdas
+ */
+function applyCalibration(homeLambda: number, awayLambda: number): { home: number; away: number } {
+  return {
+    home: homeLambda * CALIBRATION_FACTOR,
+    away: awayLambda * CALIBRATION_FACTOR,
+  };
+}
 
 export interface RealTeamStats {
   attackStrength: number;
@@ -28,7 +57,8 @@ const DEFAULT_ELO = 1500;
 const DEFAULT_ATTACK = 0.7;
 const DEFAULT_DEFENSE = 1.5;
 
-function getElo(teamName: string): EloEntry {
+/** Get Elo entry for a team. Exported for elo-proxy.ts. */
+export function getElo(teamName: string): EloEntry {
   return ELO_RATINGS[teamName] || {
     elo: DEFAULT_ELO,
     attack: DEFAULT_ATTACK,
@@ -46,7 +76,7 @@ function getElo(teamName: string): EloEntry {
  * - Ventaja de local (+12% al ataque local, -8% al ataque visitante)
  * - Forma reciente (ajuste +/- 5%)
  */
-function calculateExpectedGoals(
+export function calculateExpectedGoals(
   attackingTeam: string,
   defendingTeam: string,
   isHomeTeam: boolean,
@@ -91,10 +121,10 @@ function factorial(n: number): number {
 }
 
 /**
- * Calcula la matriz de probabilidades de marcador (0-0 hasta 6-6)
- * y deriva probabilidades de victoria/empate/derrota
+ * Pure independent Poisson model (legacy, used as fallback when USE_DIXON_COLES=false).
+ * Calculates the score probability matrix and derives 1X2, Over 2.5, BTTS.
  */
-function calculateMatchProbabilities(
+function calculateMatchProbabilitiesPoisson(
   homeLambda: number,
   awayLambda: number
 ): {
@@ -338,8 +368,36 @@ export async function calculateStatisticalPrediction(
   homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
   awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
 
-  // 3. Calcular probabilidades con modelo de Poisson
-  const probabilities = calculateMatchProbabilities(homeLambda, awayLambda);
+  // 2d. Apply global calibration factor
+  const calibrated = applyCalibration(homeLambda, awayLambda);
+  homeLambda = calibrated.home;
+  awayLambda = calibrated.away;
+
+  // Clamp final
+  homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
+  awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
+
+  // 3. Calcular probabilidades con modelo Dixon-Coles (o Poisson puro)
+  const rawProbs = USE_DIXON_COLES
+    ? calculateMatchProbabilitiesDixonColes(homeLambda, awayLambda)
+    : calculateMatchProbabilitiesPoisson(homeLambda, awayLambda);
+
+  // Normalize 1X2 to integers summing to 100
+  const total1X2 = rawProbs.homeWin + rawProbs.draw + rawProbs.awayWin;
+  const homeWinPct = Math.round((rawProbs.homeWin / total1X2) * 100);
+  const drawPct = Math.round((rawProbs.draw / total1X2) * 100);
+  const awayWinPct = 100 - homeWinPct - drawPct;
+
+  const probabilities = {
+    homeWin: homeWinPct,
+    draw: drawPct,
+    awayWin: Math.max(0, awayWinPct),
+    predictedScoreHome: rawProbs.predictedScoreHome,
+    predictedScoreAway: rawProbs.predictedScoreAway,
+    scoreMatrix: rawProbs.scoreMatrix,
+    over25: rawProbs.over25,
+    btts: rawProbs.btts,
+  };
 
   // 4. Calcular strength ratings
   const homeStrengths = calculateTeamStrengths(homeTeam, true);
