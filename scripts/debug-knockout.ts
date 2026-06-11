@@ -118,14 +118,33 @@ async function main() {
 
   const koWinners = new Map<string, string>();
   const koLosers = new Map<string, string>();
+  const usedThirdPlaces = new Set<string>();
   const knockoutMatches = ALL_MATCHES.filter(m => m.round !== 'group');
+
+  // Helper for unique third-place resolution
+  const getThirdPlace = (slot: string): string => {
+    const groups = slot.match(/3([A-L])/g)?.map(g => g[1]) || [];
+    for (const tp of qualified.bestThird) {
+      if (groups.includes(tp.group) && !usedThirdPlaces.has(tp.name)) {
+        usedThirdPlaces.add(tp.name);
+        return tp.name;
+      }
+    }
+    for (const tp of qualified.bestThird) {
+      if (!usedThirdPlaces.has(tp.name)) {
+        usedThirdPlaces.add(tp.name);
+        return tp.name;
+      }
+    }
+    return 'TBD';
+  };
 
   // Round of 32
   console.log('── 1/16 Final (Round of 32) ──');
   const r32 = knockoutMatches.filter(m => m.round === 'round-32');
   for (const m of r32) {
-    const home = resolveTeam(m.homeTeam, qualified, koWinners, koLosers);
-    const away = resolveTeam(m.awayTeam, qualified, koWinners, koLosers);
+    const home = m.homeTeam.includes('3') ? getThirdPlace(m.homeTeam) : resolveTeam(m.homeTeam, qualified, koWinners, koLosers);
+    const away = m.awayTeam.includes('3') ? getThirdPlace(m.awayTeam) : resolveTeam(m.awayTeam, qualified, koWinners, koLosers);
 
     if (home === 'TBD' || away === 'TBD') {
       console.log(`  [${m.round}] ${m.homeTeam} vs ${m.awayTeam} → TBD`);

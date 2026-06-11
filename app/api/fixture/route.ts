@@ -468,6 +468,28 @@ async function simulateKnockoutPhase(
   const results: any[] = [];
   const winners = new Map<string, string>();
   const losers = new Map<string, string>();
+  const usedThirdPlaces = new Set<string>(); // Track used third-place teams
+
+  // Helper to get a unique third-place team for a slot
+  const getThirdPlace = (slot: string): string => {
+    const groupLetters = slot.match(/3([A-L])/g)?.map(g => g[1]) || [];
+    // Find the best third-place team whose group is in the criteria and hasn't been used
+    for (const tp of qualified.bestThirdPlaces) {
+      const tpInfo = qualified.thirdPlaceGroups.find(t => t.name === tp);
+      if (tpInfo && groupLetters.includes(tpInfo.group) && !usedThirdPlaces.has(tp)) {
+        usedThirdPlaces.add(tp);
+        return tp;
+      }
+    }
+    // Fallback: any unused best third-place
+    for (const tp of qualified.bestThirdPlaces) {
+      if (!usedThirdPlaces.has(tp)) {
+        usedThirdPlaces.add(tp);
+        return tp;
+      }
+    }
+    return 'TBD';
+  };
 
   // ═══════════════════════════════════════════════════
   // ROUND OF 32 — 16 matches
@@ -493,8 +515,23 @@ async function simulateKnockoutPhase(
   ];
 
   for (const slot of r32Slots) {
-    const home = resolveTeamSlot(slot.home, qualified, winners, losers);
-    const away = resolveTeamSlot(slot.away, qualified, winners, losers);
+    let home: string;
+    let away: string;
+
+    // Home slot: could be "1A" (group winner) or a third-place slot
+    if (slot.home.includes('3')) {
+      home = getThirdPlace(slot.home);
+    } else {
+      home = resolveTeamSlot(slot.home, qualified, winners, losers);
+    }
+
+    // Away slot: could be "2B" (runner-up) or a third-place slot like "3B/3E/3F/3G"
+    if (slot.away.includes('3')) {
+      away = getThirdPlace(slot.away);
+    } else {
+      away = resolveTeamSlot(slot.away, qualified, winners, losers);
+    }
+
     const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
     results.push(result);
     if (result.winner && result.winner !== 'TBD') {
