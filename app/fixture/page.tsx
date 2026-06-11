@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName, ELO_RATINGS, POWER_RATINGS } from '@/lib/teams';
+import { utcToLocal, getUserTimezoneOffset, getTimezoneLabel, TIMEZONE_PRESETS } from '@/lib/timezone';
 
 type ViewMode = 'fecha' | 'grupo';
 type PhaseFilter = string;
@@ -11,6 +12,7 @@ interface FixtureMatch {
   id: string;
   group: string;
   date: string;
+  time: string;
   homeTeam: string;
   awayTeam: string;
   venue: string;
@@ -50,8 +52,13 @@ export default function FixturePage() {
   const [error, setError] = useState('');
   const [generating, setGenerating] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null);
+  const [tzOffset, setTzOffset] = useState<number>(-4); // Default Bolivia
 
-  useEffect(() => { loadFixtures(); }, []);
+  useEffect(() => {
+    // Auto-detect user timezone
+    setTzOffset(getUserTimezoneOffset());
+    loadFixtures();
+  }, []);
 
   const loadFixtures = async () => {
     setLoading(true);
@@ -73,6 +80,7 @@ export default function FixturePage() {
         awayTeam: m.awayTeam,
         venue: m.venue || '',
         city: m.city || '',
+        time: m.time || '',
         round: m.round,
         homeGoals: m.predictedScore?.[0] ?? null,
         awayGoals: m.predictedScore?.[1] ?? null,
@@ -129,10 +137,11 @@ export default function FixturePage() {
 
   const filtered = phaseFilter === 'all' ? fixtures : fixtures.filter(m => m.round === phaseFilter);
 
-  const groupedByDate = filtered.reduce<Record<string, FixtureMatch[]>>((acc, m) => {
-    const key = m.date;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(m);
+  // Group by LOCAL date (after timezone conversion)
+  const groupedByDate = filtered.reduce<Record<string, { matches: FixtureMatch[]; localTime: string }>>((acc, m) => {
+    const local = utcToLocal(m.date, m.time || '00:00');
+    if (!acc[local.date]) acc[local.date] = { matches: [], localTime: local.time };
+    acc[local.date].matches.push({ ...m, time: local.time });
     return acc;
   }, {});
 
@@ -147,6 +156,8 @@ export default function FixturePage() {
     const dt = new Date(d + 'T12:00:00');
     return dt.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
   };
+
+  const currentTzLabel = getTimezoneLabel(tzOffset);
 
   const getRoundLabel = (round: string) => {
     const labels: Record<string, string> = {
@@ -204,8 +215,17 @@ export default function FixturePage() {
         ))}
       </div>
 
-      {/* View mode toggle */}
-      <div className="flex items-center gap-2 mb-5 animate-fade-in">
+      {/* Timezone selector + view mode */}
+      <div className="flex flex-wrap items-center gap-2 mb-5 animate-fade-in">
+        <select
+          value={tzOffset}
+          onChange={(e) => setTzOffset(Number(e.target.value))}
+          className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-1.5 text-[11px] text-white focus:border-accent-blue/50 focus:outline-none"
+        >
+          {TIMEZONE_PRESETS.map(tz => (
+            <option key={tz.offset} value={tz.offset} className="bg-[#0A1628]">{tz.label} ({getTimezoneLabel(tz.offset)})</option>
+          ))}
+        </select>
         <div className="flex gap-1 p-1 bg-white/[0.04] rounded-lg">
           <button
             onClick={() => setViewMode('fecha')}
@@ -246,11 +266,12 @@ export default function FixturePage() {
       {!loading && !error && (
         <div className="animate-fade-in">
           {viewMode === 'fecha' ? (
-            Object.entries(groupedByDate).map(([date, matches]) => (
+            Object.entries(groupedByDate).map(([date, { matches }]) => (
               <div key={date} className="mb-6">
                 <h3 className="text-xs font-bold text-accent-blue uppercase tracking-wider mb-2 sticky top-14 bg-[#050B14]/90 backdrop-blur py-2 z-10 flex items-center gap-2">
                   <span>{formatDate(date)}</span>
                   <span className="text-text-muted font-normal">· {matches.length} partidos</span>
+                  <span className="text-[10px] text-accent-gold/60 bg-accent-gold/10 px-1.5 py-0.5 rounded ml-auto">{currentTzLabel}</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {matches.map(m => <MatchCard key={m.id} match={m} getFlag={getFlag} getRoundLabel={getRoundLabel} onDetail={() => setSelectedMatch(m)} />)}
@@ -284,6 +305,8 @@ function MatchCard({ match, getFlag, getRoundLabel, onDetail }: {
   getRoundLabel: (round: string) => string;
   onDetail: () => void;
 }) {
+  const local = match.date && match.time ? utcToLocal(match.date, match.time) : null;
+
   return (
     <button onClick={onDetail} className="glass-card p-3 hover:border-white/[0.1] transition-colors w-full text-left cursor-pointer group">
       <div className="flex items-center justify-between mb-2">
@@ -301,6 +324,16 @@ function MatchCard({ match, getFlag, getRoundLabel, onDetail }: {
           <span className="text-[10px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">👁 Ver</span>
         </div>
       </div>
+
+      {/* Local time */}
+      {local && (
+        <div className="text-[10px] text-accent-blue/70 mb-1.5 flex items-center gap-1">
+          🕐 {local.display}
+          {local.isDifferentDay && (
+            <span className="text-[9px] text-accent-amber/80 bg-accent-amber/10 px-1 rounded">día diferente a UTC</span>
+          )}
+        </div>
+      )}
 
       {match.homeGoals !== null ? (
         <>
@@ -357,8 +390,9 @@ function MatchRowCompact({ match, getFlag, onDetail }: {
   getFlag: (name: string) => string;
   onDetail: () => void;
 }) {
+  const local = match.date && match.time ? utcToLocal(match.date, match.time) : null;
   return (
-    <button onClick={onDetail} className="flex items-center justify-between text-xs py-1 w-full text-left hover:bg-white/[0.03] rounded px-1 -mx-1 transition-colors cursor-pointer">
+    <button onClick={onDetail} className="flex items-center justify-between text-xs py-1.5 w-full text-left hover:bg-white/[0.03] rounded px-1 -mx-1 transition-colors cursor-pointer">
       <div className="flex items-center gap-1.5 flex-1 min-w-0">
         <span className="text-sm shrink-0">{getFlag(match.homeTeam)}</span>
         <span className="text-text-primary truncate">{match.homeTeam}</span>
@@ -374,6 +408,9 @@ function MatchRowCompact({ match, getFlag, onDetail }: {
         <span className="text-text-primary truncate text-right">{match.awayTeam}</span>
         <span className="text-sm shrink-0">{getFlag(match.awayTeam)}</span>
       </div>
+      {local && (
+        <span className="text-[9px] text-accent-blue/50 shrink-0 ml-2 w-12 text-right">{local.time}</span>
+      )}
     </button>
   );
 }
