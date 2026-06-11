@@ -140,28 +140,26 @@ export default function FixturePage() {
   const predictedCount = fixtures.filter(f => f.isPredicted).length;
 
   return (
-    <div className="px-4 md:px-6 lg:px-8 py-6 max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-6 animate-fade-in">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">⚡ Pronósticos</h1>
-            <p className="text-sm text-text-secondary">
-              {predictedCount} / {fixtures.length || 128} partidos predichos · Motor Poisson + Elo + xG
-            </p>
-          </div>
-          <button onClick={generateAll} disabled={generating} className="btn-premium text-xs px-4 py-2 disabled:opacity-50">
-            {generating ? '⏳...' : '⚡ Generar Todo'}
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5 animate-fade-in">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">⚡ Pronósticos</h1>
+          <p className="text-xs sm:text-sm text-text-secondary truncate">
+            {predictedCount} / {fixtures.length || 128} partidos · Poisson + Elo + xG
+          </p>
         </div>
+        <button onClick={generateAll} disabled={generating} className="btn-premium text-xs px-4 py-2 disabled:opacity-50 shrink-0">
+          {generating ? '⏳...' : '⚡ Generar Todo'}
+        </button>
+      </div>
 
-        {/* Progress bar */}
-        <div className="w-full h-2 bg-white/[0.06] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-accent-blue to-accent-emerald rounded-full transition-all duration-500"
-            style={{ width: `${fixtures.length > 0 ? (predictedCount / fixtures.length) * 100 : 0}%` }}
-          />
-        </div>
+      {/* Progress bar */}
+      <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mb-4">
+        <div
+          className="h-full bg-gradient-to-r from-accent-blue to-accent-emerald rounded-full transition-all duration-500"
+          style={{ width: `${fixtures.length > 0 ? (predictedCount / fixtures.length) * 100 : 0}%` }}
+        />
       </div>
 
       {/* Phase filter */}

@@ -130,11 +130,11 @@ export default function LivePage() {
   };
 
   return (
-    <div className="px-4 md:px-6 lg:px-8 py-6 max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-6 animate-fade-in">
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">📈 Veredicto Vivo</h1>
-        <p className="text-sm text-text-secondary">
+      <div className="mb-5 animate-fade-in">
+        <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">📈 Veredicto Vivo</h1>
+        <p className="text-xs sm:text-sm text-text-secondary">
           Comparación predicción vs realidad · Se actualiza con cada resultado
         </p>
       </div>

@@ -330,7 +330,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6 animate-fade-in">
         <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">

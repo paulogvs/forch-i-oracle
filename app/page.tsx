@@ -34,7 +34,6 @@ export default function HomePage() {
 
   useEffect(() => {
     loadDashboard();
-    // Top 8 teams by Elo
     const sorted = WORLD_CUP_TEAMS
       .map(t => ({ name: t.name, elo: ELO_RATINGS[t.name]?.elo || 1500, flag: t.flag }))
       .sort((a, b) => b.elo - a.elo)
@@ -76,150 +75,125 @@ export default function HomePage() {
   const comparisons = accuracyData?.comparisons || [];
 
   return (
-    <div className="min-h-screen px-4 md:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
-      {/* ═══ HERO: Accuracy Dashboard ═══ */}
-      <section className="mb-8 animate-fade-in">
-        <div className="flex items-center justify-between mb-6">
+    <div className="max-w-6xl mx-auto">
+      {/* ═══ HERO ═══ */}
+      <section className="mb-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1">
               📊 Panel de Precisión
             </h1>
-            <p className="text-sm text-text-secondary">
+            <p className="text-xs sm:text-sm text-text-secondary">
               Qué tan acertadas son nuestras predicciones · Motor Poisson + Elo + xG
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-xs text-text-muted">Mundial 2026</div>
-            <div className="text-sm font-bold text-accent-gold">{countdown.days}d {countdown.hours}h</div>
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+            <div className="text-right">
+              <div className="text-[10px] text-text-muted uppercase tracking-wider">Mundial 2026</div>
+              <div className="text-lg sm:text-xl font-bold text-gradient-gold font-mono">
+                {countdown.days}<span className="text-xs text-text-secondary">d</span> {countdown.hours}<span className="text-xs text-text-secondary">h</span> {countdown.minutes}<span className="text-xs text-text-secondary">m</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Accuracy hero cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="glass-card p-4 text-center">
-            <div className="text-3xl font-bold text-gradient-gold mb-1">
-              {acc ? `${acc.winnerAccuracy}%` : '—'}
-            </div>
-            <div className="text-xs text-text-secondary">Acierto Ganador</div>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-3xl font-bold text-accent-blue mb-1">
-              {acc ? `${acc.avgGoalError}` : '—'}
-            </div>
-            <div className="text-xs text-text-secondary">Error en Goles</div>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-3xl font-bold text-accent-emerald mb-1">
-              {acc ? `${acc.over25Accuracy}%` : '—'}
-            </div>
-            <div className="text-xs text-text-secondary">Over 2.5</div>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <div className="text-3xl font-bold text-accent-amber mb-1">
-              {acc ? acc.totalMatched : 0}
-            </div>
-            <div className="text-xs text-text-secondary">Partidos Jugados</div>
-          </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+          <StatCard label="Acierto Ganador" value={acc ? `${acc.winnerAccuracy}%` : '—'} color="gold" />
+          <StatCard label="Error en Goles" value={acc ? `${acc.avgGoalError}` : '—'} color="blue" />
+          <StatCard label="Over 2.5" value={acc ? `${acc.over25Accuracy}%` : '—'} color="emerald" />
+          <StatCard label="Partidos Jugados" value={acc ? String(acc.totalMatched) : '0'} color="amber" />
         </div>
 
-        {/* Prediction count + generate button */}
-        <div className="glass-card p-4 flex items-center justify-between">
-          <div>
+        {/* Prediction bar */}
+        <div className="glass-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
             <div className="text-sm text-white">
               <span className="font-bold text-accent-blue">{accuracyData?.totalPredictions || 0}</span>
               <span className="text-text-secondary"> / {accuracyData?.totalMatches || 128} predicciones</span>
             </div>
-            <div className="text-xs text-text-muted">
+            <div className="text-[11px] text-text-muted mt-0.5 truncate">
               {acc && acc.totalMatched > 0
                 ? `${acc.exactScoreHits} marcadores exactos · ${acc.withinOneGoal} dentro de 1 gol`
                 : 'Genera predicciones para ver la precisión'}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <button
               onClick={generatePredictions}
               disabled={generating}
-              className="btn-premium text-xs px-4 py-2 disabled:opacity-50"
+              className="btn-premium text-xs px-4 py-2 disabled:opacity-50 whitespace-nowrap"
             >
-              {generating ? '⏳...' : '⚡ Generar Predicciones'}
+              {generating ? '⏳...' : '⚡ Generar'}
             </button>
             <button
               onClick={loadDashboard}
-              className="px-4 py-2 text-xs font-semibold text-text-secondary border border-white/[0.1] rounded-xl hover:text-white transition-all"
+              className="px-3 py-2 text-xs font-semibold text-text-secondary border border-white/[0.08] rounded-lg hover:text-white hover:border-white/[0.15] transition-all"
             >
-              🔄 Actualizar
+              🔄
             </button>
           </div>
         </div>
       </section>
 
-      {/* ═══ Accuracy Trend Graph ═══ */}
+      {/* ═══ Trend Graph ═══ */}
       {trend.length > 0 && (
-        <section className="mb-8 animate-fade-in-up">
-          <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
+        <section className="mb-6 animate-fade-in-up">
+          <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
             📈 Tendencia de Precisión
           </h3>
-          <div className="glass-card p-4">
-            <div className="flex items-end gap-1 h-32">
+          <div className="glass-card p-3 sm:p-4">
+            <div className="flex items-end gap-0.5 h-28 sm:h-32">
               {trend.map((point, i) => {
-                const height = Math.max(4, (point.winnerAccuracy / 100) * 120);
+                const height = Math.max(4, (point.winnerAccuracy / 100) * 112);
                 const isLast = i === trend.length - 1;
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div
-                      className={`w-full rounded-t transition-all ${
-                        isLast ? 'bg-accent-gold' : 'bg-accent-blue/40'
-                      }`}
+                      className={`w-full rounded-t-sm transition-all ${isLast ? 'bg-accent-gold' : 'bg-accent-blue/40'}`}
                       style={{ height: `${height}px` }}
-                      title={`${point.date}: ${point.winnerAccuracy}% · ${point.matchesPlayed} partidos`}
+                      title={`${point.date}: ${point.winnerAccuracy}%`}
                     />
-                    <span className="text-[8px] text-text-muted truncate w-full text-center">
-                      {new Date(point.date + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric' })}
-                    </span>
                   </div>
                 );
               })}
             </div>
             <div className="flex justify-between text-[10px] text-text-muted mt-2">
-              <span>Precisión del modelo a lo largo del torneo</span>
+              <span>Precisión del modelo</span>
               <span>{trend.length} días</span>
             </div>
           </div>
         </section>
       )}
 
-      {/* ═══ Match-by-Match Comparison ═══ */}
+      {/* ═══ Match Comparisons ═══ */}
       {comparisons.length > 0 && (
-        <section className="mb-8 animate-fade-in-up stagger-1">
-          <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
-            ⚽ Predicho vs Real ({comparisons.length} partidos)
+        <section className="mb-6 animate-fade-in-up">
+          <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
+            ⚽ Predicho vs Real
           </h3>
-          <div className="space-y-1">
-            {comparisons.slice(0, 30).map((c) => {
+          <div className="space-y-1.5">
+            {comparisons.slice(0, 20).map((c) => {
               const winnerIcon = c.winnerCorrect === true ? '✅' : c.winnerCorrect === false ? '❌' : '⏳';
               return (
-                <div key={c.matchId} className="glass-card p-3 flex items-center gap-4">
-                  <span className="text-lg w-6 text-center">{winnerIcon}</span>
+                <div key={c.matchId} className="glass-card p-2.5 sm:p-3 flex items-center gap-3">
+                  <span className="text-base w-5 text-center shrink-0">{winnerIcon}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-text-muted font-mono w-10">{c.matchId}</span>
+                    <div className="flex items-center gap-2 text-xs mb-0.5">
+                      <span className="text-text-muted font-mono w-8 sm:w-10 text-[10px]">{c.matchId}</span>
                       <span className="text-white truncate">{c.homeTeam}</span>
-                      <span className="text-text-muted">vs</span>
-                      <span className="text-white truncate text-right">{c.awayTeam}</span>
+                      <span className="text-text-muted shrink-0">vs</span>
+                      <span className="text-white truncate">{c.awayTeam}</span>
                     </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-[10px] text-accent-blue">
-                        Pred: {c.predictedHomeGoals}-{c.predictedAwayGoals}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px]">
+                      <span className="text-accent-blue">Pred: {c.predictedHomeGoals}-{c.predictedAwayGoals}</span>
                       {c.isPlayed && c.realHomeGoals !== null && (
-                        <span className="text-[10px] text-accent-emerald">
+                        <span className={`font-medium ${c.winnerCorrect ? 'text-accent-emerald' : 'text-accent-crimson'}`}>
                           Real: {c.realHomeGoals}-{c.realAwayGoals}
                         </span>
                       )}
                       {c.goalError !== null && (
-                        <span className="text-[10px] text-text-muted">
-                          Error: {c.goalError} goles
-                        </span>
+                        <span className="text-text-muted">Error: {c.goalError}g</span>
                       )}
                     </div>
                   </div>
@@ -230,23 +204,23 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ═══ Quick Navigation ═══ */}
-      <section className="mb-8 animate-fade-in-up stagger-2">
-        <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
+      {/* ═══ Quick Nav ═══ */}
+      <section className="mb-6 animate-fade-in-up">
+        <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
           Navegación Rápida
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
           {[
-            { href: '/fixture', icon: '⚡', label: 'Pronósticos', desc: '128 partidos predichos' },
-            { href: '/veredicto', icon: '📊', label: 'Veredicto Vivo', desc: 'Probabilidades actuales' },
-            { href: '/torneo', icon: '🏆', label: 'Simulador', desc: 'Bracket completo' },
-            { href: '/pronostico', icon: '🎯', label: 'Predecir', desc: 'Partido individual' },
-            { href: '/admin', icon: '⚙️', label: 'Admin', desc: 'Resultados reales' },
-            { href: '/benchmark', icon: '🤖', label: 'Benchmark', desc: 'Comparar modelos' },
+            { href: '/fixture', icon: '⚡', label: 'Pronósticos', desc: '128 partidos' },
+            { href: '/live', icon: '📈', label: 'En Vivo', desc: 'Resultados reales' },
+            { href: '/veredicto', icon: '🏆', label: 'Veredicto', desc: 'Probabilidades' },
+            { href: '/torneo', icon: '🎮', label: 'Simulador', desc: 'Bracket' },
+            { href: '/pronostico', icon: '🎯', label: 'Predecir', desc: 'Individual' },
+            { href: '/admin', icon: '⚙️', label: 'Admin', desc: 'Resultados' },
           ].map(link => (
-            <Link key={link.href} href={link.href} className="glass-card p-4 hover:border-white/[0.1] transition-colors group">
-              <div className="text-2xl mb-2">{link.icon}</div>
-              <div className="text-sm font-semibold text-white group-hover:text-accent-blue transition-colors">{link.label}</div>
+            <Link key={link.href} href={link.href} className="glass-card p-3 sm:p-4 hover:border-white/[0.1] transition-colors group">
+              <div className="text-xl sm:text-2xl mb-1.5">{link.icon}</div>
+              <div className="text-xs sm:text-sm font-semibold text-white group-hover:text-accent-blue transition-colors">{link.label}</div>
               <div className="text-[10px] text-text-muted">{link.desc}</div>
             </Link>
           ))}
@@ -254,30 +228,47 @@ export default function HomePage() {
       </section>
 
       {/* ═══ Top 8 Elo ═══ */}
-      <section className="mb-8 animate-fade-in-up stagger-3">
-        <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">
+      <section className="mb-6 animate-fade-in-up">
+        <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
           🌍 Top 8 · Rating Elo
         </h3>
-        <div className="glass-card overflow-hidden">
+        <div className="glass-card overflow-hidden divide-y divide-white/[0.04]">
           {topTeams.map((team, i) => (
-            <div key={team.name} className={`flex items-center justify-between px-4 py-2.5 ${i !== topTeams.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
-              <div className="flex items-center gap-3">
-                <span className={`w-5 text-center text-xs font-bold ${i === 0 ? 'text-accent-gold' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-text-muted'}`}>
+            <div key={team.name} className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <span className={`w-5 text-center text-[10px] sm:text-xs font-bold shrink-0 ${
+                  i === 0 ? 'text-accent-gold' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-text-muted'
+                }`}>
                   {i + 1}
                 </span>
-                <span className="text-base">{team.flag}</span>
-                <span className="text-sm text-white">{team.name}</span>
+                <span className="text-base sm:text-lg shrink-0">{team.flag}</span>
+                <span className="text-xs sm:text-sm text-white truncate">{team.name}</span>
               </div>
-              <span className="text-sm font-bold font-mono text-accent-blue">{team.elo}</span>
+              <span className="text-xs sm:text-sm font-bold font-mono text-accent-blue shrink-0 ml-2">{team.elo}</span>
             </div>
           ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-xs text-text-muted border-t border-white/[0.04]">
+      <footer className="text-center py-4 text-[11px] text-text-muted border-t border-white/[0.04]">
         <p>Built with FORCH.i by Paulo Velasco · Poisson + Dixon-Coles + Elo · WC2026</p>
       </footer>
+    </div>
+  );
+}
+
+function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
+  const colorMap: Record<string, string> = {
+    gold: 'text-gradient-gold',
+    blue: 'text-accent-blue',
+    emerald: 'text-accent-emerald',
+    amber: 'text-accent-amber',
+  };
+  return (
+    <div className="glass-card p-3 sm:p-4 text-center">
+      <div className={`text-2xl sm:text-3xl font-bold ${colorMap[color] || 'text-white'} mb-0.5`}>{value}</div>
+      <div className="text-[10px] sm:text-xs text-text-secondary">{label}</div>
     </div>
   );
 }
