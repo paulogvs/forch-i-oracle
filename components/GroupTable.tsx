@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { getTeamsByGroup, getTeamByName } from '@/lib/teams';
 import { GROUPS } from '@/lib/matches';
+import type { TournamentBracket } from '@/lib/tournament-sim';
 
 interface GroupTableProps {
   selectedGroup?: string;
@@ -12,13 +14,10 @@ function getTeamFlag(teamName: string): string {
   return team?.flag || '🏳️';
 }
 
-// Simulated standings (placeholder data — would be calculated from actual results)
 function getSimulatedStandings(group: string) {
   const teams = getTeamsByGroup(group);
-  // Random-ish but deterministic standings based on group letter
   const seed = group.charCodeAt(0);
   const sorted = [...teams].sort((a, b) => {
-    // Use confederation prestige as proxy: UEFA > CONMEBOL > others
     const prestige = (confed: string) => {
       if (confed === 'UEFA') return 5;
       if (confed === 'CONMEBOL') return 4;
@@ -45,20 +44,21 @@ function getSimulatedStandings(group: string) {
 }
 
 export default function GroupTable({ selectedGroup }: GroupTableProps) {
-  const activeGroup = selectedGroup || 'A';
+  const [activeGroup, setActiveGroup] = useState(selectedGroup || 'A');
   const standings = getSimulatedStandings(activeGroup);
 
   return (
     <div className="w-full">
-      {/* Group selector tabs */}
-      <div className="flex flex-wrap gap-1.5 mb-6 justify-center">
+      {/* Group pills */}
+      <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 scrollbar-none">
         {GROUPS.map((group) => (
           <button
             key={group}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 ${
+            onClick={() => setActiveGroup(group)}
+            className={`shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
               group === activeGroup
-                ? 'bg-forch-gold text-black shadow-md'
-                : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10'
+                ? 'bg-white/15 text-white border border-white/20'
+                : 'bg-white/[0.03] text-text-muted hover:bg-white/[0.06] hover:text-text-secondary border border-transparent'
             }`}
           >
             {group}
@@ -67,64 +67,58 @@ export default function GroupTable({ selectedGroup }: GroupTableProps) {
       </div>
 
       {/* Table */}
-      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-white/10">
-          <h3 className="text-white font-bold text-center">
-            Grupo {activeGroup} — Fase de Grupos
-          </h3>
+      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-white/[0.06]">
+          <h3 className="text-sm font-bold text-text-primary text-center">Grupo {activeGroup}</h3>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-400 text-xs uppercase">
-                <th className="text-left py-3 px-3 w-8">#</th>
-                <th className="text-left py-3 px-3">Equipo</th>
-                <th className="text-center py-3 px-2">PJ</th>
-                <th className="text-center py-3 px-2">G</th>
-                <th className="text-center py-3 px-2">E</th>
-                <th className="text-center py-3 px-2">P</th>
-                <th className="text-center py-3 px-2 hidden sm:table-cell">GF</th>
-                <th className="text-center py-3 px-2 hidden sm:table-cell">GC</th>
-                <th className="text-center py-3 px-2 hidden sm:table-cell">DG</th>
-                <th className="text-center py-3 px-3 font-bold">Pts</th>
+              <tr className="text-text-muted text-[10px] uppercase tracking-wider">
+                <th className="text-left py-2.5 px-3 w-6">#</th>
+                <th className="text-left py-2.5 px-3">Equipo</th>
+                <th className="text-center py-2.5 px-2">PJ</th>
+                <th className="text-center py-2.5 px-2">G</th>
+                <th className="text-center py-2.5 px-2">E</th>
+                <th className="text-center py-2.5 px-2">P</th>
+                <th className="text-center py-2.5 px-2 hidden sm:table-cell">DG</th>
+                <th className="text-center py-2.5 px-3 font-bold">Pts</th>
               </tr>
             </thead>
             <tbody>
               {standings.map((team) => (
                 <tr
                   key={team.code}
-                  className={`border-t border-white/5 transition-colors ${
+                  className={`border-t border-white/[0.04] transition-colors ${
                     team.position <= 2
-                      ? 'bg-green-500/5'
+                      ? 'bg-accent-emerald/5'
                       : team.position === 3
-                      ? 'bg-yellow-500/5'
+                      ? 'bg-accent-amber/5'
                       : ''
                   }`}
                 >
-                  <td className="py-2.5 px-3">
-                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                      team.position <= 2 ? 'text-green-400' : team.position === 3 ? 'text-yellow-400' : 'text-gray-500'
+                  <td className="py-2 px-3">
+                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
+                      team.position <= 2 ? 'text-accent-emerald' : team.position === 3 ? 'text-accent-amber' : 'text-text-muted'
                     }`}>
                       {team.position}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3">
-                    <span className="text-white font-medium">
+                  <td className="py-2 px-3">
+                    <span className="text-text-primary text-xs font-medium">
                       {getTeamFlag(team.name)} {team.name}
                     </span>
                   </td>
-                  <td className="text-center py-2.5 px-2 text-gray-300">{team.played}</td>
-                  <td className="text-center py-2.5 px-2 text-gray-300">{team.won}</td>
-                  <td className="text-center py-2.5 px-2 text-gray-300">{team.drawn}</td>
-                  <td className="text-center py-2.5 px-2 text-gray-300">{team.lost}</td>
-                  <td className="text-center py-2.5 px-2 text-gray-300 hidden sm:table-cell">{team.goalsFor}</td>
-                  <td className="text-center py-2.5 px-2 text-gray-300 hidden sm:table-cell">{team.goalsAgainst}</td>
-                  <td className="text-center py-2.5 px-2 text-gray-300 hidden sm:table-cell">
+                  <td className="text-center py-2 px-2 text-text-secondary text-xs">{team.played}</td>
+                  <td className="text-center py-2 px-2 text-text-secondary text-xs">{team.won}</td>
+                  <td className="text-center py-2 px-2 text-text-secondary text-xs">{team.drawn}</td>
+                  <td className="text-center py-2 px-2 text-text-secondary text-xs">{team.lost}</td>
+                  <td className="text-center py-2 px-2 text-text-secondary text-xs hidden sm:table-cell">
                     {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
                   </td>
-                  <td className="text-center py-2.5 px-3">
-                    <span className="text-white font-bold">{team.points}</span>
+                  <td className="text-center py-2 px-3">
+                    <span className="text-text-primary text-xs font-bold">{team.points}</span>
                   </td>
                 </tr>
               ))}
@@ -133,21 +127,19 @@ export default function GroupTable({ selectedGroup }: GroupTableProps) {
         </div>
 
         {/* Legend */}
-        <div className="p-3 border-t border-white/10 flex flex-wrap gap-4 text-xs">
+        <div className="p-3 border-t border-white/[0.06] flex flex-wrap gap-4 text-[10px]">
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-            <span className="text-gray-400">Clasifica directamente</span>
+            <div className="w-2 h-2 rounded-full bg-accent-emerald" />
+            <span className="text-text-muted">Clasifica</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-            <span className="text-gray-400">Posible clasificación (3° puesto)</span>
+            <div className="w-2 h-2 rounded-full bg-accent-amber" />
+            <span className="text-text-muted">3er puesto</span>
           </div>
         </div>
       </div>
 
-      <p className="text-center text-xs text-gray-500 mt-3">
-        ⏳ Tabla preliminar — se actualizará con los resultados reales del torneo
-      </p>
+      <p className="text-center text-[11px] text-text-muted mt-3">Preliminar — se actualizará con resultados reales</p>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { TEAM_NAMES } from '@/lib/teams';
+import { getTeamFlag } from '@/lib/matches';
 
 interface TeamSelectorProps {
   value: string;
@@ -13,7 +14,7 @@ interface TeamSelectorProps {
 export default function TeamSelector({ value, onChange, label, disabledTeam }: TeamSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const inputRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredTeams = TEAM_NAMES.filter(
     (team) =>
@@ -23,29 +24,36 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setSearch('');
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedDisplay = value || 'Seleccionar equipo...';
+  const flag = value ? getTeamFlag(value) : '';
 
   return (
-    <div className="relative w-full" ref={inputRef}>
-      <label className="block text-sm font-medium text-gray-400 mb-2">{label}</label>
+    <div className="relative w-full" ref={containerRef}>
+      <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-2">
+        {label}
+      </label>
+
+      {/* Trigger */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-left text-white
-                   hover:border-forch-gold/50 focus:border-forch-gold focus:outline-none transition-all
-                   backdrop-blur-sm flex items-center justify-between"
+        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-left
+                   hover:border-white/[0.15] focus:border-accent-gold/50 focus:outline-none transition-all
+                   flex items-center justify-between"
       >
-        <span className={value ? 'text-white' : 'text-gray-500'}>{selectedDisplay}</span>
+        <span className={value ? 'text-white text-sm font-medium' : 'text-text-muted text-sm'}>
+          {flag ? `${flag} ${value}` : value || 'Seleccionar equipo...'}
+        </span>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -54,39 +62,47 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
         </svg>
       </button>
 
+      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-gray-900 border border-white/10 rounded-xl shadow-2xl
-                        backdrop-blur-xl max-h-64 overflow-hidden">
-          <div className="p-2">
+        <div className="absolute z-50 w-full mt-2 bg-bg-elevated/95 border border-white/[0.08] rounded-xl shadow-2xl
+                        backdrop-blur-2xl max-h-64 overflow-hidden">
+          {/* Search */}
+          <div className="p-2 border-b border-white/[0.06]">
             <input
               type="text"
               placeholder="Buscar equipo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm
-                         placeholder-gray-500 focus:outline-none focus:border-forch-gold/50"
+              className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm
+                         placeholder-text-muted focus:outline-none focus:border-accent-gold/30"
               autoFocus
             />
           </div>
+
+          {/* Team list */}
           <div className="overflow-y-auto max-h-48">
-            {filteredTeams.map((team) => (
-              <button
-                key={team}
-                type="button"
-                onClick={() => {
-                  const cleanName = team.includes(' ') ? team.slice(team.indexOf(' ') + 1) : team;
-                  onChange(cleanName);
-                  setIsOpen(false);
-                  setSearch('');
-                }}
-                className="w-full px-4 py-2 text-left text-white hover:bg-forch-gold/20 transition-colors
-                           flex items-center gap-2"
-              >
-                <span>{team}</span>
-              </button>
-            ))}
+            {filteredTeams.map((team) => {
+              const teamFlag = getTeamFlag(team);
+              return (
+                <button
+                  key={team}
+                  type="button"
+                  onClick={() => {
+                    const cleanName = team.includes(' ') ? team.slice(team.indexOf(' ') + 1) : team;
+                    onChange(cleanName);
+                    setIsOpen(false);
+                    setSearch('');
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-text-primary hover:bg-white/[0.06] transition-colors
+                             flex items-center gap-2.5"
+                >
+                  <span className="text-base">{teamFlag}</span>
+                  <span className="font-medium">{team}</span>
+                </button>
+              );
+            })}
             {filteredTeams.length === 0 && (
-              <div className="px-4 py-3 text-gray-500 text-sm">No se encontraron equipos</div>
+              <div className="px-4 py-4 text-text-muted text-sm text-center">Sin resultados</div>
             )}
           </div>
         </div>

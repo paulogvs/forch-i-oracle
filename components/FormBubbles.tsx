@@ -6,9 +6,9 @@ interface FormBubblesProps {
 }
 
 const colors = {
-  W: 'bg-green-500 text-white',
-  D: 'bg-yellow-500 text-gray-900',
-  L: 'bg-red-500 text-white',
+  W: 'bg-accent-emerald text-white',
+  D: 'bg-accent-amber text-bg-primary',
+  L: 'bg-accent-crimson text-white',
 };
 
 const labels = { W: 'V', D: 'E', L: 'D' };
@@ -16,12 +16,12 @@ const labels = { W: 'V', D: 'E', L: 'D' };
 export default function FormBubbles({ form, label }: FormBubblesProps) {
   return (
     <div className="flex items-center gap-2">
-      {label && <span className="text-xs text-gray-400">{label}</span>}
+      {label && <span className="text-[10px] text-text-muted font-medium">{label}</span>}
       <div className="flex gap-1">
         {form.map((result, i) => (
           <div
             key={i}
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${colors[result]}`}
+            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${colors[result]}`}
           >
             {labels[result]}
           </div>
@@ -30,7 +30,7 @@ export default function FormBubbles({ form, label }: FormBubblesProps) {
           Array.from({ length: 5 - form.length }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="w-7 h-7 rounded-full bg-white/5 border border-white/10"
+              className="w-6 h-6 rounded-full bg-white/[0.04] border border-white/[0.06]"
             />
           ))}
       </div>

@@ -15,13 +15,13 @@ interface FixtureViewProps {
   totalSims?: number;
 }
 
-const TABS: { id: FixtureTab; label: string; icon: string }[] = [
-  { id: 'grupos', label: 'Grupos', icon: '📋' },
-  { id: 'r32', label: '1/16', icon: '🏟️' },
-  { id: 'r16', label: 'Octavos', icon: '⚡' },
-  { id: 'cuartos', label: 'Cuartos', icon: '🔥' },
-  { id: 'semis', label: 'Semis', icon: '💎' },
-  { id: 'finales', label: 'Finales', icon: '🏆' },
+const TABS: { id: FixtureTab; label: string }[] = [
+  { id: 'grupos', label: 'Grupos' },
+  { id: 'r32', label: '1/16' },
+  { id: 'r16', label: '1/8' },
+  { id: 'cuartos', label: '1/4' },
+  { id: 'semis', label: '1/2' },
+  { id: 'finales', label: 'Final' },
 ];
 
 export default function FixtureView({ bracket, top8 = [], totalSims = 100 }: FixtureViewProps) {
@@ -36,26 +36,27 @@ export default function FixtureView({ bracket, top8 = [], totalSims = 100 }: Fix
 
   return (
     <div className="relative z-10">
-      {/* TAB NAVIGATION — Sticky + scrollable */}
-      <div className="sticky top-0 z-50 bg-wc-navy/90 backdrop-blur-xl border-b border-white/5">
+      {/* Tab nav */}
+      <div className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-2xl border-b border-white/[0.06]">
         <div ref={tabsRef} className="flex overflow-x-auto scrollbar-hide px-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`tab-pill flex-1 min-w-0 ${activeTab === tab.id ? 'active' : ''}`}
+              className={`flex-1 min-w-0 py-3 px-2 text-xs font-semibold transition-all duration-200 border-b-2 ${
+                activeTab === tab.id
+                  ? 'text-white border-accent-blue'
+                  : 'text-text-muted border-transparent hover:text-text-secondary'
+              }`}
             >
-              <span className="mr-1">{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
+              {tab.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* TAB CONTENT */}
-      <div className="p-3 md:p-4 space-y-4 animate-fade-in" key={activeTab}>
-        
-        {/* GRUPOS */}
+      {/* Content */}
+      <div className="p-4 md:p-6 space-y-4 animate-fade-in" key={activeTab}>
         {activeTab === 'grupos' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -71,30 +72,17 @@ export default function FixtureView({ bracket, top8 = [], totalSims = 100 }: Fix
           </>
         )}
 
-        {/* 1/16 FINAL */}
-        {activeTab === 'r32' && (
-          <BracketPhase title="Dieciseisavos de Final" icon="🏟️" matches={bracket.roundOf32} />
-        )}
+        {activeTab === 'r32' && <BracketPhase title="Dieciseisavos" matches={bracket.roundOf32} />}
+        {activeTab === 'r16' && <BracketPhase title="Octavos" matches={bracket.roundOf16} />}
+        {activeTab === 'cuartos' && <BracketPhase title="Cuartos" matches={bracket.quarters} />}
 
-        {/* OCTAVOS */}
-        {activeTab === 'r16' && (
-          <BracketPhase title="Octavos de Final" icon="⚡" matches={bracket.roundOf16} />
-        )}
-
-        {/* CUARTOS */}
-        {activeTab === 'cuartos' && (
-          <BracketPhase title="Cuartos de Final" icon="🔥" matches={bracket.quarters} />
-        )}
-
-        {/* SEMIS */}
         {activeTab === 'semis' && (
           <div className="space-y-6">
-            <BracketPhase title="Semifinales" icon="💎" matches={bracket.semis} />
-            <BracketPhase title="Tercer Puesto" icon="🥉" matches={[bracket.thirdPlace]} />
+            <BracketPhase title="Semifinales" matches={bracket.semis} />
+            <BracketPhase title="Tercer Puesto" matches={[bracket.thirdPlace]} />
           </div>
         )}
 
-        {/* FINALES */}
         {activeTab === 'finales' && (
           <div className="space-y-6 max-w-lg mx-auto">
             {bracket.champion && bracket.champion !== 'TBD' && (
@@ -105,8 +93,8 @@ export default function FixtureView({ bracket, top8 = [], totalSims = 100 }: Fix
                 runnerUpFlag={bracket.runnerUpFlag}
               />
             )}
-            <BracketPhase title="La Gran Final" icon="🏆" matches={[bracket.final]} />
-            <BracketPhase title="Tercer Puesto" icon="🥉" matches={[bracket.thirdPlace]} />
+            <BracketPhase title="La Gran Final" matches={[bracket.final]} />
+            <BracketPhase title="Tercer Puesto" matches={[bracket.thirdPlace]} />
             {top8.length > 0 && (
               <div className="mt-6">
                 <Top8Ranking data={top8} totalSims={totalSims} />

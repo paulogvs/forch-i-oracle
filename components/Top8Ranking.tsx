@@ -55,65 +55,57 @@ function Top8Row({
   const pct = useCountUp(item.pct, 1200, inView);
 
   const rankColors: Record<number, string> = {
-    1: 'bg-forch-gold text-black',
-    2: 'bg-gray-300 text-gray-800',
-    3: 'bg-amber-700 text-white',
+    1: 'bg-accent-gold text-bg-primary',
+    2: 'bg-text-secondary text-bg-primary',
+    3: 'bg-accent-amber/80 text-white',
   };
 
-  const rankBadge = rankColors[rank]
-    ? (
-        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${rankColors[rank]}`}>
-          {rank}
-        </span>
-      )
-    : (
-        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-white/10 text-gray-400">
-          {rank}
-        </span>
-      );
+  const rankBadge = rankColors[rank] ? (
+    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${rankColors[rank]}`}>
+      {rank}
+    </span>
+  ) : (
+    <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-white/[0.06] text-text-muted">
+      {rank}
+    </span>
+  );
 
   return (
     <div
-      className="flex items-center gap-3 md:gap-4 py-3 animate-fade-in"
+      className="flex items-center gap-3 md:gap-4 py-2.5 animate-fade-in"
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* Rank badge */}
       {rankBadge}
 
-      {/* Flag + Team */}
       <div className="flex items-center gap-2 w-32 md:w-40 shrink-0">
-        <span className="text-xl">{item.flag}</span>
-        <span className="text-sm md:text-base font-semibold text-white truncate">
-          {item.team}
-        </span>
+        <span className="text-lg">{item.flag}</span>
+        <span className="text-xs md:text-sm font-semibold text-text-primary truncate">{item.team}</span>
       </div>
 
-      {/* Bar */}
-      <div className="flex-1 h-6 md:h-8 bg-white/5 rounded-full overflow-hidden">
+      <div className="flex-1 h-5 md:h-6 bg-white/[0.04] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{
             width: inView ? `${(item.pct / 35) * 100}%` : '0%',
-            background: rank === 1
-              ? 'linear-gradient(to right, #D4AF37cc, #D4AF37)'
-              : rank === 2
-                ? 'linear-gradient(to right, #9CA3AFcc, #9CA3AF)'
+            background:
+              rank === 1
+                ? 'linear-gradient(to right, #D4AF37cc, #D4AF37)'
+                : rank === 2
+                ? 'linear-gradient(to right, #A8B5C4cc, #A8B5C4)'
                 : rank === 3
-                  ? 'linear-gradient(to right, #B45309cc, #B45309)'
-                  : 'linear-gradient(to right, #4B5563cc, #6B7280)',
+                ? 'linear-gradient(to right, #D97706cc, #D97706)'
+                : 'linear-gradient(to right, #4B5563cc, #6B7280)',
             transitionDelay: `${delay}ms`,
           }}
         />
       </div>
 
-      {/* Percentage */}
-      <span className="text-base md:text-lg font-bold text-forch-gold w-14 text-right shrink-0 font-mono">
+      <span className="text-sm md:text-base font-bold text-accent-gold w-14 text-right shrink-0 font-mono">
         {pct.toFixed(1)}%
       </span>
 
-      {/* Win count */}
-      <span className="text-xs text-gray-500 w-16 text-right shrink-0 font-mono hidden sm:block">
-        {item.wins}/{(item.wins / (item.pct / 100))} sims
+      <span className="text-[10px] text-text-muted w-16 text-right shrink-0 font-mono hidden sm:block">
+        {item.wins}/{Math.round(item.wins / (item.pct / 100))} sims
       </span>
     </div>
   );
@@ -142,63 +134,50 @@ export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
   if (!data || data.length === 0) return null;
 
   return (
-    <div ref={ref} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 md:p-8">
+    <div ref={ref} className="glass-card p-6 md:p-8">
       {/* Header */}
       <div className="text-center mb-6">
-        <h3 className="text-lg md:text-xl font-bold text-white mb-1">
-          🏆 Probabilidad de Campeón
-        </h3>
-        <p className="text-xs text-gray-500">
+        <h3 className="text-base md:text-lg font-bold text-text-primary mb-1">Probabilidad de Campeón</h3>
+        <p className="text-[11px] text-text-muted">
           Basado en {totalSims} simulaciones con motor Poisson + Elo + xG
         </p>
       </div>
 
-      {/* Insight: líder */}
+      {/* Leader insight */}
       {data.length > 0 && (
-        <div className="mb-6 p-3 bg-forch-gold/10 border border-forch-gold/20 rounded-xl text-center">
-          <p className="text-xs text-forch-gold font-semibold uppercase tracking-wider mb-1">
-            Favorito principal
-          </p>
-          <p className="text-white font-bold text-lg">
+        <div className="mb-5 p-3 bg-accent-gold/10 border border-accent-gold/20 rounded-xl text-center">
+          <p className="text-[10px] text-accent-gold font-semibold uppercase tracking-wider mb-1">Favorito</p>
+          <p className="text-text-primary font-bold text-base">
             {data[0].flag} {data[0].team}
           </p>
-          <p className="text-gray-400 text-xs">
+          <p className="text-text-muted text-[11px]">
             Ganó {data[0].wins} de {totalSims} simulaciones
           </p>
         </div>
       )}
 
-      {/* Insight: dark horse */}
+      {/* Dark horse */}
       {data.length >= 4 && (
-        <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-center">
-          <p className="text-xs text-green-400 font-semibold uppercase tracking-wider mb-1">
-            Dark Horse
-          </p>
-          <p className="text-white font-bold">
+        <div className="mb-5 p-3 bg-accent-emerald/10 border border-accent-emerald/20 rounded-xl text-center">
+          <p className="text-[10px] text-accent-emerald font-semibold uppercase tracking-wider mb-1">Dark Horse</p>
+          <p className="text-text-primary font-bold">
             {data[3].flag} {data[3].team}
           </p>
-          <p className="text-gray-400 text-xs">
-            {data[3].pct}% de probabilidad — valor oculto
+          <p className="text-text-muted text-[11px]">
+            {data[3].pct}% — valor oculto
           </p>
         </div>
       )}
 
-      {/* Ranking rows */}
-      <div className="space-y-1">
+      {/* Rows */}
+      <div className="space-y-0.5">
         {data.map((item, idx) => (
-          <Top8Row
-            key={item.team}
-            rank={idx + 1}
-            item={item}
-            inView={inView}
-            delay={idx * 100}
-          />
+          <Top8Row key={item.team} rank={idx + 1} item={item} inView={inView} delay={idx * 100} />
         ))}
       </div>
 
-      {/* Footer */}
-      <p className="text-[10px] text-gray-600 text-center mt-4">
-        Las probabilidades se basan en simulaciones estadísticas — no reflejan cuotas de apuestas
+      <p className="text-[10px] text-text-muted text-center mt-4">
+        Simulaciones estadísticas — no reflejan cuotas de apuestas
       </p>
     </div>
   );

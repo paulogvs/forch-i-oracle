@@ -1,5 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#050B14',
+};
 
 export const metadata: Metadata = {
   title: 'FORCH.i ORACLE — Predicciones IA Mundial 2026',
@@ -28,7 +35,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {/* Background layer — subtle radial gradients */}
+        <div className="bg-mesh" aria-hidden="true" />
+        {/* Content */}
+        <main className="relative z-10">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }

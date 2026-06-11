@@ -6,6 +6,8 @@ import { getTeamByName } from '@/lib/teams';
 import FormBubbles from './FormBubbles';
 import ComparisonBars from './ComparisonBars';
 import LensConsensus from './LensConsensus';
+import AnimatedNumber from './ui/AnimatedNumber';
+import ProbabilityBar from './ui/ProbabilityBar';
 
 interface ResultCardProps {
   prediction: Prediction;
@@ -15,7 +17,11 @@ interface ResultCardProps {
 
 type Tab = 'consensus' | 'form' | 'stats' | 'analysis';
 
-const confidenceMap: Record<string, number> = { alta: 85, media: 60, baja: 40 };
+const confidenceColor: Record<string, string> = {
+  alta: 'text-accent-cyan',
+  media: 'text-accent-amber',
+  baja: 'text-accent-crimson',
+};
 
 const factorIcons: Record<string, string> = {
   'Forma reciente': '📈',
@@ -37,10 +43,9 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
   const homeCode = getTeamByName(homeTeam)?.code || homeTeam.slice(0, 3).toUpperCase();
   const awayCode = getTeamByName(awayTeam)?.code || awayTeam.slice(0, 3).toUpperCase();
 
-  const winner = prediction.homeWin > prediction.awayWin ? homeTeam : prediction.awayWin > prediction.homeWin ? awayTeam : null;
-  const winnerFlag = winner === homeTeam ? homeFlag : winner === awayTeam ? awayFlag : '';
+  const winner = prediction.homeWin > prediction.awayWin ? homeTeam
+    : prediction.awayWin > prediction.homeWin ? awayTeam : null;
   const isDraw = !winner;
-  const confidencePct = confidenceMap[prediction.confidence] || 50;
 
   const allKeyPlayers = [...prediction.homeKeyPlayers, ...prediction.awayKeyPlayers].slice(0, 6);
 
@@ -52,129 +57,125 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
   ];
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden">
-      {/* ═══════════════════════════════════════════
-          HERO — Predicted Score (always visible)
-         ═══════════════════════════════════════════ */}
-      <div className="p-6 md:p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-            Predicción FORCH.i
-          </h2>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-forch-gold/10 border border-forch-gold/20">
-            <span className="w-2 h-2 rounded-full bg-forch-gold animate-pulse" />
-            <span className="text-xs font-semibold text-forch-gold">{confidencePct}% confianza</span>
-          </div>
-        </div>
+    <div className="glass-card-static overflow-hidden animate-fade-in-up">
+      {/* ═══ HEADER ═══ */}
+      <div className="px-6 pt-6 pb-2 flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-wider font-semibold text-text-muted">
+          Predicción FORCH.i
+        </span>
+        <span className={`text-xs font-semibold ${confidenceColor[prediction.confidence] || 'text-text-tertiary'}`}>
+          {prediction.confidence === 'alta' ? '●' : prediction.confidence === 'media' ? '●' : '○'} {prediction.confidence}
+        </span>
+      </div>
 
-        {/* Score Display */}
-        <div className="flex items-center justify-center gap-4 md:gap-8 mb-6">
+      {/* ═══ SCOREBOARD ═══ */}
+      <div className="px-6 py-6 md:px-8">
+        <div className="flex items-center justify-center gap-6 md:gap-12">
           {/* Home */}
-          <div className="text-center flex-1">
-            <div className="text-4xl md:text-5xl mb-2">{homeFlag}</div>
-            <div className="text-sm md:text-base font-bold text-white truncate">{homeTeam}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{homeCode}</div>
+          <div className="text-center flex-1 min-w-0">
+            <div className="text-4xl md:text-5xl mb-2" role="img" aria-label={`Bandera de ${homeTeam}`}>{homeFlag}</div>
+            <div className="text-sm md:text-base font-semibold text-white truncate">{homeTeam}</div>
+            <div className="text-[10px] font-mono text-text-muted mt-0.5">{homeCode}</div>
           </div>
 
           {/* Score */}
-          <div className="text-center px-4 md:px-8">
+          <div className="text-center px-2">
             <div className="flex items-center gap-2 md:gap-4">
-              <span className="text-5xl md:text-7xl font-black text-forch-gold font-mono">
-                {prediction.predictedScoreHome}
-              </span>
-              <span className="text-2xl md:text-3xl text-gray-600 font-light">—</span>
-              <span className="text-5xl md:text-7xl font-black text-forch-gold font-mono">
-                {prediction.predictedScoreAway}
-              </span>
+              <AnimatedNumber
+                value={prediction.predictedScoreHome}
+                className="text-5xl md:text-7xl font-black text-gradient-gold"
+              />
+              <span className="text-2xl md:text-3xl text-text-muted font-light">—</span>
+              <AnimatedNumber
+                value={prediction.predictedScoreAway}
+                className="text-5xl md:text-7xl font-black text-gradient-gold"
+              />
             </div>
-            {isDraw && (
-              <span className="text-xs text-gray-500 mt-2 block">Empate</span>
-            )}
-            {winner && (
-              <span className="text-xs text-forch-gold mt-2 block">
-                {winnerFlag} {winner}
-              </span>
-            )}
+            <div className="mt-2 text-xs text-text-tertiary">
+              {isDraw ? '⚖️ Empate probable' : `🏆 ${winner} favorito`}
+            </div>
           </div>
 
           {/* Away */}
-          <div className="text-center flex-1">
-            <div className="text-4xl md:text-5xl mb-2">{awayFlag}</div>
-            <div className="text-sm md:text-base font-bold text-white truncate">{awayTeam}</div>
-            <div className="text-xs text-gray-500 mt-0.5">{awayCode}</div>
+          <div className="text-center flex-1 min-w-0">
+            <div className="text-4xl md:text-5xl mb-2" role="img" aria-label={`Bandera de ${awayTeam}`}>{awayFlag}</div>
+            <div className="text-sm md:text-base font-semibold text-white truncate">{awayTeam}</div>
+            <div className="text-[10px] font-mono text-text-muted mt-0.5">{awayCode}</div>
           </div>
         </div>
+      </div>
 
-        {/* Win Probabilities Bar */}
-        <div className="flex rounded-full overflow-hidden h-2 mb-4 bg-white/5">
-          <div className="bg-forch-gold transition-all duration-700" style={{ width: `${prediction.homeWin}%` }} />
-          <div className="bg-gray-600 transition-all duration-700" style={{ width: `${prediction.draw}%` }} />
-          <div className="bg-gray-500 transition-all duration-700" style={{ width: `${prediction.awayWin}%` }} />
+      {/* ═══ PROBABILITIES ═══ */}
+      <div className="px-6 md:px-8 pb-4">
+        <ProbabilityBar
+          homeWin={prediction.homeWin}
+          draw={prediction.draw}
+          awayWin={prediction.awayWin}
+        />
+      </div>
+
+      {/* ═══ xG PILLS ═══ */}
+      {(prediction.homeExpectedGoals > 0 || prediction.awayExpectedGoals > 0) && (
+        <div className="px-6 md:px-8 pb-4 flex flex-wrap items-center justify-center gap-3">
+          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono text-text-secondary">
+            xG <span className="text-white font-semibold">{prediction.homeExpectedGoals.toFixed(2)}</span>
+            {' — '}
+            <span className="text-white font-semibold">{prediction.awayExpectedGoals.toFixed(2)}</span>
+          </span>
+          {prediction.over25Probability > 0 && (
+            <span className="px-3 py-1 rounded-full bg-accent-gold/10 border border-accent-gold/20 text-[11px] font-mono text-accent-gold">
+              Over 2.5 {prediction.over25Probability}%
+            </span>
+          )}
+          {prediction.bttsProbability > 0 && (
+            <span className="px-3 py-1 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-[11px] font-mono text-accent-blue">
+              BTTS {prediction.bttsProbability}%
+            </span>
+          )}
         </div>
-        <div className="flex justify-between text-[10px] text-gray-500 mb-6 font-mono">
-          <span>{homeTeam} {prediction.homeWin}%</span>
-          <span>Empate {prediction.draw}%</span>
-          <span>{awayTeam} {prediction.awayWin}%</span>
-        </div>
+      )}
 
-        {/* xG / Over 2.5 / BTTS */}
-        {(prediction.homeExpectedGoals > 0 || prediction.awayExpectedGoals > 0) && (
-          <div className="flex items-center justify-center gap-4 mb-4 text-[11px] text-gray-400">
-            <span>xG <span className="text-white font-bold">{prediction.homeExpectedGoals.toFixed(2)}</span> — <span className="text-white font-bold">{prediction.awayExpectedGoals.toFixed(2)}</span></span>
-            {prediction.over25Probability > 0 && (
-              <span>Over 2.5 <span className="text-forch-gold font-bold">{prediction.over25Probability}%</span></span>
-            )}
-            {prediction.bttsProbability > 0 && (
-              <span>BTTS <span className="text-forch-gold font-bold">{prediction.bttsProbability}%</span></span>
-            )}
-          </div>
-        )}
-
-        {/* Key Factors (inline, compact) */}
-        {prediction.keyFactors.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-            {prediction.keyFactors.slice(0, 4).map((factor, i) => (
-              <div key={i} className="bg-white/5 rounded-xl p-3 text-center">
-                <div className="text-lg mb-1">{factorIcons[factor.label] || '📊'}</div>
-                <div className="text-[10px] text-gray-400 truncate">{factor.label}</div>
-                <div className="text-xs font-bold text-white mt-0.5">
-                  {factor.homeAdvantage > 0 ? `+${factor.homeAdvantage}%` : `${factor.homeAdvantage}%`}
-                </div>
+      {/* ═══ KEY FACTORS ═══ */}
+      {prediction.keyFactors.length > 0 && (
+        <div className="px-6 md:px-8 pb-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+          {prediction.keyFactors.slice(0, 4).map((factor, i) => (
+            <div key={i} className="bg-white/[0.03] rounded-xl p-3 text-center border border-white/[0.04]">
+              <div className="text-base mb-1">{factorIcons[factor.label] || '📊'}</div>
+              <div className="text-[10px] text-text-tertiary truncate">{factor.label}</div>
+              <div className={`text-xs font-bold mt-0.5 ${factor.homeAdvantage > 0 ? 'text-accent-blue' : factor.homeAdvantage < 0 ? 'text-accent-amber' : 'text-text-secondary'}`}>
+                {factor.homeAdvantage > 0 ? `+${factor.homeAdvantage}%` : `${factor.homeAdvantage}%`}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
+      )}
 
-        {/* Expand/Collapse Button */}
+      {/* ═══ EXPAND BUTTON ═══ */}
+      <div className="px-6 md:px-8 pb-4">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full py-3 rounded-xl bg-white/5 border border-white/10
-                     text-sm text-gray-400 hover:text-white hover:bg-white/10
+          className="w-full py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]
+                     text-xs text-text-tertiary hover:text-white hover:bg-white/[0.06]
                      transition-all duration-200 flex items-center justify-center gap-2"
         >
           <span>{expanded ? 'Ver menos' : 'Ver análisis completo'}</span>
-          <span className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>
-            ▼
-          </span>
+          <span className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▼</span>
         </button>
       </div>
 
-      {/* ═══════════════════════════════════════════
-          EXPANDED CONTENT — Progressive disclosure
-         ═══════════════════════════════════════════ */}
+      {/* ═══ EXPANDED CONTENT ═══ */}
       {expanded && (
-        <div className="border-t border-white/10">
+        <div className="border-t border-white/[0.06]">
           {/* Tabs */}
-          <div className="flex border-b border-white/10">
+          <div className="flex border-b border-white/[0.06]">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 py-3 text-xs font-medium transition-all duration-200
                   ${activeTab === tab.id
-                    ? 'text-forch-gold border-b-2 border-forch-gold bg-white/5'
-                    : 'text-gray-500 hover:text-gray-300'
+                    ? 'text-white bg-white/[0.06]'
+                    : 'text-text-muted hover:text-text-secondary'
                   }`}
               >
                 <span className="mr-1">{tab.icon}</span>
@@ -222,21 +223,17 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
             {activeTab === 'analysis' && (
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-white">Análisis Táctico</h4>
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <p className="text-sm text-gray-300 leading-relaxed">
+                <div className="bg-white/[0.03] rounded-xl p-4 border border-white/[0.06]">
+                  <p className="text-sm text-text-secondary leading-relaxed">
                     {prediction.analysis || 'Sin análisis disponible.'}
                   </p>
                 </div>
                 {allKeyPlayers.length > 0 && (
                   <div>
-                    <h5 className="text-xs text-gray-400 uppercase tracking-wider mb-2">Jugadores Clave</h5>
+                    <h5 className="text-[10px] uppercase tracking-wider text-text-muted mb-2">Jugadores Clave</h5>
                     <div className="flex flex-wrap gap-2">
                       {allKeyPlayers.map((player, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1 rounded-full bg-white/5 border border-white/10
-                                     text-xs text-gray-300"
-                        >
+                        <span key={i} className="px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-xs text-text-secondary">
                           {player}
                         </span>
                       ))}
@@ -249,10 +246,10 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
         </div>
       )}
 
-      {/* Footer */}
-      <div className="px-6 py-3 bg-white/5 border-t border-white/10 flex items-center justify-center">
-        <span className="text-[10px] text-gray-600">
-          Motor estadístico Poisson + Elo + xG · {prediction.confidence.toUpperCase()} confianza
+      {/* ═══ FOOTER ═══ */}
+      <div className="px-6 py-2.5 bg-white/[0.02] border-t border-white/[0.04] flex items-center justify-center">
+        <span className="text-[10px] text-text-muted font-mono">
+          Poisson + Elo + xG · {prediction.confidence.toUpperCase()}
         </span>
       </div>
     </div>

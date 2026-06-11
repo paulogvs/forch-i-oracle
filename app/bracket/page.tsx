@@ -17,7 +17,7 @@ export default function BracketPage() {
     setLoading(true);
     setError('');
     setBracket(null);
-    setProgress('Iniciando 100 simulaciones...');
+    setProgress('Iniciando simulaciones...');
 
     try {
       const res = await fetch('/api/simulate-tournament', { method: 'POST' });
@@ -37,144 +37,107 @@ export default function BracketPage() {
   };
 
   return (
-    <main className="min-h-screen relative">
-      {/* Background mesh */}
-      <div className="bg-mesh" />
-      <div className="stadium-lights" />
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-2xl border-b border-white/[0.06]">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-white transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Predictor
+          </Link>
 
-      {/* Content */}
-      <div className="relative z-10">
-        {/* ═══════════════════════════════════════
-            HEADER — Sticky premium
-           ═══════════════════════════════════════ */}
-        <header className="sticky top-0 z-50 bg-wc-navy/95 backdrop-blur-xl border-b border-white/5">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-between mb-3">
-              <Link
-                href="/"
-                className="flex items-center gap-2 text-wc-silver hover:text-white transition-colors text-sm"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Predictor
-              </Link>
+          <h1 className="text-sm font-bold text-white">
+            FORCH.i <span className="text-gradient-gold">ORACLE</span>
+          </h1>
 
-              <div className="text-center">
-                <h1 className="text-sm font-bold text-white">
-                  FORCH.i <span className="text-wc-gold">ORACLE</span>
-                </h1>
-              </div>
-
-              <Link
-                href="/benchmark"
-                className="btn-premium text-xs px-3 py-2"
-              >
-                🤖 Benchmark
-              </Link>
-              <button
-                onClick={handleSimulate}
-                disabled={loading}
-                className="btn-premium gold text-xs px-4 py-2 flex items-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Simulando...
-                  </>
-                ) : (
-                  <>⚡ Simular</>
-                )}
-              </button>
-            </div>
-
-            {/* Status bar */}
-            {(progress || loading) && (
-              <div className="text-xs text-wc-silver truncate animate-fade-in">
-                {loading && <span className="text-wc-blue mr-1">●</span>}
-                {progress}
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* ═══════════════════════════════════════
-            MAIN CONTENT
-           ═══════════════════════════════════════ */}
-        <div className="max-w-7xl mx-auto">
-          {/* Hero — No simulation yet */}
-          {!bracket && !loading && (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 animate-fade-in">
-              {/* Animated trophy */}
-              <div className="text-7xl md:text-8xl mb-6 animate-bounce-subtle">🏆</div>
-              
-              <h2 className="text-3xl md:text-5xl font-black text-white mb-3">
-                Simulador del
-                <span className="block bg-gradient-to-r from-wc-blue via-wc-amber to-wc-gold bg-clip-text text-transparent">
-                  Mundial 2026
+          <div className="flex items-center gap-2">
+            <Link href="/benchmark" className="px-3 py-1.5 text-xs font-medium text-text-secondary hover:text-white hover:bg-white/[0.06] rounded-lg transition-all">
+              🤖 Benchmark
+            </Link>
+            <button
+              onClick={handleSimulate}
+              disabled={loading}
+              className="btn-premium text-xs px-4 py-2"
+            >
+              {loading ? (
+                <span className="flex items-center gap-1.5">
+                  <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Simulando...
                 </span>
-              </h2>
-
-              <p className="text-wc-silver text-sm md:text-base max-w-md mb-8 leading-relaxed">
-                100 simulaciones independientes con motor Poisson + Elo + xG.
-                Top 8 de probabilidad + bracket completo de 128 partidos.
-              </p>
-
-              <button
-                onClick={handleSimulate}
-                className="btn-premium gold text-base px-8 py-4 font-bold"
-              >
-                ⚡ Simular Torneo Completo
-              </button>
-
-              <p className="text-wc-silver/60 text-xs mt-4">
-                ~30 segundos · Se actualiza con resultados reales
-              </p>
-            </div>
-          )}
-
-          {/* Loading */}
-          {loading && !bracket && (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center animate-fade-in">
-              <div className="relative mb-6">
-                <div className="w-16 h-16 rounded-full border-2 border-wc-blue/30 border-t-wc-blue animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center text-2xl">⚽</div>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Simulando Mundial 2026</h3>
-              <p className="text-sm text-wc-silver">{progress || 'Calculando...'}</p>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in">
-              <div className="text-5xl mb-4">❌</div>
-              <h3 className="text-xl font-bold text-white mb-2">Error</h3>
-              <p className="text-sm text-wc-silver mb-6">{error}</p>
-              <button onClick={handleSimulate} className="btn-premium gold">
-                Reintentar
-              </button>
-            </div>
-          )}
-
-          {/* Fixture View */}
-          {bracket && (
-            <FixtureView
-              bracket={bracket}
-              top8={top8}
-              totalSims={totalSims}
-            />
-          )}
+              ) : '⚡ Simular'}
+            </button>
+          </div>
         </div>
 
-        {/* Footer */}
-        <footer className="relative z-10 text-center py-8 text-xs text-wc-silver/40">
-          <p>Construido con <span className="text-wc-gold">FORCH.i</span> por Paulo Velasco</p>
-        </footer>
-      </div>
-    </main>
+        {/* Status */}
+        {(progress || loading) && (
+          <div className="max-w-7xl mx-auto px-4 md:px-8 pb-2">
+            <span className="text-[11px] text-text-muted truncate animate-fade-in">
+              {loading && <span className="text-accent-blue mr-1">●</span>}
+              {progress}
+            </span>
+          </div>
+        )}
+      </header>
+
+      {/* Main */}
+      <main className="flex-1 max-w-7xl mx-auto w-full">
+        {/* Hero — no simulation */}
+        {!bracket && !loading && (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 animate-fade-in">
+            <div className="text-6xl md:text-7xl mb-6 animate-bounce-subtle">🏆</div>
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-text-primary mb-2">
+              Simulador del
+            </h2>
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-gradient-gold mb-4">
+              Mundial 2026
+            </h2>
+            <p className="text-text-secondary text-sm md:text-base max-w-md mb-8 leading-relaxed">
+              100 simulaciones con motor Poisson + Elo + xG.
+              Top 8 + bracket completo de 128 partidos.
+            </p>
+            <button onClick={handleSimulate} className="btn-premium text-base px-8 py-4 font-bold">
+              ⚡ Simular Torneo
+            </button>
+            <p className="text-text-muted text-xs mt-4">~30 segundos · Se actualiza con resultados reales</p>
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && !bracket && (
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center animate-fade-in">
+            <div className="relative mb-6">
+              <div className="w-16 h-16 rounded-full border-2 border-accent-blue/30 border-t-accent-blue animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center text-2xl">⚽</div>
+            </div>
+            <h3 className="text-lg font-bold text-text-primary mb-2">Simulando Mundial 2026</h3>
+            <p className="text-sm text-text-secondary">{progress || 'Calculando...'}</p>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-fade-in">
+            <div className="text-4xl mb-4">❌</div>
+            <h3 className="text-lg font-bold text-text-primary mb-2">Error</h3>
+            <p className="text-sm text-text-secondary mb-6">{error}</p>
+            <button onClick={handleSimulate} className="btn-premium">Reintentar</button>
+          </div>
+        )}
+
+        {/* Results */}
+        {bracket && <FixtureView bracket={bracket} top8={top8} totalSims={totalSims} />}
+      </main>
+
+      {/* Footer */}
+      <footer className="text-center py-8 text-xs text-text-muted">
+        <p>FORCH.i © 2026 · Datos oficiales FIFA</p>
+      </footer>
+    </div>
   );
 }
