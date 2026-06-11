@@ -87,7 +87,6 @@ export default function BenchmarkPage() {
                   <th className="text-center py-2 px-2" scope="col">Sub</th>
                   <th className="text-center py-2 px-2" scope="col">3°</th>
                   <th className="text-center py-2 px-2" scope="col">4°</th>
-                  <th className="text-center py-2 px-2" scope="col">Tokens</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,9 +99,6 @@ export default function BenchmarkPage() {
                     <td className="py-2.5 px-2 text-center text-text-secondary text-xs">{m.runnerUp}</td>
                     <td className="py-2.5 px-2 text-center text-text-secondary text-xs">{m.thirdPlace}</td>
                     <td className="py-2.5 px-2 text-center text-text-secondary text-xs">{m.fourthPlace}</td>
-                    <td className="py-2.5 px-2 text-center text-text-muted text-[10px]">
-                      {m.totalTokens.toLocaleString()}
-                    </td>
                   </tr>
                 ))}
               </tbody>
