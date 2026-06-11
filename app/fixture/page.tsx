@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
-import { getTeamByName } from '@/lib/teams';
+import { getTeamByName, ELO_RATINGS, POWER_RATINGS } from '@/lib/teams';
 
 type ViewMode = 'fecha' | 'grupo';
 type PhaseFilter = string;
@@ -14,6 +14,7 @@ interface FixtureMatch {
   homeTeam: string;
   awayTeam: string;
   venue: string;
+  city: string;
   round: string;
   homeGoals: number | null;
   awayGoals: number | null;
@@ -23,6 +24,18 @@ interface FixtureMatch {
   confidence: string | null;
   xGHome: number | null;
   xGAway: number | null;
+  homeAttack: number | null;
+  homeDefense: number | null;
+  homeMidfield: number | null;
+  awayAttack: number | null;
+  awayDefense: number | null;
+  awayMidfield: number | null;
+  homeElo: number | null;
+  awayElo: number | null;
+  topScores: { home: number; away: number; probability: number }[] | null;
+  over25: number | null;
+  btts: number | null;
+  analysis: string | null;
   isPredicted: boolean;
   isPlayed: boolean;
   realHomeGoals: number | null;
@@ -36,6 +49,7 @@ export default function FixturePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null);
 
   useEffect(() => { loadFixtures(); }, []);
 
@@ -58,6 +72,7 @@ export default function FixturePage() {
         homeTeam: m.homeTeam,
         awayTeam: m.awayTeam,
         venue: m.venue || '',
+        city: m.city || '',
         round: m.round,
         homeGoals: m.predictedScore?.[0] ?? null,
         awayGoals: m.predictedScore?.[1] ?? null,
@@ -67,6 +82,18 @@ export default function FixturePage() {
         confidence: m.confidence ?? null,
         xGHome: m.xG?.[0] ?? null,
         xGAway: m.xG?.[1] ?? null,
+        homeAttack: m.homeAttack ?? null,
+        homeDefense: m.homeDefense ?? null,
+        homeMidfield: m.homeMidfield ?? null,
+        awayAttack: m.awayAttack ?? null,
+        awayDefense: m.awayDefense ?? null,
+        awayMidfield: m.awayMidfield ?? null,
+        homeElo: m.homeElo ?? null,
+        awayElo: m.awayElo ?? null,
+        topScores: m.topScores ?? null,
+        over25: m.over25Probability ?? null,
+        btts: m.bttsProbability ?? null,
+        analysis: m.analysis ?? null,
         isPredicted: m.predictedScore !== null && m.predictedScore !== undefined,
         isPlayed: false,
         realHomeGoals: null,
@@ -97,7 +124,6 @@ export default function FixturePage() {
     { id: 'round-16', label: '1/8 (8)' },
     { id: 'quarter', label: '1/4 (4)' },
     { id: 'semi', label: 'Semis (2)' },
-    { id: 'third', label: '3° (1)' },
     { id: 'final', label: 'Final (1)' },
   ];
 
@@ -136,7 +162,6 @@ export default function FixturePage() {
   };
 
   const getFlag = (name: string) => getTeamByName(name)?.flag || '❓';
-
   const predictedCount = fixtures.filter(f => f.isPredicted).length;
 
   return (
@@ -146,7 +171,7 @@ export default function FixturePage() {
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">⚡ Pronósticos</h1>
           <p className="text-xs sm:text-sm text-text-secondary truncate">
-            {predictedCount} / {fixtures.length || 128} partidos · Poisson + Elo + xG
+            {predictedCount} / {fixtures.length || 128} partidos · Toca un partido para ver detalles
           </p>
         </div>
         <button onClick={generateAll} disabled={generating} className="btn-premium text-xs px-4 py-2 disabled:opacity-50 shrink-0">
@@ -180,7 +205,7 @@ export default function FixturePage() {
       </div>
 
       {/* View mode toggle */}
-      <div className="flex items-center gap-2 mb-6 animate-fade-in">
+      <div className="flex items-center gap-2 mb-5 animate-fade-in">
         <div className="flex gap-1 p-1 bg-white/[0.04] rounded-lg">
           <button
             onClick={() => setViewMode('fecha')}
@@ -228,7 +253,7 @@ export default function FixturePage() {
                   <span className="text-text-muted font-normal">· {matches.length} partidos</span>
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {matches.map(m => <MatchCard key={m.id} match={m} getFlag={getFlag} getRoundLabel={getRoundLabel} />)}
+                  {matches.map(m => <MatchCard key={m.id} match={m} getFlag={getFlag} getRoundLabel={getRoundLabel} onDetail={() => setSelectedMatch(m)} />)}
                 </div>
               </div>
             ))
@@ -238,7 +263,7 @@ export default function FixturePage() {
                 <div key={group} className="glass-card p-3">
                   <h3 className="text-xs font-bold text-accent-gold uppercase mb-3">{group}</h3>
                   <div className="space-y-1.5">
-                    {matches.map(m => <MatchRowCompact key={m.id} match={m} getFlag={getFlag} />)}
+                    {matches.map(m => <MatchRowCompact key={m.id} match={m} getFlag={getFlag} onDetail={() => setSelectedMatch(m)} />)}
                   </div>
                 </div>
               ))}
@@ -246,28 +271,35 @@ export default function FixturePage() {
           )}
         </div>
       )}
+
+      {/* Match Detail Modal */}
+      {selectedMatch && <MatchDetailModal match={selectedMatch} getFlag={getFlag} onClose={() => setSelectedMatch(null)} />}
     </div>
   );
 }
 
-function MatchCard({ match, getFlag, getRoundLabel }: {
+function MatchCard({ match, getFlag, getRoundLabel, onDetail }: {
   match: FixtureMatch;
   getFlag: (name: string) => string;
   getRoundLabel: (round: string) => string;
+  onDetail: () => void;
 }) {
   return (
-    <div className="glass-card p-3 hover:border-white/[0.1] transition-colors">
+    <button onClick={onDetail} className="glass-card p-3 hover:border-white/[0.1] transition-colors w-full text-left cursor-pointer group">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] text-text-muted font-medium">{getRoundLabel(match.round)}</span>
-        {match.confidence && (
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-            match.confidence === 'alta' ? 'bg-accent-emerald/15 text-accent-emerald' :
-            match.confidence === 'media' ? 'bg-accent-amber/15 text-accent-amber' :
-            'bg-white/[0.06] text-text-muted'
-          }`}>
-            {match.confidence}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5">
+          {match.confidence && (
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+              match.confidence === 'alta' ? 'bg-accent-emerald/15 text-accent-emerald' :
+              match.confidence === 'media' ? 'bg-accent-amber/15 text-accent-amber' :
+              'bg-white/[0.06] text-text-muted'
+            }`}>
+              {match.confidence}
+            </span>
+          )}
+          <span className="text-[10px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">👁 Ver</span>
+        </div>
       </div>
 
       {match.homeGoals !== null ? (
@@ -316,16 +348,17 @@ function MatchCard({ match, getFlag, getRoundLabel }: {
           <span className="text-[10px] text-text-muted">Por definir</span>
         </div>
       )}
-    </div>
+    </button>
   );
 }
 
-function MatchRowCompact({ match, getFlag }: {
+function MatchRowCompact({ match, getFlag, onDetail }: {
   match: FixtureMatch;
   getFlag: (name: string) => string;
+  onDetail: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between text-xs py-1">
+    <button onClick={onDetail} className="flex items-center justify-between text-xs py-1 w-full text-left hover:bg-white/[0.03] rounded px-1 -mx-1 transition-colors cursor-pointer">
       <div className="flex items-center gap-1.5 flex-1 min-w-0">
         <span className="text-sm shrink-0">{getFlag(match.homeTeam)}</span>
         <span className="text-text-primary truncate">{match.homeTeam}</span>
@@ -341,6 +374,217 @@ function MatchRowCompact({ match, getFlag }: {
         <span className="text-text-primary truncate text-right">{match.awayTeam}</span>
         <span className="text-sm shrink-0">{getFlag(match.awayTeam)}</span>
       </div>
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATCH DETAIL MODAL
+// ═══════════════════════════════════════════════════════════════
+
+function MatchDetailModal({ match, getFlag, onClose }: {
+  match: FixtureMatch;
+  getFlag: (name: string) => string;
+  onClose: () => void;
+}) {
+  const homeElo = match.homeElo || ELO_RATINGS[match.homeTeam]?.elo || 1500;
+  const awayElo = match.awayElo || ELO_RATINGS[match.awayTeam]?.elo || 1500;
+  const eloDiff = homeElo - awayElo;
+  const homePower = POWER_RATINGS[match.homeTeam] || { attack: 50, defense: 50, midfield: 50 };
+  const awayPower = POWER_RATINGS[match.awayTeam] || { attack: 50, defense: 50, midfield: 50 };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" />
+
+      {/* Modal */}
+      <div
+        className="relative w-full sm:max-w-lg bg-[#0A1628] border border-white/[0.08] rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto animate-fade-in-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button onClick={onClose} className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-text-secondary transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Header - Teams + Score */}
+        <div className="p-5 pb-4 border-b border-white/[0.06]">
+          <div className="text-[10px] text-accent-blue font-semibold uppercase tracking-wider mb-3">
+            {match.round === 'group' ? `Grupo ${match.group}` : getRoundLabel(match.round)} · {match.venue}{match.city ? `, ${match.city}` : ''}
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex-1 text-center">
+              <div className="text-3xl mb-1">{getFlag(match.homeTeam)}</div>
+              <div className="text-sm font-bold text-white">{match.homeTeam}</div>
+            </div>
+            {match.homeGoals !== null ? (
+              <div className="px-4 py-2 bg-white/[0.06] rounded-xl">
+                <div className="text-2xl font-bold font-mono text-accent-blue">
+                  {match.homeGoals} — {match.awayGoals}
+                </div>
+                <div className="text-[10px] text-text-muted text-center">Predicción</div>
+              </div>
+            ) : (
+              <div className="px-4 py-2 bg-white/[0.06] rounded-xl">
+                <div className="text-lg font-bold text-text-muted">vs</div>
+              </div>
+            )}
+            <div className="flex-1 text-center">
+              <div className="text-3xl mb-1">{getFlag(match.awayTeam)}</div>
+              <div className="text-sm font-bold text-white">{match.awayTeam}</div>
+            </div>
+          </div>
+        </div>
+
+        {match.homeGoals !== null && (
+          <>
+            {/* 1X2 Probabilities */}
+            <div className="p-5 border-b border-white/[0.06]">
+              <h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-3">Probabilidades</h4>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="text-center p-2 bg-accent-blue/10 rounded-lg">
+                  <div className="text-lg font-bold text-accent-blue">{match.homeWin}%</div>
+                  <div className="text-[10px] text-text-muted">Local</div>
+                </div>
+                <div className="text-center p-2 bg-white/[0.06] rounded-lg">
+                  <div className="text-lg font-bold text-white">{match.draw}%</div>
+                  <div className="text-[10px] text-text-muted">Empate</div>
+                </div>
+                <div className="text-center p-2 bg-accent-crimson/10 rounded-lg">
+                  <div className="text-lg font-bold text-accent-crimson">{match.awayWin}%</div>
+                  <div className="text-[10px] text-text-muted">Visitante</div>
+                </div>
+              </div>
+              <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
+                <div style={{ width: `${match.homeWin}%` }} className="bg-accent-blue/70" />
+                <div style={{ width: `${match.draw}%` }} className="bg-white/20" />
+                <div style={{ width: `${match.awayWin}%` }} className="bg-accent-crimson/70" />
+              </div>
+            </div>
+
+            {/* xG + Markets */}
+            <div className="p-5 border-b border-white/[0.06]">
+              <h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-3">Goles Esperados y Mercados</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2.5 bg-white/[0.03] rounded-lg">
+                  <div className="text-xs text-text-muted">xG {match.homeTeam}</div>
+                  <div className="text-base font-bold text-white">{match.xGHome?.toFixed(2) || '—'}</div>
+                </div>
+                <div className="p-2.5 bg-white/[0.03] rounded-lg">
+                  <div className="text-xs text-text-muted">xG {match.awayTeam}</div>
+                  <div className="text-base font-bold text-white">{match.xGAway?.toFixed(2) || '—'}</div>
+                </div>
+                <div className="p-2.5 bg-white/[0.03] rounded-lg">
+                  <div className="text-xs text-text-muted">Over 2.5</div>
+                  <div className="text-base font-bold text-accent-emerald">{match.over25 ?? '—'}%</div>
+                </div>
+                <div className="p-2.5 bg-white/[0.03] rounded-lg">
+                  <div className="text-xs text-text-muted">BTTS</div>
+                  <div className="text-base font-bold text-accent-amber">{match.btts ?? '—'}%</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Team Comparison */}
+            <div className="p-5 border-b border-white/[0.06]">
+              <h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-3">Comparación de Equipos</h4>
+
+              {/* Elo */}
+              <div className="mb-3">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-white">{match.homeTeam}</span>
+                  <span className="text-text-muted">Elo Rating</span>
+                  <span className="text-white">{match.awayTeam}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold font-mono text-accent-blue w-10 text-right">{homeElo}</span>
+                  <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className="h-full bg-accent-blue" style={{ width: `${Math.max(20, Math.min(80, 50 + eloDiff * 0.1))}%` }} />
+                  </div>
+                  <span className="text-sm font-bold font-mono text-accent-crimson w-10">{awayElo}</span>
+                </div>
+                <div className="text-[10px] text-text-muted text-center mt-0.5">Diferencia: {eloDiff > 0 ? '+' : ''}{eloDiff}</div>
+              </div>
+
+              {/* Power Ratings */}
+              {['attack', 'midfield', 'defense'].map((stat) => {
+                const homeVal = homePower[stat as keyof typeof homePower];
+                const awayVal = awayPower[stat as keyof typeof awayPower];
+                const labels: Record<string, string> = { attack: 'Ataque', midfield: 'Medio', defense: 'Defensa' };
+                return (
+                  <div key={stat} className="mb-2.5">
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span className="text-white">{homeVal}</span>
+                      <span className="text-text-muted">{labels[stat]}</span>
+                      <span className="text-white">{awayVal}</span>
+                    </div>
+                    <div className="flex h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-accent-blue/60" style={{ width: `${(homeVal / (homeVal + awayVal)) * 100}%` }} />
+                      <div className="bg-accent-crimson/60" style={{ width: `${(awayVal / (homeVal + awayVal)) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Top Scores */}
+            {match.topScores && match.topScores.length > 0 && (
+              <div className="p-5 border-b border-white/[0.06]">
+                <h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-3">Marcadores Más Probables</h4>
+                <div className="space-y-1.5">
+                  {match.topScores.slice(0, 5).map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 text-xs">
+                      <span className="text-text-muted w-4 text-right">{i + 1}</span>
+                      <span className="font-mono font-bold text-white w-8">{s.home}-{s.away}</span>
+                      <div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                        <div className="h-full bg-accent-gold/50" style={{ width: `${Math.min(100, s.probability * 3)}%` }} />
+                      </div>
+                      <span className="text-text-muted w-10 text-right">{s.probability}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Analysis */}
+            {match.analysis && (
+              <div className="p-5">
+                <h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-2">Análisis</h4>
+                <p className="text-xs text-text-secondary leading-relaxed">{match.analysis}</p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Confidence badge */}
+        {match.confidence && match.homeGoals !== null && (
+          <div className="p-4 border-t border-white/[0.06] flex items-center justify-center">
+            <span className={`text-xs font-semibold px-4 py-1.5 rounded-full ${
+              match.confidence === 'alta' ? 'bg-accent-emerald/15 text-accent-emerald' :
+              match.confidence === 'media' ? 'bg-accent-amber/15 text-accent-amber' :
+              'bg-white/[0.06] text-text-muted'
+            }`}>
+              Confianza: {match.confidence.charAt(0).toUpperCase() + match.confidence.slice(1)}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
+}
+
+function getRoundLabel(round: string): string {
+  const labels: Record<string, string> = {
+    group: 'Fase de Grupos',
+    'round-32': '1/16 Final',
+    'round-16': 'Octavos',
+    quarter: 'Cuartos',
+    semi: 'Semifinales',
+    third: 'Tercer Puesto',
+    final: 'Final',
+  };
+  return labels[round] || round;
 }

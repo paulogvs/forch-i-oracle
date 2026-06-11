@@ -24,7 +24,7 @@ interface PredictionHistory {
 export default function VeredictoPage() {
   const [topTeams, setTopTeams] = useState<TeamPrediction[]>([]);
   const [predictions, setPredictions] = useState<PredictionHistory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState('');
   const [totalMatches, setTotalMatches] = useState(0);
   const [totalPredictions, setTotalPredictions] = useState(0);
