@@ -1,19 +1,41 @@
-// FORCH.i ORACLE — API Route: Full Tournament Fixture Prediction
-// Predicts ALL 128 matches with scores using dynamic + static engine
+// FORCH.i ORACLE — API Route: Full Tournament Fixture Prediction (v2 with Data Layer)
+// Predicts ALL 128 matches with scores using enhanced engine + data layer caching.
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
 import { predictMatchDynamic, addMatchResult, getResultsCount } from '@/lib/prediction-store';
+import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
+import { getDataLayer } from '@/lib/data-layer';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { useDynamic = true, realResults = [] } = body;
+    const { useDynamic = true, useEnhanced = true, realResults = [] } = body;
 
-    // Ingest any real results first
+    const db = getDataLayer();
+
+    // Ingest any real results
     for (const r of realResults) {
       addMatchResult(r);
+      await db.submitMatchResult({
+        matchId: r.matchId || `${r.homeTeam}_vs_${r.awayTeam}`,
+        homeScore: r.homeGoals || r.homeScore || 0,
+        awayScore: r.awayGoals || r.awayScore || 0,
+        winner: (r.homeGoals || r.homeScore || 0) > (r.awayGoals || r.awayScore || 0)
+          ? r.homeTeam : (r.awayGoals || r.awayScore || 0) > (r.homeGoals || r.homeScore || 0)
+            ? r.awayTeam : 'draw',
+      });
     }
+
+    // Get team forms from data layer
+    const teamFormsCache = new Map<string, Awaited<ReturnType<typeof db.getTeamForm>>>();
+
+    const getTeamFormCached = async (teamName: string) => {
+      if (!teamFormsCache.has(teamName)) {
+        teamFormsCache.set(teamName, await db.getTeamForm(teamName));
+      }
+      return teamFormsCache.get(teamName)!;
+    };
 
     const fixture: any[] = [];
     const groupStandings: Record<string, any[]> = {};
@@ -24,22 +46,90 @@ export async function POST(request: NextRequest) {
 
     for (const group of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
       const groupMatches = MATCHES_BY_GROUP[group] || [];
-      const teams = new Set<string>();
-      const standings: Record<string, { pts: number; gf: number; ga: number; gd: number }> = {};
+      const standings: Record<string, { pts: number; gf: number; ga: number; gd: number; played: number }> = {};
 
       // Initialize standings
       for (const m of groupMatches) {
-        teams.add(m.homeTeam);
-        teams.add(m.awayTeam);
-        standings[m.homeTeam] = standings[m.homeTeam] || { pts: 0, gf: 0, ga: 0, gd: 0 };
-        standings[m.awayTeam] = standings[m.awayTeam] || { pts: 0, gf: 0, ga: 0, gd: 0 };
+        standings[m.homeTeam] = standings[m.homeTeam] || { pts: 0, gf: 0, ga: 0, gd: 0, played: 0 };
+        standings[m.awayTeam] = standings[m.awayTeam] || { pts: 0, gf: 0, ga: 0, gd: 0, played: 0 };
       }
 
       // Predict each match
       for (const match of groupMatches) {
         let prediction;
 
-        if (useDynamic) {
+        if (useEnhanced) {
+          // Use enhanced engine with data layer context
+          const homeForm = await getTeamFormCached(match.homeTeam);
+          const awayForm = await getTeamFormCached(match.awayTeam);
+
+          const homeContext: EnhancedPredictionContext = {
+            teamName: match.homeTeam,
+            venue: match.venue,
+            recentMatches: homeForm?.last5?.map(f => ({
+              opponent: f.opponent,
+              goalsFor: f.goalsFor,
+              goalsAgainst: f.goalsAgainst,
+              result: f.result,
+              date: f.date,
+            })),
+          };
+
+          const awayContext: EnhancedPredictionContext = {
+            teamName: match.awayTeam,
+            venue: match.venue,
+            recentMatches: awayForm?.last5?.map(f => ({
+              opponent: f.opponent,
+              goalsFor: f.goalsFor,
+              goalsAgainst: f.goalsAgainst,
+              result: f.result,
+              date: f.date,
+            })),
+          };
+
+          const enhanced = await calculateEnhancedPrediction(match.homeTeam, match.awayTeam, homeContext, awayContext);
+          prediction = {
+            homeWin: enhanced.homeWin,
+            draw: enhanced.draw,
+            awayWin: enhanced.awayWin,
+            homeGoals: enhanced.predictedScoreHome,
+            awayGoals: enhanced.predictedScoreAway,
+            confidence: enhanced.confidence,
+            homeXG: enhanced.homeExpectedGoals,
+            awayXG: enhanced.awayExpectedGoals,
+            dataQuality: enhanced.dataQualityScore,
+          };
+
+          // Also save prediction to data layer
+          try {
+            await db.savePrediction({
+              matchId: match.id,
+              homeWin: enhanced.homeWin,
+              draw: enhanced.draw,
+              awayWin: enhanced.awayWin,
+              mostLikelyScore: `${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`,
+              expectedGoalsHome: enhanced.homeExpectedGoals,
+              expectedGoalsAway: enhanced.awayExpectedGoals,
+              over25Probability: enhanced.over25Probability,
+              bttsProbability: enhanced.bttsProbability,
+              keyFactors: [],
+              confidence: enhanced.confidence,
+              dataQualityScore: enhanced.dataQualityScore,
+              modelVersion: '2.0',
+              homeAttack: enhanced.homeAttack,
+              homeDefense: enhanced.homeDefense,
+              homeMidfield: enhanced.homeMidfield,
+              awayAttack: enhanced.awayAttack,
+              awayDefense: enhanced.awayDefense,
+              awayMidfield: enhanced.awayMidfield,
+              homeElo: enhanced.homeElo,
+              awayElo: enhanced.awayElo,
+              topScores: enhanced.topScores,
+            });
+          } catch {
+            // Non-critical if save fails
+          }
+        } else if (useDynamic) {
           const dyn = predictMatchDynamic(match.homeTeam, match.awayTeam);
           prediction = {
             homeWin: dyn.homeWinPct,
@@ -81,11 +171,13 @@ export async function POST(request: NextRequest) {
           drawPct: prediction.draw,
           awayWinPct: prediction.awayWin,
           xG: [prediction.homeXG, prediction.awayXG],
+          dataQuality: prediction.dataQuality,
         });
 
         // Update standings
         const h = standings[match.homeTeam];
         const a = standings[match.awayTeam];
+        h.played++; a.played++;
         h.gf += prediction.homeGoals;
         h.ga += prediction.awayGoals;
         a.gf += prediction.awayGoals;
@@ -112,11 +204,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════
-    // PHASE 2: Predict knockout (simulate based on group results)
+    // PHASE 2: Predict knockout (TBD until group results)
     // ═══════════════════════════════════════════════════
 
-    // For now, use the tournament sim for knockout predictions
-    // This is a simplified version — full integration with tournament-sim.ts
     const knockoutMatches = ALL_MATCHES.filter(m => m.round !== 'group');
 
     for (const match of knockoutMatches) {
@@ -130,7 +220,7 @@ export async function POST(request: NextRequest) {
         homeTeam: match.homeTeam,
         awayTeam: match.awayTeam,
         round: match.round,
-        predictedScore: null, // TBD until group stage resolved
+        predictedScore: null,
         confidence: null,
         homeWinPct: null,
         drawPct: null,
@@ -147,12 +237,13 @@ export async function POST(request: NextRequest) {
       groupStageMatches: 72,
       knockoutMatches: fixture.length - 72,
       useDynamic,
+      useEnhanced,
       realResultsIngested: realResults.length,
       totalRealResults: getResultsCount(),
     });
 
   } catch (error) {
-    console.error('[fixture] Error:', error);
+    console.error('[fixture:v2] Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to generate fixture' },
       { status: 500 }

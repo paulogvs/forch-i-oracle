@@ -1,11 +1,18 @@
-// FORCH.i ORACLE — API Route: Match prediction
+// FORCH.i ORACLE — API Route: Match prediction (v2 with Data Layer)
+// Updated to use the data layer for caching predictions and the enhanced engine.
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrediction } from '@/lib/groq';
-import { getMatchContext } from '@/lib/football-api';
+import { getMatchContext, getComprehensiveTeamStats } from '@/lib/football-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
-import { calculateStatisticalPrediction, getKeyFactors, type RealTeamStats } from '@/lib/predictor-engine';
-import { getComprehensiveTeamStats } from '@/lib/football-api';
+import {
+  calculateStatisticalPrediction,
+  getKeyFactors,
+  type RealTeamStats,
+} from '@/lib/predictor-engine';
+import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
+import { getDataLayer } from '@/lib/data-layer';
 import type { Prediction } from '@/lib/groq';
 
 interface MatchContext {
@@ -54,10 +61,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check cache first
+    const db = getDataLayer();
+
+    // Check data layer cache first (Supabase or in-memory)
+    const matchInDb = await db.getMatchByTeams(homeTeam, awayTeam);
+    if (matchInDb) {
+      const cachedPred = await db.getPrediction(matchInDb.id);
+      if (cachedPred) {
+        console.log(`[predict:v2] DB cache hit for ${homeTeam} vs ${awayTeam}`);
+        return NextResponse.json({
+          success: true,
+          homeTeam,
+          awayTeam,
+          matchContext,
+          prediction: {
+            homeWin: cachedPred.homeWin,
+            draw: cachedPred.draw,
+            awayWin: cachedPred.awayWin,
+            predictedScoreHome: parseInt(cachedPred.mostLikelyScore.split('-')[0]),
+            predictedScoreAway: parseInt(cachedPred.mostLikelyScore.split('-')[1]),
+            confidence: cachedPred.confidence,
+            analysis: cachedPred.analysis || 'Análisis no disponible.',
+            keyFactors: cachedPred.keyFactors || [],
+            homeKeyPlayers: cachedPred.homeKeyPlayers || [],
+            awayKeyPlayers: cachedPred.awayKeyPlayers || [],
+            homeFormLast5: ['D', 'D', 'D', 'D', 'D'],
+            awayFormLast5: ['D', 'D', 'D', 'D', 'D'],
+            homeAttackStrength: cachedPred.homeAttack ?? 50,
+            awayAttackStrength: cachedPred.awayAttack ?? 50,
+            homeDefenseStrength: cachedPred.homeDefense ?? 50,
+            awayDefenseStrength: cachedPred.awayDefense ?? 50,
+            homeMidfieldStrength: cachedPred.homeMidfield ?? 50,
+            awayMidfieldStrength: cachedPred.awayMidfield ?? 50,
+          },
+          fromCache: true,
+          fromDb: true,
+          timestamp: cachedPred.predictedAt,
+          dataQuality: cachedPred.dataQualityScore,
+        });
+      }
+    }
+
+    // Check in-memory cache
     const cached = getCachedPrediction(homeTeam, awayTeam);
     if (cached) {
-      console.log(`[predict] Cache hit for ${homeTeam} vs ${awayTeam}`);
+      console.log(`[predict:v2] Memory cache hit for ${homeTeam} vs ${awayTeam}`);
       return NextResponse.json({
         success: true,
         homeTeam,
@@ -65,14 +113,49 @@ export async function POST(request: NextRequest) {
         matchContext,
         prediction: cached,
         fromCache: true,
+        fromDb: false,
         timestamp: new Date().toISOString(),
       });
     }
 
-    // 1. Calculate STATISTICAL prediction INSTANTLY (Poisson + Elo + xG) — 0ms
-    console.log(`[predict] Calculando predicción estadística para ${homeTeam} vs ${awayTeam}`);
+    // Build enhanced context
+    const homeForm = await db.getTeamForm(homeTeam);
+    const awayForm = await db.getTeamForm(awayTeam);
 
-    // 1b. Try to get REAL stats from API-Football (timeout 5s, non-blocking)
+    const homeContext: EnhancedPredictionContext = {
+      teamName: homeTeam,
+      venue: matchContext?.venue,
+      recentMatches: homeForm?.last5?.map(f => ({
+        opponent: f.opponent,
+        goalsFor: f.goalsFor,
+        goalsAgainst: f.goalsAgainst,
+        result: f.result,
+        date: f.date,
+      })),
+      daysSinceLastMatch: homeForm?.updatedAt
+        ? Math.floor((Date.now() - new Date(homeForm.updatedAt).getTime()) / 86400000)
+        : undefined,
+    };
+
+    const awayContext: EnhancedPredictionContext = {
+      teamName: awayTeam,
+      venue: matchContext?.venue,
+      recentMatches: awayForm?.last5?.map(f => ({
+        opponent: f.opponent,
+        goalsFor: f.goalsFor,
+        goalsAgainst: f.goalsAgainst,
+        result: f.result,
+        date: f.date,
+      })),
+      daysSinceLastMatch: awayForm?.updatedAt
+        ? Math.floor((Date.now() - new Date(awayForm.updatedAt).getTime()) / 86400000)
+        : undefined,
+    };
+
+    // Calculate enhanced prediction
+    console.log(`[predict:v2] Calculating enhanced prediction for ${homeTeam} vs ${awayTeam}`);
+
+    // Also get real stats from API-Football (non-blocking)
     let homeRealStats: RealTeamStats | undefined;
     let awayRealStats: RealTeamStats | undefined;
 
@@ -81,66 +164,52 @@ export async function POST(request: NextRequest) {
         getComprehensiveTeamStats(homeTeam),
         getComprehensiveTeamStats(awayTeam),
       ]);
-      if (homeStats) {
-        homeRealStats = homeStats;
-        console.log(`[predict] Real stats for ${homeTeam}: attack=${homeStats.attackStrength.toFixed(1)}, defense=${homeStats.defenseStrength.toFixed(1)}`);
-      }
-      if (awayStats) {
-        awayRealStats = awayStats;
-        console.log(`[predict] Real stats for ${awayTeam}: attack=${awayStats.attackStrength.toFixed(1)}, defense=${awayStats.defenseStrength.toFixed(1)}`);
-      }
-    } catch (err) {
-      console.warn('[predict] Could not fetch real stats, using Elo fallback:', err);
+      homeRealStats = homeStats || undefined;
+      awayRealStats = awayStats || undefined;
+    } catch {
+      // Ignore, use Elo fallback
     }
 
-    const stats = await calculateStatisticalPrediction(
+    // Base statistical prediction
+    const baseStats = await calculateStatisticalPrediction(
       homeTeam, awayTeam,
-      undefined, undefined, // form (will come from API-Football below)
-      undefined, undefined, // injuries (will come from API-Football below)
+      homeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined,
+      awayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined,
+      undefined, undefined,
       homeRealStats, awayRealStats
     );
 
-    // 2. Get real data context for Groq analysis (API-Football) — 5s timeout each
-    console.log(`[predict] Obteniendo contexto de API-Football (timeout 5s)`);
+    // Get API-Football context for Groq
     let contextData: string;
-    let homeForm: ('W' | 'D' | 'L')[] | undefined;
-    let awayForm: ('W' | 'D' | 'L')[] | undefined;
-    let homeInjuries: string[] | undefined;
-    let awayInjuries: string[] | undefined;
+    let homeInjuriesArr: string[] | undefined;
+    let awayInjuriesArr: string[] | undefined;
 
     try {
       contextData = await getMatchContext(homeTeam, awayTeam);
-      // Extract form and injuries from context for re-recalculating key factors
-      const contextMatch = contextData.match(/Forma reciente:\s*([WDL]*)/g);
-      if (contextMatch) {
-        homeForm = (contextMatch[0]?.match(/[WDL]/g) || []) as ('W' | 'D' | 'L')[];
-        awayForm = (contextMatch[1]?.match(/[WDL]/g) || []) as ('W' | 'D' | 'L')[];
-      }
-      const injuryMatch = contextData.match(/Lesiones conocidas:\s*(.+)/g);
-      if (injuryMatch) {
-        homeInjuries = injuryMatch[0]?.split(': ')[1]?.split(', ') || [];
-        awayInjuries = injuryMatch[1]?.split(': ')[1]?.split(', ') || [];
-      }
-    } catch (footballError) {
-      console.error('[predict] Football API error:', footballError);
+    } catch {
       contextData = `No hay datos en vivo disponibles para ${homeTeam} vs ${awayTeam}. Basado en conocimiento general.`;
     }
 
-    // 3. Calculate key factors based on statistical data
-    const keyFactors = getKeyFactors(stats, homeTeam, awayTeam, homeForm, awayForm, homeInjuries, awayInjuries);
+    // Enhanced prediction (uses base stats + adjustments)
+    const enhanced = await calculateEnhancedPrediction(
+      homeTeam, awayTeam,
+      homeContext, awayContext
+    );
 
-    // 4. Call Groq ONLY for the textual analysis (numbers are already calculated)
-    //    Timeout: 8s max. If it fails, we still have the stats.
-    console.log(`[predict] Llamando a Groq para análisis narrativo (timeout 8s)`);
+    // Key factors
+    const keyFactors = getKeyFactors(
+      enhanced,
+      homeTeam, awayTeam,
+      homeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined,
+      awayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined
+    );
+
+    // Groq analysis
     let groqAnalysis: { analysis: string; homeKeyPlayers: string[]; awayKeyPlayers: string[] } | null = null;
 
     try {
       const groqPrediction = await getPrediction(
-        homeTeam,
-        awayTeam,
-        contextData,
-        matchContext,
-        stats  // Pass calculated stats so Groq can write informed analysis
+        homeTeam, awayTeam, contextData, matchContext, enhanced
       );
       groqAnalysis = {
         analysis: groqPrediction.analysis,
@@ -149,54 +218,88 @@ export async function POST(request: NextRequest) {
       };
     } catch (groqError) {
       const groqMsg = groqError instanceof Error ? groqError.message : String(groqError);
-      console.warn(`[predict] Groq fallback: ${groqMsg}`);
-      // Fallback: use stats-based analysis
+      console.warn(`[predict:v2] Groq fallback: ${groqMsg}`);
       groqAnalysis = {
-        analysis: `Análisis estadístico: ${homeTeam} tiene ${stats.homeWin}% de probabilidad de victoria con un marcador más probable de ${stats.predictedScoreHome}-${stats.predictedScoreAway}. Goles esperados: ${homeTeam} ${stats.homeExpectedGoals} xG vs ${awayTeam} ${stats.awayExpectedGoals} xG. Confianza del modelo: ${stats.confidence}.`,
+        analysis: `Análisis estadístico: ${homeTeam} tiene ${enhanced.homeWin}% de probabilidad de victoria con un marcador más probable de ${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}. Goles esperados: ${homeTeam} ${enhanced.homeExpectedGoals} xG vs ${awayTeam} ${enhanced.awayExpectedGoals} xG. Confianza del modelo: ${enhanced.confidence}.`,
         homeKeyPlayers: [],
         awayKeyPlayers: [],
       };
     }
 
-    // 5. MERGE: statistical numbers + Groq text analysis (or fallback)
+    // Build prediction object
     const prediction: Prediction = {
-      homeWin: stats.homeWin,
-      draw: stats.draw,
-      awayWin: stats.awayWin,
-      predictedScoreHome: stats.predictedScoreHome,
-      predictedScoreAway: stats.predictedScoreAway,
-      confidence: stats.confidence,
-      analysis: groqAnalysis?.analysis || `Predicción estadística: ${homeTeam} ${stats.homeWin}% | Empate ${stats.draw}% | ${awayTeam} ${stats.awayWin}%`,
-      keyFactors,                          // Calculated from stats
+      homeWin: enhanced.homeWin,
+      draw: enhanced.draw,
+      awayWin: enhanced.awayWin,
+      predictedScoreHome: enhanced.predictedScoreHome,
+      predictedScoreAway: enhanced.predictedScoreAway,
+      confidence: enhanced.confidence,
+      analysis: groqAnalysis?.analysis || `Predicción estadística: ${homeTeam} ${enhanced.homeWin}% | Empate ${enhanced.draw}% | ${awayTeam} ${enhanced.awayWin}%`,
+      keyFactors,
       homeKeyPlayers: groqAnalysis?.homeKeyPlayers || [],
       awayKeyPlayers: groqAnalysis?.awayKeyPlayers || [],
-      homeFormLast5: homeForm || ['D', 'D', 'D', 'D', 'D'],
-      awayFormLast5: awayForm || ['D', 'D', 'D', 'D', 'D'],
-      homeAttackStrength: stats.homeAttack,
-      awayAttackStrength: stats.awayAttack,
-      homeDefenseStrength: stats.homeDefense,
-      awayDefenseStrength: stats.awayDefense,
-      homeMidfieldStrength: stats.homeMidfield,
-      awayMidfieldStrength: stats.awayMidfield,
+      homeFormLast5: homeForm?.last5?.map(f => f.result) || ['D', 'D', 'D', 'D', 'D'],
+      awayFormLast5: awayForm?.last5?.map(f => f.result) || ['D', 'D', 'D', 'D', 'D'],
+      homeAttackStrength: enhanced.homeAttack,
+      awayAttackStrength: enhanced.awayAttack,
+      homeDefenseStrength: enhanced.homeDefense,
+      awayDefenseStrength: enhanced.awayDefense,
+      homeMidfieldStrength: enhanced.homeMidfield,
+      awayMidfieldStrength: enhanced.awayMidfield,
     };
 
-    // Cache the result
+    // Save to data layer (if match exists)
+    if (matchInDb) {
+      try {
+        await db.savePrediction({
+          matchId: matchInDb.id,
+          homeWin: prediction.homeWin,
+          draw: prediction.draw,
+          awayWin: prediction.awayWin,
+          mostLikelyScore: `${prediction.predictedScoreHome}-${prediction.predictedScoreAway}`,
+          expectedGoalsHome: enhanced.homeExpectedGoals,
+          expectedGoalsAway: enhanced.awayExpectedGoals,
+          over25Probability: enhanced.over25Probability,
+          bttsProbability: enhanced.bttsProbability,
+          keyFactors: prediction.keyFactors,
+          confidence: prediction.confidence,
+          dataQualityScore: enhanced.dataQualityScore,
+          modelVersion: '2.0',
+          homeAttack: enhanced.homeAttack,
+          homeDefense: enhanced.homeDefense,
+          homeMidfield: enhanced.homeMidfield,
+          awayAttack: enhanced.awayAttack,
+          awayDefense: enhanced.awayDefense,
+          awayMidfield: enhanced.awayMidfield,
+          homeElo: enhanced.homeElo,
+          awayElo: enhanced.awayElo,
+          topScores: enhanced.topScores,
+          analysis: prediction.analysis,
+          homeKeyPlayers: prediction.homeKeyPlayers,
+          awayKeyPlayers: prediction.awayKeyPlayers,
+        });
+      } catch {
+        console.warn('[predict:v2] Could not save prediction to data layer');
+      }
+    }
+
+    // Also save to in-memory cache for fast access
     setCachedPrediction(homeTeam, awayTeam, prediction);
 
-    // 3. Return result
     return NextResponse.json({
       success: true,
       homeTeam,
       awayTeam,
       matchContext,
       prediction,
+      fromCache: false,
+      fromDb: false,
       timestamp: new Date().toISOString(),
+      dataQuality: enhanced.dataQualityScore,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('[predict] FALLO:', errorMsg);
-    if (errorStack) console.error('[predict] Stack:', errorStack);
+    console.error('[predict:v2] FALLO:', errorMsg);
 
     let userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
     let statusCode = 500;
@@ -204,21 +307,9 @@ export async function POST(request: NextRequest) {
     if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('GROQ_API_KEY') || errorMsg.includes('authentication') || errorMsg.includes('401')) {
       userMessage = 'Servicio no disponible temporalmente. Estamos trabajando en ello.';
       statusCode = 503;
-    } else if (errorMsg.includes('403') || errorMsg.includes('PERMISSION_DENIED')) {
-      userMessage = 'Servicio no disponible. Contacta al administrador.';
-      statusCode = 503;
     } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('rate limit')) {
       userMessage = 'Demasiadas solicitudes. Intenta de nuevo en un minuto.';
       statusCode = 429;
-    } else if (errorMsg.includes('SAFETY') || errorMsg.includes('blocked')) {
-      userMessage = 'Predicción bloqueada. Intenta con otros equipos.';
-      statusCode = 422;
-    } else if (errorMsg.includes('No se pudo analizar') || errorMsg.includes('LLM_PARSE_ERROR')) {
-      userMessage = 'Respuesta inválida del servicio. Intenta de nuevo.';
-      statusCode = 502;
-    } else if (errorMsg.includes('fetch') || errorMsg.includes('ENOTFOUND') || errorMsg.includes('ECONNREFUSED')) {
-      userMessage = 'Error de conexión con el servicio. Intenta de nuevo.';
-      statusCode = 503;
     }
 
     return NextResponse.json(

@@ -1,30 +1,58 @@
-// FORCH.i ORACLE — API Route: Simulate entire tournament
-// Usa el motor estadístico real (Poisson + Elo + xG)
+// FORCH.i ORACLE — API Route: Simulate entire tournament (v2 with Data Layer)
+// Uses the data layer for persisting real results and champion probabilities.
 import { NextRequest, NextResponse } from 'next/server';
 import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
-
-// In-memory cache for real results
-const realResults = new Map<string, RealMatchResult>();
+import { getDataLayer } from '@/lib/data-layer';
 
 export async function POST(request: NextRequest) {
   try {
+    const db = getDataLayer();
     const body = await request.json().catch(() => ({}));
     const submittedResults: RealMatchResult[] = body.results || [];
 
-    // Store any submitted real results
+    // Store any submitted real results in the data layer
     for (const r of submittedResults) {
-      realResults.set(r.matchId, r);
+      await db.submitMatchResult({
+        matchId: r.matchId,
+        homeScore: r.homeScore,
+        awayScore: r.awayScore,
+        winner: r.winner,
+      });
     }
 
-    const resultsArray = Array.from(realResults.values());
+    // Get all real results from data layer
+    const storedResults = await db.getMatchResults();
+    const simResults: RealMatchResult[] = storedResults.map(r => ({
+      matchId: r.matchId,
+      homeScore: r.homeScore,
+      awayScore: r.awayScore,
+      winner: r.winner,
+    }));
 
-    console.log(`[tournament] Multi-simulating with ${resultsArray.length} real results...`);
+    console.log(`[tournament:v2] Multi-simulating with ${simResults.length} real results...`);
 
     const result = await simulateTournamentMulti(
-      100, // 100 simulaciones para probabilidad estable
-      resultsArray,
-      (msg) => console.log(`[tournament] ${msg}`)
+      100,
+      simResults,
+      (msg) => console.log(`[tournament:v2] ${msg}`)
     );
+
+    // Save champion probabilities to data layer
+    if (result.top8.length > 0) {
+      const probs = result.top8.map(entry => ({
+        teamId: entry.team,
+        championProb: entry.pct,
+        simulationsCount: entry.wins,
+        totalSimulations: result.totalSims,
+      }));
+
+      try {
+        await db.saveTournamentProbs(probs);
+        console.log(`[tournament:v2] Saved ${probs.length} champion probabilities`);
+      } catch {
+        console.warn('[tournament:v2] Could not save champion probabilities');
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -32,11 +60,11 @@ export async function POST(request: NextRequest) {
       top8: result.top8,
       totalSims: result.totalSims,
       fromCache: false,
-      realResultsCount: resultsArray.length,
+      realResultsCount: simResults.length,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error('[tournament] Simulation failed:', errorMsg);
+    console.error('[tournament:v2] Simulation failed:', errorMsg);
 
     return NextResponse.json(
       {
@@ -51,6 +79,7 @@ export async function POST(request: NextRequest) {
 /** Submit a real match result */
 export async function PUT(request: NextRequest) {
   try {
+    const db = getDataLayer();
     const body = await request.json();
     const { matchId, homeScore, awayScore } = body as {
       matchId: string;
@@ -67,21 +96,19 @@ export async function PUT(request: NextRequest) {
 
     const winner = homeScore > awayScore ? 'home' : awayScore > homeScore ? 'away' : 'draw';
 
-    // Find the team names from matchId
-    // MatchId format: A1, B3, R32-1, etc.
-    const result: RealMatchResult = {
+    await db.submitMatchResult({
       matchId,
       homeScore,
       awayScore,
       winner,
-    };
+    });
 
-    realResults.set(matchId, result);
+    const totalResults = (await db.getMatchResults()).length;
 
     return NextResponse.json({
       success: true,
       message: `Resultado guardado: ${matchId} ${homeScore}-${awayScore}`,
-      totalResults: realResults.size,
+      totalResults,
     });
   } catch (error) {
     return NextResponse.json(
@@ -93,15 +120,39 @@ export async function PUT(request: NextRequest) {
 
 /** Get all stored real results */
 export async function GET() {
-  return NextResponse.json({
-    success: true,
-    results: Array.from(realResults.values()),
-    total: realResults.size,
-  });
+  try {
+    const db = getDataLayer();
+    const results = await db.getMatchResults();
+
+    // Also get tournament probabilities
+    const probs = await db.getTournamentProbs();
+
+    return NextResponse.json({
+      success: true,
+      results,
+      total: results.length,
+      championProbs: probs,
+    });
+  } catch {
+    return NextResponse.json({
+      success: true,
+      results: [],
+      total: 0,
+      championProbs: [],
+    });
+  }
 }
 
 /** Clear all stored results */
 export async function DELETE() {
-  realResults.clear();
-  return NextResponse.json({ success: true, message: 'Resultados eliminados' });
+  try {
+    const db = getDataLayer();
+    await db.clearMatchResults();
+    return NextResponse.json({ success: true, message: 'Resultados eliminados' });
+  } catch {
+    return NextResponse.json(
+      { error: 'Error eliminando resultados' },
+      { status: 500 }
+    );
+  }
 }

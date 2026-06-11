@@ -29,8 +29,34 @@
     "app/api/simulate-tournament/route.ts": {
       "maxDuration": 120,
       "memory": 1024
+    },
+    "app/api/cron/ingest/route.ts": {
+      "maxDuration": 60,
+      "memory": 512
+    },
+    "app/api/cron/recalculate/route.ts": {
+      "maxDuration": 120,
+      "memory": 1024
+    },
+    "app/api/cron/simulate/route.ts": {
+      "maxDuration": 300,
+      "memory": 1024
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/ingest?secret=${CRON_SECRET}",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/recalculate?secret=${CRON_SECRET}",
+      "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/simulate?secret=${CRON_SECRET}",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/sitemap.xml",

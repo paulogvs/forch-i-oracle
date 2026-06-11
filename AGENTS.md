@@ -5,28 +5,84 @@
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS 3.4
 - **AI:** Groq Llama 3.3 70B
-- **Data:** API-Football (free tier)
+- **Data:** API-Football (free tier) + Supabase (PostgreSQL, optional)
 
 ## Scripts
 - `npm run dev` — Development server
 - `npm run build` — Production build
 - `npm start` — Production server
+- `npx tsx scripts/seed-supabase.ts` — Seed Supabase database
 
-## Components
-- `MatchSelector.tsx` — WC2026 match picker (groups A-L)
-- `TeamSelector.tsx` — Manual team dropdown
-- `ResultCard.tsx` — Prediction display
+## Architecture
+
+### Data Layer (Abstraction)
+- `lib/data-layer/` — Pluggable data layer (in-memory ↔ Supabase)
+  - `interface.ts` — IDataLayer interface (contract)
+  - `in-memory.ts` — In-memory implementation (default, auto-seeds)
+  - `supabase.ts` — Supabase PostgreSQL implementation
+  - `index.ts` — Factory (auto-selects based on env vars)
+  - `types.ts` — Shared TypeScript types
+
+### Prediction Engines
+- `lib/predictor-engine.ts` — Core Poisson + Elo + xG engine (v1, stable)
+- `lib/prediction-store.ts` — Bayesian-updating living engine
+- `lib/enhanced-engine.ts` — Enhanced engine (v2) with:
+  - xG ajustado por competición
+  - Momentum con pesos exponenciales
+  - Fatiga (días entre partidos)
+  - Home advantage realista WC2026
+  - Impacto de lesiones ponderado
+  - H2H histórico ponderado
+  - Data quality scoring
+
+### Cron Jobs (Vercel Cron)
+- `/api/cron/ingest` — Ingesta de datos (cada 6h)
+- `/api/cron/recalculate` — Recalcular predicciones (cada 12h)
+- `/api/cron/simulate` — Simulación de torneo (diario)
+- `/api/cron/status` — Status de todos los jobs
+
+### API Routes
+- `POST /api/predict` — Single match prediction (v2, uses data layer)
+- `POST /api/simulate-tournament` — Full tournament simulation (persisted)
+- `POST /api/fixture` — All 128 match predictions (enhanced engine)
+- `POST /api/match-result` — Submit real result → cascade update
+- `GET /api/predictions/all` — All pre-calculated predictions
+- `GET /api/prediction/[matchId]` — Single pre-calculated prediction
+
+## Components (17 total)
+- `MatchSelector.tsx` — WC2026 match picker (groups A-L + knockout tabs)
+- `TeamSelector.tsx` — Manual team dropdown with search
+- `ResultCard.tsx` — Prediction display with expandable tabs
+- `LensConsensus.tsx` — 5-lens analysis consensus
+- `FixtureView.tsx` — Tabbed fixture viewer (grupos → finales)
+- `BracketPhase.tsx` / `BracketMatch.tsx` — Knockout bracket display
+- `GroupCard.tsx` / `GroupTable.tsx` / `SimGroupStandings.tsx` — Group standings
+- `Top8Ranking.tsx` — Champion probability ranking
+- `ChampionPodium.tsx` / `ChampionReveal.tsx` — Champion reveal
+- `KeyFactors.tsx` / `ConfidenceMeter.tsx` / `ComparisonBars.tsx` / `FormBubbles.tsx` — Stats viz
 
 ## Data Files
-- `lib/matches.ts` — 72 WC2026 group stage matches
-- `lib/teams.ts` — 48 World Cup teams
+- `lib/matches.ts` — 128 WC2026 matches (72 group + 56 knockout)
+- `lib/teams.ts` — 48 World Cup teams with Elo, power ratings, star players
+- `lib/venues.ts` — 16 WC2026 venues with altitude data
+- `lib/h2h.ts` — 50+ historical head-to-head records
 
 ## Conventions
 - Use `'use client'` for interactive components
 - Lazy-initialize API clients (don't evaluate at module level)
-- Use FORCH.i gold (#D4AF37) for accents
+- Use FORCH.i gold (#C9A227) for accents
 - Include "Built with FORCH.i by Paulo Velasco" badge
+- Data layer: always use `getDataLayer()` — don't import implementations directly
+- Enhanced engine: prefer `calculateEnhancedPrediction` over base engine for new features
+- All predictions: numbers from math/stats, text from Groq (Groq never invents numbers)
 
 ## API Keys Required
 - `GROQ_API_KEY` — Groq Console (https://console.groq.com/keys)
-- `FOOTBALL_API_KEY` — API-Football
+- `FOOTBALL_API_KEY` — API-Football (https://www.api-football.com/)
+
+## Optional (for persistent pipeline)
+- `SUPABASE_URL` — Supabase project URL
+- `SUPABASE_SERVICE_KEY` — Supabase service_role key (NOT anon)
+- `CRON_SECRET` — Secret for protecting cron endpoints
+
+See `SUPABASE_SETUP.md` for database setup instructions.

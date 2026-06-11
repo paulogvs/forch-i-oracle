@@ -1,6 +1,6 @@
 ---
 name: tournament-bracket-simulation
-description: Pattern for building full tournament bracket simulators that predict every match from group stage to final using AI, with animated UI and caching
+description: Pattern for building full tournament bracket simulators that predict every match from group stage to final using AI, with animated UI, tab-based navigation, and premium WC2026 design system
 source: auto-skill
 extracted_at: '2026-06-09T18:58:41.297Z'
 ---
@@ -468,6 +468,223 @@ return NextResponse.json({
 - 10-20: Too noisy — random variance dominates
 - 100: Stable enough for top-4, good for 100-run in <30s with Poisson model
 - 1000: More precise but slow — only needed for production-grade accuracy
+
+## 13. WC2026 Premium Design System
+
+**Color palette** — Use official World Cup 2026 colors, not generic grays:
+
+```css
+:root {
+  --wc-navy: #0A1628;        /* Primary background */
+  --wc-navy-light: #132238;  /* Card background */
+  --wc-blue: #0066FF;        /* Primary action color */
+  --wc-blue-glow: #3388FF;   /* Hover/glow state */
+  --wc-amber: #FF8C42;       /* Accent/highlight */
+  --wc-silver: #8899AA;      /* Muted text */
+  --wc-gold: #C9A227;        /* Champion/winner highlight */
+  --wc-field: #1A472A;       /* Football field green */
+}
+```
+
+**Tailwind config:**
+
+```ts
+// tailwind.config.ts
+const config: Config = {
+  theme: {
+    extend: {
+      colors: {
+        wc: {
+          navy: '#0A1628', 'navy-light': '#132238',
+          blue: '#0066FF', 'blue-glow': '#3388FF',
+          amber: '#FF8C42', silver: '#8899AA',
+          gold: '#C9A227', field: '#1A472A', white: '#FFFFFF',
+        },
+      },
+    },
+  },
+};
+```
+
+**Background mesh gradient** (animated):
+
+```css
+.bg-mesh::before {
+  content: '';
+  position: absolute;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(0, 102, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(201, 162, 39, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(255, 140, 66, 0.05) 0%, transparent 60%);
+  animation: meshFloat 20s ease-in-out infinite;
+}
+```
+
+**Key visual elements:**
+
+| Element | Style |
+|---------|-------|
+| Glass card | `backdrop-filter: blur(20px)`, border `rgba(255,255,255,0.08)`, hover lifts +2px |
+| Score badge | Blue gradient for normal, gold gradient for winners |
+| Tab pill | Underline highlight (`border-bottom-color: var(--wc-blue)`) |
+| Button | Gradient blue with `box-shadow: 0 4px 16px rgba(0,102,255,0.3)`, gold variant for CTA |
+| Champion podium | Gold gradient border + shimmer animation overlay |
+| Animations | `fadeIn`, `slideUp`, `pulseGlow`, `shimmer`, `bounceSubtle` |
+
+**Sticky header with tabs:**
+
+```tsx
+<div className="sticky top-0 z-50 bg-wc-navy/90 backdrop-blur-xl border-b border-white/5">
+  <div className="flex overflow-x-auto px-2">
+    {TABS.map(tab => <button className={`tab-pill ${activeTab === tab.id ? 'active' : ''}`} />)}
+  </div>
+</div>
+```
+
+**Responsive grid for group cards:**
+
+```tsx
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+```
+
+## 14. Bracket Match Card Component
+
+Compact card for displaying simulated knockout matches:
+
+```tsx
+function BracketMatchCard({ match, delay }) {
+  return (
+    <div className="glass-card p-3 animate-fade-in" style={{ animationDelay: `${delay}ms` }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] text-wc-silver">{match.roundLabel}</span>
+        {match.winner !== 'TBD' && <span className="text-[10px] text-wc-gold">Finalizado</span>}
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className={match.winner === match.homeTeam ? 'text-wc-gold font-bold' : 'text-white/80'}>
+            {match.homeTeam}
+          </span>
+          <span className={`score-badge ${match.winner === match.homeTeam ? 'gold' : ''}`}>
+            {match.homeScore ?? '-'}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={match.winner === match.awayTeam ? 'text-wc-gold font-bold' : 'text-white/80'}>
+            {match.awayTeam}
+          </span>
+          <span className={`score-badge ${match.winner === match.awayTeam ? 'gold' : ''}`}>
+            {match.awayScore ?? '-'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+## 15. Group Card Component
+
+Compact standings card with qualified highlight:
+
+```tsx
+function GroupCard({ group }) {
+  return (
+    <div className="glass-card overflow-hidden">
+      <div className="bg-gradient-to-r from-wc-blue/20 to-wc-amber/20 px-4 py-2.5 border-b border-white/5">
+        <h3 className="text-sm font-bold text-white text-center">GRUPO {group.group}</h3>
+      </div>
+      <div className="p-3">
+        <div className="grid grid-cols-5 text-[9px] text-wc-silver uppercase mb-1.5">
+          <span className="col-span-2">Equipo</span>
+          <span className="text-center">PJ</span>
+          <span className="text-center">DG</span>
+          <span className="text-center">Pts</span>
+        </div>
+        {group.teams.map((team, i) => {
+          const isQualified = i < 2 || (i < 4 && team.points >= 4);
+          return (
+            <div className={`grid grid-cols-5 py-1.5 px-1 rounded-lg ${isQualified ? 'bg-wc-blue/5' : ''}`}>
+              <div className="col-span-2 flex items-center gap-2">
+                <span>{team.flag}</span>
+                <span className="text-xs truncate">{team.name}</span>
+              </div>
+              <span className="text-center text-xs font-mono">{team.played}</span>
+              <span className={`text-center text-xs font-mono ${team.goalDiff > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {team.goalDiff > 0 ? '+' : ''}{team.goalDiff}
+              </span>
+              <span className="text-center text-xs font-bold text-wc-gold">{team.points}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+```
+
+## 16. Analytical Engine Improvements — Altitude + H2H
+
+Modern prediction engines should include these two critical factors:
+
+### Altitude Adjustment
+
+Teams not acclimated to altitude suffer performance reduction. Create a venue database:
+
+```ts
+// lib/venues.ts
+export const WC2026_VENUES: Record<string, Venue> = {
+  'Estadio Azteca': { altitudeM: 2200, category: 'high' },
+  'Estadio Akron': { altitudeM: 1560, category: 'moderate' },
+  // 13 USA/Canada venues at sea level (3-320m)
+};
+
+export function getAltitudeFactor(team: string, venue: string): number {
+  // Non-acclimated teams at 2200m: 0.85x (15% reduction)
+  // CONCACAF teams: 0.92x (partial acclimation)
+  // Acclimated teams (Mexico, Ecuador, Colombia): 1.05-1.08x (bonus)
+  // Sea level venues: 1.0x (no effect)
+}
+```
+
+**Integration into predictor:**
+```ts
+homeLambda *= getAltitudeFactor(homeTeam, venueName);
+awayLambda *= getAltitudeFactor(awayTeam, venueName);
+```
+
+### H2H Correlation Engine
+
+Pre-compute historical rivalry data for 50+ classic matchups:
+
+```ts
+// lib/h2h.ts
+const H2H_DATABASE: Record<string, { wA: number; d: number; wB: number; gA: number; gB: number }> = {
+  'Argentina_vs_Brasil': { wA: 28, d: 23, wB: 27, gA: 110, gB: 115 },
+  // ...
+};
+
+export function computeH2H(teamA: string, teamB: string, eloDiff: number = 0): H2HAdvantage {
+  // If data exists: compute win rate differential → factor 0.85-1.15
+  // If no data: fallback to Elo-based estimate (0.9-1.1)
+}
+```
+
+**Integration:**
+```ts
+const h2h = computeH2H(homeTeam, awayTeam, eloDiff);
+homeLambda *= h2h.factor;
+awayLambda *= (2 - h2h.factor); // Inverted for away team
+```
+
+**Updated prediction pipeline:**
+```
+1. Baseline: Poisson + Elo + xG
+2. Form adjustment
+3. Altitude factor (venue-specific)
+4. H2H correlation (historical rivalry)
+5. Clamp to realistic range (0.3 - 4.0 goals)
+6. Poisson probability matrix
+```
 
 ## Gotchas
 
