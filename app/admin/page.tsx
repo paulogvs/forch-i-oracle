@@ -1,12 +1,11 @@
 // FORCH.i ORACLE — Admin Dashboard
 // Manage cron jobs, view system status, and trigger manual operations.
 // Route: /admin
+// Security: CRON_SECRET is entered manually, never embedded in client code.
 
 'use client';
 
 import { useState, useCallback } from 'react';
-
-const CRON_SECRET = process.env.NEXT_PUBLIC_CRON_SECRET || '';
 
 interface CronStatus {
   jobName: string;
@@ -36,6 +35,7 @@ const JOB_ENDPOINTS: Record<string, string> = {
 };
 
 export default function AdminPage() {
+  const [secret, setSecret] = useState('');
   const [statuses, setStatuses] = useState<Record<string, CronStatus | null>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, JobResult | null>>({});
@@ -43,8 +43,8 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
-    if (!CRON_SECRET) {
-      setError('CRON_SECRET no configurado. Agrega NEXT_PUBLIC_CRON_SECRET a .env.local');
+    if (!secret) {
+      setError('Ingresa el CRON_SECRET para continuar');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function AdminPage() {
     setError(null);
 
     try {
-      const res = await fetch(`/api/cron/status?secret=${CRON_SECRET}`);
+      const res = await fetch(`/api/cron/status?secret=${encodeURIComponent(secret)}`);
       const data = await res.json();
 
       if (data.success) {
@@ -65,11 +65,11 @@ export default function AdminPage() {
     } finally {
       setGlobalLoading(false);
     }
-  }, []);
+  }, [secret]);
 
   const triggerJob = async (jobName: string) => {
-    if (!CRON_SECRET) {
-      setError('CRON_SECRET no configurado');
+    if (!secret) {
+      setError('Ingresa el CRON_SECRET para continuar');
       return;
     }
 
@@ -77,7 +77,7 @@ export default function AdminPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${JOB_ENDPOINTS[jobName]}?secret=${CRON_SECRET}`);
+      const res = await fetch(`${JOB_ENDPOINTS[jobName]}?secret=${encodeURIComponent(secret)}`);
       const data = await res.json();
 
       setResults(prev => ({ ...prev, [jobName]: data }));
@@ -136,6 +136,27 @@ export default function AdminPage() {
           </p>
         </div>
 
+        {/* Secret Input */}
+        <div className="glass-card p-6 mb-6">
+          <h2 className="text-xl font-semibold text-wc-white mb-4">🔐 Autenticación</h2>
+          <div className="flex gap-3">
+            <input
+              type="password"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              placeholder="CRON_SECRET"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-forch-gold/50"
+            />
+            <button
+              onClick={fetchStatus}
+              disabled={globalLoading || !secret}
+              className="btn-premium px-4 py-2 text-sm disabled:opacity-50"
+            >
+              {globalLoading ? '⏳ Cargando...' : '📊 Ver Status'}
+            </button>
+          </div>
+        </div>
+
         {/* Error */}
         {error && (
           <div className="glass-card border-l-4 border-red-500 p-4 mb-6">
@@ -148,15 +169,8 @@ export default function AdminPage() {
           <h2 className="text-xl font-semibold text-wc-white mb-4">Acciones Rápidas</h2>
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={fetchStatus}
-              disabled={globalLoading}
-              className="btn-premium px-4 py-2 text-sm disabled:opacity-50"
-            >
-              {globalLoading ? '⏳ Cargando...' : '📊 Ver Status'}
-            </button>
-            <button
               onClick={triggerAll}
-              disabled={globalLoading}
+              disabled={globalLoading || !secret}
               className="px-4 py-2 text-sm bg-gradient-to-r from-forch-green to-emerald-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               🚀 Ejecutar Todo
@@ -179,7 +193,7 @@ export default function AdminPage() {
                     <h3 className="text-lg font-medium text-wc-white">{label}</h3>
                     <button
                       onClick={() => triggerJob(jobName)}
-                      disabled={isLoading}
+                      disabled={isLoading || !secret}
                       className="px-3 py-1.5 text-xs bg-wc-blue/20 text-wc-blue rounded hover:bg-wc-blue/30 transition-colors disabled:opacity-50"
                     >
                       {isLoading ? '⏳ Ejecutando...' : '▶ Ejecutar'}

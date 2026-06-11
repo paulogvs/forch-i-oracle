@@ -118,6 +118,19 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
           <span>{awayTeam} {prediction.awayWin}%</span>
         </div>
 
+        {/* xG / Over 2.5 / BTTS */}
+        {(prediction.homeExpectedGoals > 0 || prediction.awayExpectedGoals > 0) && (
+          <div className="flex items-center justify-center gap-4 mb-4 text-[11px] text-gray-400">
+            <span>xG <span className="text-white font-bold">{prediction.homeExpectedGoals.toFixed(2)}</span> — <span className="text-white font-bold">{prediction.awayExpectedGoals.toFixed(2)}</span></span>
+            {prediction.over25Probability > 0 && (
+              <span>Over 2.5 <span className="text-forch-gold font-bold">{prediction.over25Probability}%</span></span>
+            )}
+            {prediction.bttsProbability > 0 && (
+              <span>BTTS <span className="text-forch-gold font-bold">{prediction.bttsProbability}%</span></span>
+            )}
+          </div>
+        )}
+
         {/* Key Factors (inline, compact) */}
         {prediction.keyFactors.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">

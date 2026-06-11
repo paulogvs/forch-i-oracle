@@ -3,14 +3,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrediction } from '@/lib/groq';
-import { getMatchContext, getComprehensiveTeamStats } from '@/lib/football-api';
+import { getMatchContext } from '@/lib/football-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
-import {
-  calculateStatisticalPrediction,
-  getKeyFactors,
-  type RealTeamStats,
-} from '@/lib/predictor-engine';
+import { getKeyFactors } from '@/lib/predictor-engine';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
 import { getDataLayer } from '@/lib/data-layer';
 import { DEFAULT_FORM } from '@/lib/teams';
@@ -69,7 +65,6 @@ export async function POST(request: NextRequest) {
     if (matchInDb) {
       const cachedPred = await db.getPrediction(matchInDb.id);
       if (cachedPred) {
-        console.log(`[predict:v2] DB cache hit for ${homeTeam} vs ${awayTeam}`);
         return NextResponse.json({
           success: true,
           homeTeam,
@@ -94,6 +89,11 @@ export async function POST(request: NextRequest) {
             awayDefenseStrength: cachedPred.awayDefense ?? 50,
             homeMidfieldStrength: cachedPred.homeMidfield ?? 50,
             awayMidfieldStrength: cachedPred.awayMidfield ?? 50,
+            homeExpectedGoals: cachedPred.expectedGoalsHome ?? 0,
+            awayExpectedGoals: cachedPred.expectedGoalsAway ?? 0,
+            over25Probability: cachedPred.over25Probability ?? 0,
+            bttsProbability: cachedPred.bttsProbability ?? 0,
+            topScores: cachedPred.topScores ?? [],
           },
           fromCache: true,
           fromDb: true,
@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
     // Check in-memory cache
     const cached = getCachedPrediction(homeTeam, awayTeam);
     if (cached) {
-      console.log(`[predict:v2] Memory cache hit for ${homeTeam} vs ${awayTeam}`);
       return NextResponse.json({
         success: true,
         homeTeam,
@@ -152,33 +151,6 @@ export async function POST(request: NextRequest) {
         ? Math.floor((Date.now() - new Date(awayForm.updatedAt).getTime()) / 86400000)
         : undefined,
     };
-
-    // Calculate enhanced prediction
-    console.log(`[predict:v2] Calculating enhanced prediction for ${homeTeam} vs ${awayTeam}`);
-
-    // Also get real stats from API-Football (non-blocking)
-    let homeRealStats: RealTeamStats | undefined;
-    let awayRealStats: RealTeamStats | undefined;
-
-    try {
-      const [homeStats, awayStats] = await Promise.all([
-        getComprehensiveTeamStats(homeTeam),
-        getComprehensiveTeamStats(awayTeam),
-      ]);
-      homeRealStats = homeStats || undefined;
-      awayRealStats = awayStats || undefined;
-    } catch {
-      // Ignore, use Elo fallback
-    }
-
-    // Base statistical prediction
-    const baseStats = await calculateStatisticalPrediction(
-      homeTeam, awayTeam,
-      homeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined,
-      awayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined,
-      undefined, undefined,
-      homeRealStats, awayRealStats
-    );
 
     // Get API-Football context for Groq
     let contextData: string;
@@ -247,6 +219,11 @@ export async function POST(request: NextRequest) {
       awayDefenseStrength: enhanced.awayDefense,
       homeMidfieldStrength: enhanced.homeMidfield,
       awayMidfieldStrength: enhanced.awayMidfield,
+      homeExpectedGoals: enhanced.homeExpectedGoals,
+      awayExpectedGoals: enhanced.awayExpectedGoals,
+      over25Probability: enhanced.over25Probability,
+      bttsProbability: enhanced.bttsProbability,
+      topScores: enhanced.topScores,
     };
 
     // Save to data layer (if match exists)

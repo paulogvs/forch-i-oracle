@@ -92,6 +92,11 @@ export interface Prediction {
   awayDefenseStrength: number;
   homeMidfieldStrength: number;
   awayMidfieldStrength: number;
+  homeExpectedGoals: number;
+  awayExpectedGoals: number;
+  over25Probability: number;
+  bttsProbability: number;
+  topScores: { home: number; away: number; probability: number }[];
 }
 
 interface MatchContext {
@@ -259,6 +264,11 @@ export function validatePrediction(parsed: Record<string, unknown>, source: stri
     awayDefenseStrength: clampRange(parsed.awayDefenseStrength, 0, 100, 50),
     homeMidfieldStrength: clampRange(parsed.homeMidfieldStrength, 0, 100, 50),
     awayMidfieldStrength: clampRange(parsed.awayMidfieldStrength, 0, 100, 50),
+    homeExpectedGoals: 0,
+    awayExpectedGoals: 0,
+    over25Probability: 0,
+    bttsProbability: 0,
+    topScores: [],
   };
 }
 
@@ -409,6 +419,11 @@ IMPORTANTE: Responde ÚNICAMENTE con este formato JSON:
       awayDefenseStrength: 50,
       homeMidfieldStrength: 50,
       awayMidfieldStrength: 50,
+      homeExpectedGoals: 0,
+      awayExpectedGoals: 0,
+      over25Probability: 0,
+      bttsProbability: 0,
+      topScores: [],
     };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

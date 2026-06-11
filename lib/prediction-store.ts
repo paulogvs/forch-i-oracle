@@ -7,8 +7,7 @@
 // 3. Form decay: Recent matches weigh more (exponential decay)
 // 4. xG tracking: Expected goals vs actual to identify over/under-performers
 
-import { getTeamEnglishName, ELO_RATINGS } from './teams';
-import { POWER_RATINGS } from './teams';
+import { ELO_RATINGS } from './teams';
 
 // ═══════════════════════════════════════════════════════════════
 // DATA TYPES

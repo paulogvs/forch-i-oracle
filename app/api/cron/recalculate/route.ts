@@ -6,18 +6,13 @@
 import { NextResponse } from 'next/server';
 import { getDataLayer } from '@/lib/data-layer';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
-import { calculateStatisticalPrediction, getKeyFactors } from '@/lib/predictor-engine';
+import { getKeyFactors } from '@/lib/predictor-engine';
 import { getPrediction as getGroqPrediction } from '@/lib/groq';
-
-const CRON_SECRET = process.env.CRON_SECRET || 'forchi-cron-secret-2026';
+import { validateCronAuth } from '@/lib/cron-auth';
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  const urlParam = new URL(request.url).searchParams.get('secret');
-
-  if (authHeader !== `Bearer ${CRON_SECRET}` && urlParam !== CRON_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const unauthorized = validateCronAuth(request);
+  if (unauthorized) return unauthorized;
 
   const startTime = Date.now();
   const db = getDataLayer();

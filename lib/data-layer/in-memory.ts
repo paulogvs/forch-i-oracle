@@ -71,7 +71,7 @@ function ensureInitialized(): void {
       matchTime: m.time,
       venue: m.venue,
       city: m.city,
-      status: m.isTBD ? 'scheduled' : 'scheduled',
+      status: 'scheduled',
       createdAt: new Date().toISOString(),
     });
   }

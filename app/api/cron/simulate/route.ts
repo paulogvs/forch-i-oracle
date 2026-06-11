@@ -6,17 +6,13 @@
 import { NextResponse } from 'next/server';
 import { getDataLayer } from '@/lib/data-layer';
 import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
+import { validateCronAuth } from '@/lib/cron-auth';
 
-const CRON_SECRET = process.env.CRON_SECRET || 'forchi-cron-secret-2026';
 const NUM_SIMULATIONS = 100;
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  const urlParam = new URL(request.url).searchParams.get('secret');
-
-  if (authHeader !== `Bearer ${CRON_SECRET}` && urlParam !== CRON_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const unauthorized = validateCronAuth(request);
+  if (unauthorized) return unauthorized;
 
   const startTime = Date.now();
   const db = getDataLayer();

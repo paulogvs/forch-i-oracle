@@ -9,7 +9,6 @@
 
 import { getAltitudeFactor } from './venues';
 import { computeH2H } from './h2h';
-import { getComprehensiveTeamStats, type RealTeamStats } from './football-api';
 
 // ═══════════════════════════════════════════════════════════════
 // COMPETITION-ADJUSTED xG
