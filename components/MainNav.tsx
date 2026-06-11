@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/', icon: '📊', label: 'Dashboard' },
   { href: '/fixture', icon: '⚡', label: 'Predicción' },
   { href: '/live', icon: '📈', label: 'En Vivo' },
+  { href: '/torneo', icon: '🏆', label: 'Simulador' },
   { href: '/benchmark', icon: '🤖', label: 'Benchmark' },
 ];
 

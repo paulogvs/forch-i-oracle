@@ -32,6 +32,7 @@ export default function LivePage() {
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>('all');
   const [matches, setMatches] = useState<LiveMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [liveStandings, setLiveStandings] = useState<Record<string, any[]>>({});
   const [liveBracket, setLiveBracket] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
@@ -45,6 +46,7 @@ export default function LivePage() {
 
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [fixtureRes, liveRes] = await Promise.all([
         fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ useEnhanced: true }) }),
@@ -54,9 +56,25 @@ export default function LivePage() {
       const fixtureData = await fixtureRes.json();
       const liveData = await liveRes.json();
 
+      if (!fixtureData.success) throw new Error(fixtureData.error || 'Error cargando pronósticos');
+      if (!liveData.success) throw new Error(liveData.error || 'Error cargando datos en vivo');
+
+      // Build match results map from live standings
+      // We need to get actual match results — extract from the API
+      const realResultsMap = new Map<string, { home: number; away: number }>();
+
+      // Get played match results from simulate-tournament endpoint which includes results
+      const simRes = await fetch('/api/simulate-tournament');
+      const simData = await simRes.json();
+      if (simData.success && simData.results) {
+        for (const r of simData.results) {
+          realResultsMap.set(r.matchId, { home: r.homeScore, away: r.awayScore });
+        }
+      }
+
       // Build live matches from fixture predictions + real results
       const predMap = new Map();
-      if (fixtureData.success && fixtureData.fixture) {
+      if (fixtureData.fixture) {
         for (const m of fixtureData.fixture) {
           predMap.set(m.id, {
             homeGoals: m.predictedScore?.[0] ?? null,
@@ -66,14 +84,11 @@ export default function LivePage() {
         }
       }
 
-      const resultMap = new Map();
-      if (liveData.success) {
-        for (const r of (liveData.liveStandings ? [] : [])) { /* standings don't have match results directly */ }
-      }
-
-      // Get real results from fixture response
       const allMatches: LiveMatch[] = ALL_MATCHES.map(m => {
         const pred = predMap.get(m.id);
+        const real = realResultsMap.get(m.id);
+        const isPlayed = real !== undefined;
+
         return {
           id: m.id,
           homeTeam: m.homeTeam,
@@ -81,9 +96,9 @@ export default function LivePage() {
           date: m.date,
           round: m.round,
           group: m.group,
-          realHome: null,
-          realAway: null,
-          isPlayed: false,
+          realHome: real?.home ?? null,
+          realAway: real?.away ?? null,
+          isPlayed,
           predHome: pred?.homeGoals ?? null,
           predAway: pred?.awayGoals ?? null,
           predHomeWin: pred?.homeWin ?? null,
@@ -93,13 +108,14 @@ export default function LivePage() {
       });
 
       setMatches(allMatches);
-
-      if (liveData.success) {
-        setLiveStandings(liveData.liveStandings || {});
-        setLiveBracket(liveData.liveBracket);
-      }
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+      setLiveStandings(liveData.liveStandings || {});
+      setLiveBracket(liveData.liveBracket);
+    } catch (err) {
+      console.error('[live] Error loading data:', err);
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,6 +145,7 @@ export default function LivePage() {
       setFormAway(0);
       loadData(); // Refresh
     } catch (err) {
+      console.error('[live] Submit error:', err);
       setSubmitResult(`❌ ${err instanceof Error ? err.message : 'Error'}`);
     } finally {
       setSubmitting(false);
@@ -173,8 +190,17 @@ export default function LivePage() {
     byDate.get(m.date)!.push(m);
   }
 
+  const playedCount = matches.filter(m => m.isPlayed).length;
+  const correctCount = matches.filter(m => {
+    if (!m.isPlayed || m.predHome === null || m.predAway === null || m.realHome === null || m.realAway === null) return false;
+    const predWinner = m.predHome > m.predAway ? 'home' : m.predHome < m.predAway ? 'away' : 'draw';
+    const realWinner = m.realHome > m.realAway ? 'home' : m.realHome < m.realAway ? 'away' : 'draw';
+    return predWinner === realWinner;
+  }).length;
+  const accuracy = playedCount > 0 ? Math.round((correctCount / playedCount) * 100) : 0;
+
   // Live group standings
-  const hasRealResults = Object.keys(liveStandings).length > 0;
+  const hasRealResults = Object.keys(liveStandings).length > 0 && Object.values(liveStandings).some((g: any) => g.some((t: any) => t.played > 0));
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -184,6 +210,13 @@ export default function LivePage() {
         <p className="text-xs sm:text-sm text-text-secondary">
           Resultados reales vs predicciones · Tabla y bracket se recalculan automáticamente
         </p>
+        {playedCount > 0 && (
+          <div className="flex items-center gap-4 mt-2 text-xs">
+            <span className="text-accent-emerald">✅ {correctCount}/{playedCount} correctas ({accuracy}%)</span>
+            <span className="text-text-muted">·</span>
+            <span className="text-accent-blue">⏳ {matches.length - playedCount} pendientes</span>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -218,6 +251,14 @@ export default function LivePage() {
         ))}
       </div>
 
+      {/* Error */}
+      {error && (
+        <div className="glass-card p-4 text-center mb-4 border border-accent-crimson/20">
+          <p className="text-accent-crimson text-sm">{error}</p>
+          <button onClick={loadData} className="btn-premium text-xs mt-2 px-3 py-1.5">Reintentar</button>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-20">
@@ -227,40 +268,44 @@ export default function LivePage() {
       )}
 
       {/* ═══ TAB: Group Standings ═══ */}
-      {!loading && tab === 'grupos' && (
+      {!loading && !error && tab === 'grupos' && (
         <div className="animate-fade-in">
           {hasRealResults ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {Object.entries(liveStandings).map(([group, teams]) => (
-                <div key={group} className="glass-card p-3">
-                  <h3 className="text-xs font-bold text-accent-gold uppercase mb-2">Grupo {group}</h3>
-                  <table className="w-full text-[10px]">
-                    <thead>
-                      <tr className="text-text-muted">
-                        <th className="text-left pb-1">#</th>
-                        <th className="text-left pb-1">Equipo</th>
-                        <th className="text-center pb-1">PJ</th>
-                        <th className="text-center pb-1">DG</th>
-                        <th className="text-center pb-1">Pts</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {teams.map((t: any, i: number) => (
-                        <tr key={t.name} className={`${i < 2 ? 'text-accent-emerald' : ''}`}>
-                          <td className="py-0.5 text-text-muted">{i + 1}</td>
-                          <td className="py-0.5">
-                            <span className="mr-1">{getFlag(t.name)}</span>
-                            <span className="text-white truncate block max-w-[80px]">{t.name}</span>
-                          </td>
-                          <td className="py-0.5 text-center">{t.played}</td>
-                          <td className="py-0.5 text-center">{t.gd > 0 ? '+' : ''}{t.gd}</td>
-                          <td className="py-0.5 text-center font-bold">{t.points}</td>
+              {Object.entries(liveStandings).map(([group, teams]) => {
+                const played = (teams as any[]).some((t: any) => t.played > 0);
+                if (!played) return null;
+                return (
+                  <div key={group} className="glass-card p-3">
+                    <h3 className="text-xs font-bold text-accent-gold uppercase mb-2">Grupo {group}</h3>
+                    <table className="w-full text-[10px]">
+                      <thead>
+                        <tr className="text-text-muted">
+                          <th className="text-left pb-1" scope="col">#</th>
+                          <th className="text-left pb-1" scope="col">Equipo</th>
+                          <th className="text-center pb-1" scope="col">PJ</th>
+                          <th className="text-center pb-1" scope="col">DG</th>
+                          <th className="text-center pb-1" scope="col">Pts</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
+                      </thead>
+                      <tbody>
+                        {(teams as any[]).map((t: any, i: number) => (
+                          <tr key={t.name} className={`${i < 2 ? 'text-accent-emerald' : ''}`}>
+                            <td className="py-0.5 text-text-muted">{i + 1}</td>
+                            <td className="py-0.5">
+                              <span className="mr-1">{getFlag(t.name)}</span>
+                              <span className="text-white truncate block max-w-[80px]">{t.name}</span>
+                            </td>
+                            <td className="py-0.5 text-center">{t.played}</td>
+                            <td className="py-0.5 text-center">{t.gd > 0 ? '+' : ''}{t.gd}</td>
+                            <td className="py-0.5 text-center font-bold">{t.points}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="glass-card p-8 text-center">
@@ -276,7 +321,7 @@ export default function LivePage() {
       )}
 
       {/* ═══ TAB: Knockout Bracket ═══ */}
-      {!loading && tab === 'eliminatorias' && (
+      {!loading && !error && tab === 'eliminatorias' && (
         <div className="animate-fade-in space-y-6">
           {liveBracket?.roundOf16 && liveBracket.roundOf16.length > 0 && (
             <>
@@ -323,7 +368,7 @@ export default function LivePage() {
       )}
 
       {/* ═══ TAB: Enter Result ═══ */}
-      {!loading && tab === 'ingresar' && (
+      {!loading && !error && tab === 'ingresar' && (
         <div className="animate-fade-in max-w-lg mx-auto">
           <div className="glass-card p-5">
             <h3 className="text-sm font-bold text-accent-blue uppercase tracking-wider mb-4">
@@ -331,10 +376,10 @@ export default function LivePage() {
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Match selector */}
               <div>
-                <label className="block text-xs text-text-secondary mb-2">Seleccionar Partido</label>
+                <label htmlFor="match-select" className="block text-xs text-text-secondary mb-2">Seleccionar Partido</label>
                 <select
+                  id="match-select"
                   value={formMatchId}
                   onChange={(e) => setFormMatchId(e.target.value)}
                   className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-white focus:border-accent-blue/50 focus:outline-none"
@@ -348,7 +393,6 @@ export default function LivePage() {
                 </select>
               </div>
 
-              {/* Score inputs */}
               {formMatchId && (
                 <div className="flex items-center gap-4 p-4 bg-white/[0.03] rounded-xl">
                   <div className="flex-1 text-center">
@@ -381,7 +425,6 @@ export default function LivePage() {
                 </div>
               )}
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={submitting || !formMatchId}
@@ -405,7 +448,7 @@ export default function LivePage() {
       )}
 
       {/* ═══ Match List (fallback for all tabs) ═══ */}
-      {!loading && tab !== 'ingresar' && byDate.size > 0 && (
+      {!loading && !error && tab !== 'ingresar' && byDate.size > 0 && (
         <div className="mt-6 animate-fade-in space-y-6">
           {Array.from(byDate.entries()).map(([date, dayMatches]) => (
             <div key={date}>
@@ -414,7 +457,9 @@ export default function LivePage() {
               </h3>
               <div className="space-y-1.5">
                 {dayMatches.map(m => {
-                  const isCorrect = m.isPlayed && m.predHomeWin !== null
+                  const hasReal = m.isPlayed && m.realHome !== null && m.realAway !== null;
+                  const hasPred = m.predHome !== null && m.predAway !== null;
+                  const isCorrect = hasReal && hasPred
                     ? ((m.realHome! > m.realAway!) === (m.predHome! > m.predAway!))
                     : null;
 
@@ -438,19 +483,19 @@ export default function LivePage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px]">
-                          {m.isPlayed && m.realHome !== null ? (
+                          {hasReal && (
                             <span className="font-bold text-accent-emerald">
                               Real: {m.realHome}-{m.realAway}
                             </span>
-                          ) : null}
-                          {m.predHome !== null && (
+                          )}
+                          {hasPred && (
                             <span className="text-accent-blue">
                               Pred: {m.predHome}-{m.predAway}
                             </span>
                           )}
-                          {m.confidenceDrift !== null && (
-                            <span className={m.direction === 'up' ? 'text-accent-emerald' : m.direction === 'down' ? 'text-accent-crimson' : 'text-text-muted'}>
-                              {m.direction === 'up' ? '⬆' : m.direction === 'down' ? '⬇' : '→'} {m.confidenceDrift > 0 ? '+' : ''}{m.confidenceDrift}%
+                          {hasReal && hasPred && (
+                            <span className={isCorrect ? 'text-accent-emerald' : 'text-accent-crimson'}>
+                              {isCorrect ? '✅ Ganador OK' : '❌ Incorrecto'}
                             </span>
                           )}
                         </div>
@@ -477,7 +522,7 @@ export default function LivePage() {
           <div className="flex items-center gap-2"><span>✅</span> <span className="text-text-secondary">Predicción correcta</span></div>
           <div className="flex items-center gap-2"><span>❌</span> <span className="text-text-secondary">Predicción incorrecta</span></div>
           <div className="flex items-center gap-2"><span>⏳</span> <span className="text-text-secondary">Por jugar</span></div>
-          <div className="flex items-center gap-2"><span>⬆</span> <span className="text-text-secondary">Confianza subió</span></div>
+          <div className="flex items-center gap-2"><span className="w-3 h-3 bg-accent-emerald rounded-sm border-l-2 border-l-accent-emerald"></span> <span className="text-text-secondary">Resultado ingresado</span></div>
         </div>
       </div>
     </div>

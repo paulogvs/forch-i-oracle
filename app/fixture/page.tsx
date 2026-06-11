@@ -119,9 +119,14 @@ export default function FixturePage() {
   const generateAll = async () => {
     setGenerating(true);
     try {
-      await fetch('/api/accuracy', { method: 'POST' });
+      const res = await fetch('/api/accuracy', { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
       await loadFixtures();
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('[fixture] Error generating:', err);
+      setError('Error generando predicciones');
+    }
     finally { setGenerating(false); }
   };
 

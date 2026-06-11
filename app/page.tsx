@@ -31,6 +31,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [topTeams, setTopTeams] = useState<{ name: string; elo: number; flag: string }[]>([]);
+  const [dashError, setDashError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboard();
@@ -42,20 +43,30 @@ export default function HomePage() {
   }, []);
 
   const loadDashboard = async () => {
+    setDashError(null);
     try {
       const res = await fetch('/api/accuracy');
       const data = await res.json();
       if (data.success) setAccuracyData(data);
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('[dashboard] Error loading:', err);
+      setDashError('No se pudieron cargar las métricas');
+    }
     finally { setLoading(false); }
   };
 
   const generatePredictions = async () => {
     setGenerating(true);
+    setDashError(null);
     try {
-      await fetch('/api/accuracy', { method: 'POST' });
+      const res = await fetch('/api/accuracy', { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
       await loadDashboard();
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('[dashboard] Error generating:', err);
+      setDashError('Error generando predicciones');
+    }
     finally { setGenerating(false); }
   };
 
@@ -76,6 +87,14 @@ export default function HomePage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Error */}
+      {dashError && (
+        <div className="glass-card p-3 text-center mb-4 border border-accent-crimson/20 animate-fade-in">
+          <p className="text-accent-crimson text-sm">{dashError}</p>
+          <button onClick={loadDashboard} className="btn-premium text-xs mt-2 px-3 py-1.5">🔄 Reintentar</button>
+        </div>
+      )}
+
       {/* ═══ HERO ═══ */}
       <section className="mb-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
@@ -209,14 +228,12 @@ export default function HomePage() {
         <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
           Navegación Rápida
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           {[
-            { href: '/fixture', icon: '⚡', label: 'Pronósticos', desc: '128 partidos' },
+            { href: '/fixture', icon: '⚡', label: 'Predicción', desc: '128 partidos' },
             { href: '/live', icon: '📈', label: 'En Vivo', desc: 'Resultados reales' },
-            { href: '/veredicto', icon: '🏆', label: 'Veredicto', desc: 'Probabilidades' },
-            { href: '/torneo', icon: '🎮', label: 'Simulador', desc: 'Bracket' },
-            { href: '/pronostico', icon: '🎯', label: 'Predecir', desc: 'Individual' },
-            { href: '/admin', icon: '⚙️', label: 'Admin', desc: 'Resultados' },
+            { href: '/torneo', icon: '🏆', label: 'Simulador', desc: 'Bracket completo' },
+            { href: '/benchmark', icon: '🤖', label: 'Benchmark', desc: 'Comparar modelos' },
           ].map(link => (
             <Link key={link.href} href={link.href} className="glass-card p-3 sm:p-4 hover:border-white/[0.1] transition-colors group">
               <div className="text-xl sm:text-2xl mb-1.5">{link.icon}</div>
