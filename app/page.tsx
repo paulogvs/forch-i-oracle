@@ -113,12 +113,20 @@ export default function Home() {
               FORCH.i <span className="text-wc-gold">ORACLE</span>
             </h1>
 
-            <Link
-              href="/bracket"
-              className="btn-premium gold text-xs px-4 py-2"
-            >
-              🏆 Simular Torneo
-            </Link>
+            <div className="flex gap-2">
+              <Link
+                href="/benchmark"
+                className="btn-premium text-xs px-3 py-2"
+              >
+                🤖 Benchmark
+              </Link>
+              <Link
+                href="/bracket"
+                className="btn-premium gold text-xs px-3 py-2"
+              >
+                🏆 Torneo
+              </Link>
+            </div>
           </div>
         </header>
 

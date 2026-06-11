@@ -66,6 +66,12 @@ export default function BracketPage() {
                 </h1>
               </div>
 
+              <Link
+                href="/benchmark"
+                className="btn-premium text-xs px-3 py-2"
+              >
+                🤖 Benchmark
+              </Link>
               <button
                 onClick={handleSimulate}
                 disabled={loading}

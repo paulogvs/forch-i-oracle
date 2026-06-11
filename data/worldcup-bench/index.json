@@ -1,0 +1,107 @@
+{
+  "downloaded_at": "2026-06-11T13:25:45.686Z",
+  "source": "https://github.com/mverab/WorldCupBench",
+  "total_predictions": 15,
+  "models": [
+    "Claude-Fable-5",
+    "DeepSeek-V4-Pro",
+    "GLM-5.1",
+    "GPT-5.5",
+    "Gemini-3.5-Flash",
+    "Grok-4.3",
+    "MiMo-V2.5-Pro",
+    "MiniMax-M3",
+    "Nex-N2-Pro",
+    "Qwen-3.7-Max"
+  ],
+  "Claude-Fable-5": {
+    "champion": "ESP",
+    "runner_up": "ARG",
+    "third_place": "FRA",
+    "fourth_place": "ENG",
+    "timestamp": "2026-06-10T19:44:55.583047+00:00",
+    "total_tokens": 62862,
+    "cost_usd": 0.000002
+  },
+  "DeepSeek-V4-Pro": {
+    "champion": "ARG",
+    "runner_up": "USA",
+    "third_place": "ENG",
+    "fourth_place": "GER",
+    "timestamp": "2026-06-10T18:39:14.319479+00:00",
+    "total_tokens": 65179,
+    "cost_usd": 0
+  },
+  "GLM-5.1": {
+    "champion": "BRA",
+    "runner_up": "FRA",
+    "third_place": "ARG",
+    "fourth_place": "ESP",
+    "timestamp": "2026-06-10T22:15:50.339948+00:00",
+    "total_tokens": 53321,
+    "cost_usd": 0
+  },
+  "GPT-5.5": {
+    "champion": "FRA",
+    "runner_up": "BRA",
+    "third_place": "ARG",
+    "fourth_place": "ESP",
+    "timestamp": "2026-06-10T19:52:56.534012+00:00",
+    "total_tokens": 45258,
+    "cost_usd": 0.000001
+  },
+  "Gemini-3.5-Flash": {
+    "champion": "FRA",
+    "runner_up": "ARG",
+    "third_place": "ESP",
+    "fourth_place": "ENG",
+    "timestamp": "2026-06-10T21:15:56.702591+00:00",
+    "total_tokens": 62716,
+    "cost_usd": 0
+  },
+  "Grok-4.3": {
+    "champion": "BRA",
+    "runner_up": "ENG",
+    "third_place": "FRA",
+    "fourth_place": "POR",
+    "timestamp": "2026-06-10T21:16:50.690647+00:00",
+    "total_tokens": 32965,
+    "cost_usd": 0
+  },
+  "MiMo-V2.5-Pro": {
+    "champion": "ARG",
+    "runner_up": "FRA",
+    "third_place": "ESP",
+    "fourth_place": "BRA",
+    "timestamp": "2026-06-10T22:29:32.477764+00:00",
+    "total_tokens": 38496,
+    "cost_usd": 0
+  },
+  "MiniMax-M3": {
+    "champion": "FRA",
+    "runner_up": "ENG",
+    "third_place": "ARG",
+    "fourth_place": "ESP",
+    "timestamp": "2026-06-10T22:24:49.115623+00:00",
+    "total_tokens": 67510,
+    "cost_usd": 0
+  },
+  "Nex-N2-Pro": {
+    "champion": "FRA",
+    "runner_up": "BRA",
+    "third_place": "ESP",
+    "fourth_place": "POR",
+    "timestamp": "2026-06-10T20:40:33.454896+00:00",
+    "total_tokens": 79992,
+    "cost_usd": 0
+  },
+  "Qwen-3.7-Max": {
+    "champion": "ARG",
+    "runner_up": "FRA",
+    "third_place": "BRA",
+    "fourth_place": "ESP",
+    "timestamp": "2026-06-10T22:09:27.905051+00:00",
+    "total_tokens": 51828,
+    "cost_usd": 0
+  }
+}
