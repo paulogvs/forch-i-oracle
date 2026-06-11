@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
 import { getDataLayer } from '@/lib/data-layer';
+import { getLiveStandings, getLiveBracket } from '@/lib/prediction-history';
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get live standings and bracket from real results
+    const liveStandings = await getLiveStandings();
+    const liveBracket = await getLiveBracket();
+
     return NextResponse.json({
       success: true,
       bracket: result.bracket,
@@ -61,6 +66,9 @@ export async function POST(request: NextRequest) {
       totalSims: result.totalSims,
       fromCache: false,
       realResultsCount: simResults.length,
+      results: simResults,
+      liveStandings,
+      liveBracket,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
