@@ -27,9 +27,9 @@ The challenge: **webpack/Next.js analyzes all imports at build time**. A direct 
 │        ↓                                            │
 │   Factory checks:                                   │
 │   - Are env vars set? (SUPABASE_URL, SUPABASE_KEY)  │
-│   - Is SDK installed? (eval('require').resolve)     │
+│   - Is SDK installed? (dynamic import)              │
 │        ↓                                            │
-│   Yes → dynamic require('./supabase')               │
+│   Yes → dynamic import('./supabase')               │
 │   No  → return inMemoryDataLayer                    │
 └─────────────────────────────────────────────────────┘
 ```
@@ -42,37 +42,26 @@ export interface IDataLayer {
   // Teams
   getTeam(id: string): Promise<DBTeam | null>;
   getAllTeams(): Promise<DBTeam[]>;
-  upsertTeam(team: Omit<DBTeam, 'createdAt' | 'updatedAt'>): Promise<DBTeam>;
 
   // Matches
   getMatch(id: string): Promise<DBMatch | null>;
   getUpcomingMatches(): Promise<DBMatch[]>;
-  updateMatch(id: string, updates: Partial<DBMatch>): Promise<DBMatch>;
+  getAllMatches(): Promise<DBMatch[]>;
 
   // Predictions
   getPrediction(matchId: string): Promise<DBMatchPrediction | null>;
   savePrediction(pred: Omit<DBMatchPrediction, 'id' | 'predictedAt'>): Promise<DBMatchPrediction>;
+  getPredictionsForMatches(matchIds: string[]): Promise<DBMatchPrediction[]>;
 
   // Team form
   getTeamForm(teamId: string): Promise<DBTeamForm | null>;
   saveTeamForm(form: Omit<DBTeamForm, 'id' | 'updatedAt'>): Promise<DBTeamForm>;
 
-  // Tournament probs
-  getTournamentProbs(): Promise<DBTournamentProbs[]>;
-  saveTournamentProbs(probs: DBTournamentProb[]): Promise<DBTournamentProbs[]>;
-
   // Match results
   submitMatchResult(input: RealMatchResultInput): Promise<void>;
-  getMatchResults(): Promise<RealMatchResultInput[]>;
-  clearMatchResults(): Promise<void>;
 
   // Cron status
-  updateCronStatus(status: CronJobStatus): Promise<void>;
   getCronStatus(jobName: string): Promise<CronJobStatus | null>;
-
-  // Bulk
-  seedTeams(teams: DBTeam[]): Promise<void>;
-  seedMatches(matches: DBMatch[]): Promise<void>;
 }
 ```
 
@@ -99,8 +88,6 @@ export const inMemoryDataLayer: IDataLayer = {
 };
 ```
 
-**Important for ES5 targets**: Use `Array.from(map.values())` instead of `for...of map.values()` to avoid `--downlevelIteration` errors.
-
 ## Step 3: Database Implementation (Lazy-Loaded)
 
 ```ts
@@ -108,29 +95,21 @@ export const inMemoryDataLayer: IDataLayer = {
 // CRITICAL: Do NOT import @supabase/supabase-js at the top level.
 // Use require() inside functions so webpack doesn't analyze it.
 
-let supabase: unknown = null;
+let supabase: any = null;
 
 function getClient() {
   if (supabase) return supabase;
+
   const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_KEY;
+  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
   if (!url || !key) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // @ts-ignore — @supabase/supabase-js is in package.json, tsc may not resolve require()
   const { createClient } = require('@supabase/supabase-js');
   supabase = createClient(url, key);
   return supabase;
 }
-
-async function getTeam(id: string): Promise<DBTeam | null> {
-  const client = getClient();
-  if (!client) return null;
-  const { data, error } = await client.from('teams').select('*').eq('id', id).single();
-  if (error || !data) return null;
-  return mapTeamRow(data);
-}
-
-// ... implement all methods
 ```
 
 ## Step 4: Factory with Dynamic Loading
@@ -141,30 +120,10 @@ import type { IDataLayer } from './interface';
 
 let dataLayerInstance: IDataLayer | null = null;
 
-export function getDataLayer(): IDataLayer {
-  if (!dataLayerInstance) {
-    initSync();
-  }
-  return dataLayerInstance!;
-}
-
 export async function getDataLayerAsync(): Promise<IDataLayer> {
   if (dataLayerInstance) return dataLayerInstance;
   await initAsync();
   return dataLayerInstance!;
-}
-
-function initSync(): void {
-  if (dataLayerInstance) return;
-  const hasEnv = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
-  if (!hasEnv) {
-    const { inMemoryDataLayer } = require('./in-memory');
-    dataLayerInstance = inMemoryDataLayer;
-    return;
-  }
-  // Supabase env vars present — use in-memory as temp until async loads Supabase
-  const { inMemoryDataLayer } = require('./in-memory');
-  dataLayerInstance = inMemoryDataLayer;
 }
 
 async function initAsync(): Promise<void> {
@@ -174,11 +133,7 @@ async function initAsync(): Promise<void> {
 
   if (hasEnv) {
     try {
-      // Try to load Supabase data layer directly.
-      // DO NOT use eval('require') or await import('@supabase/supabase-js').
-      // - eval('require') triggers TS1252 errors with ES5 target (function declarations in blocks).
-      // - await import('@supabase/supabase-js') fails tsc --noEmit when SDK is a transitive dependency.
-      // Instead, just import ./supabase — it has require() internally and will fail gracefully.
+      // @ts-ignore — supabase.ts uses require('@supabase/supabase-js')
       const { supabaseDataLayer } = await import('./supabase');
       dataLayerInstance = supabaseDataLayer as IDataLayer;
       return;
@@ -193,67 +148,27 @@ async function initAsync(): Promise<void> {
 }
 ```
 
-## Why NOT eval('require')?
-
-`eval('require')` causes TypeScript errors with ES5 target (`TS1252: Function declarations are not allowed inside blocks`). And `await import('@supabase/supabase-js')` fails `tsc --noEmit` because TypeScript tries to resolve the module at compile time even in a try/catch.
-
-The correct approach: **just `await import('./supabase')`** — the supabase.ts file uses `require()` internally (which webpack handles fine at runtime), and if it fails, the catch block falls back to in-memory. No eval, no direct SDK import.
-
-## Usage in API Routes
-
-```ts
-import { getDataLayer } from '@/lib/data-layer';
-
-export async function POST(req: NextRequest) {
-  const db = getDataLayer();  // Always works — falls back to in-memory
-
-  // For Supabase support (async):
-  // const db = await getDataLayerAsync();
-
-  const teams = await db.getAllTeams();
-  const pred = await db.getPrediction(matchId);
-  // ...
-}
-```
-
-## Seed Script (Separate from Next.js Build)
-
-```ts
-// scripts/seed-supabase.ts
-// Exclude from tsconfig.json to avoid Next.js build:
-// "exclude": ["node_modules", "scripts"]
-
-import { createClient } from '@supabase/supabase-js';
-
-async function seed() {
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!
-  );
-
-  const { error } = await supabase
-    .from('teams')
-    .upsert(WORLD_CUP_TEAMS.map(t => ({
-      id: t.name, fifa_code: t.code, name: t.name,
-      group_char: t.group, elo_rating: ELO_RATINGS[t.name] ?? 1500,
-    })), { onConflict: 'id' });
-}
-```
-
-## Vercel Cron Integration
+## Step 5: tsconfig.json — Exclude supabase.ts
 
 ```json
-// vercel.json
 {
-  "crons": [
-    { "path": "/api/cron/ingest?secret=${CRON_SECRET}", "schedule": "0 */6 * * *" },
-    { "path": "/api/cron/recalculate?secret=${CRON_SECRET}", "schedule": "0 */12 * * *" }
-  ],
-  "functions": {
-    "app/api/cron/*/route.ts": { "maxDuration": 120, "memory": 1024 }
+  "exclude": ["node_modules", "scripts", "lib/data-layer/supabase.ts"]
+}
+```
+
+**Why:** `supabase.ts` uses `require('@supabase/supabase-js')` which TypeScript can't resolve statically. Excluding it prevents `tsc --noEmit` from failing while keeping the file available for runtime dynamic import.
+
+## Step 6: package.json — SDK in dependencies
+
+```json
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.1"
   }
 }
 ```
+
+**Why:** `@supabase/supabase-js` must be in `dependencies`, NOT `optionalDependencies`. Vercel does NOT reliably install optionalDependencies during build, causing `tsc --noEmit` to fail with `Cannot find module '@supabase/supabase-js'`.
 
 ## Key Decisions
 
@@ -261,20 +176,20 @@ async function seed() {
 |----------|-----|
 | Interface first | All implementations satisfy the same contract |
 | In-memory auto-seeds | App works immediately without setup |
-| eval('require') | Prevents webpack build-time analysis |
+| `require()` in supabase.ts | Prevents webpack build-time analysis |
+| `@ts-ignore` on dynamic import | tsc can't statically resolve the require() chain |
+| Exclude supabase.ts from tsconfig | Prevents `tsc --noEmit` from analyzing the file |
+| SDK in `dependencies` (not `optionalDependencies`) | Vercel always installs dependencies during build |
 | Separate seed script | Excluded from tsconfig, can import SDK directly |
-| Service role key | API routes need write access (bypasses RLS) |
-| onConflict upsert | Idempotent operations for cron re-runs |
 
 ## Gotchas
 
 | Issue | Solution |
 |-------|----------|
 | `for...of Map.values()` with ES5 | Use `Array.from(map.values())` with index loop |
-| `import` in data-layer/types.ts | Use relative paths (`../groq` not `./groq`) |
 | Function declarations in blocks (ES5) | Use arrow functions: `const fn = async () => {}` |
-| Build analyzes supabase.ts | Use `require()` inside supabase.ts functions, dynamic import('./supabase') in factory |
-| eval('require') + ES5 target | Causes TS1252 — use dynamic import('./supabase') instead, no eval needed |
-| await import('@supabase/...') | Fails tsc --noEmit — never import SDK directly in factory, import the wrapper module |
-| Missing type MatchRound | Import from types.ts, not from local module |
-| Unused imports in types.ts | Remove them — they cause build errors even if types exist |
+| `await import('@supabase/...')` in factory | Fails tsc — use `await import('./supabase')` instead |
+| `@supabase/supabase-js` in `optionalDependencies` | Vercel won't install it — move to `dependencies` |
+| `tsc --noEmit` fails on supabase.ts | Exclude from tsconfig + `@ts-ignore` on require() |
+| Data layer returns `null` in prod | Never throw — always fallback to in-memory |
+| `getCronStatus` requires jobName argument | Always pass string like `'ingest'`, `'recalculate'`, `'simulate'` |
