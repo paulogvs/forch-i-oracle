@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
-import MatchSeal from '@/components/MatchSeal';
+import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 
 type TabType = 'grupos' | 'eliminatorias';
 type PhaseFilter = string;
@@ -457,26 +457,39 @@ export default function LivePage() {
                 {dayMatches.map((m, mIdx) => {
                   const hasReal = m.isPlayed && m.realHome !== null && m.realAway !== null;
                   const hasPred = m.predHome !== null && m.predAway !== null;
-                  const isCorrect = hasReal && hasPred
-                    ? ((m.realHome! > m.realAway!) === (m.predHome! > m.predAway!))
+
+                  // Compute dual seal status
+                  const sealResult = hasReal && hasPred
+                    ? computeSealStatus(m.predHome, m.predAway, m.realHome, m.realAway)
                     : null;
 
-                  // Determine seal status
+                  // Single seal for pending
                   const sealStatus = hasReal
-                    ? isCorrect ? 'correct' as const : 'incorrect' as const
+                    ? (sealResult?.winnerStatus === 'correct' ? 'correct-winner' as const : 'incorrect-winner' as const)
                     : 'pending' as const;
 
                   return (
                     <div
                       key={m.id}
                       className={`glass-card p-3 ${
-                        hasReal ? (isCorrect ? 'border-l-2 border-l-accent-emerald' : 'border-l-2 border-l-accent-crimson') : ''
+                        hasReal
+                          ? (sealResult?.winnerStatus === 'correct' ? 'border-l-2 border-l-accent-emerald' : 'border-l-2 border-l-accent-crimson')
+                          : ''
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        {/* Seal */}
+                        {/* Seal — dual or single */}
                         <div className="shrink-0">
-                          <MatchSeal status={sealStatus} delay={mIdx * 60} />
+                          {sealResult ? (
+                            <MatchSeal
+                              dual
+                              winnerStatus={sealResult.winnerStatus}
+                              scoreStatus={sealResult.scoreStatus}
+                              delay={mIdx * 60}
+                            />
+                          ) : (
+                            <MatchSeal status={sealStatus} delay={mIdx * 60} />
+                          )}
                         </div>
 
                         <div className="flex-1 min-w-0">
@@ -545,18 +558,26 @@ export default function LivePage() {
       {/* Legend */}
       <div className="glass-card p-4 mt-8 animate-fade-in">
         <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-3">Leyenda</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <MatchSeal status="correct" compact />
-            <span className="text-text-secondary">Predicción correcta</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MatchSeal status="incorrect" compact />
-            <span className="text-text-secondary">Predicción incorrecta</span>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
           <div className="flex items-center gap-2">
             <MatchSeal status="pending" compact />
-            <span className="text-text-secondary">Por jugar / Sin predicción</span>
+            <span className="text-text-secondary">Por jugar</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MatchSeal status="exact-score" compact />
+            <span className="text-text-secondary">Score exacto</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MatchSeal status="correct-winner" compact />
+            <span className="text-text-secondary">Ganador correcto</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MatchSeal status="incorrect-score" compact />
+            <span className="text-text-secondary">Ganador OK, score NO</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MatchSeal status="incorrect-winner" compact />
+            <span className="text-text-secondary">Ganador incorrecto</span>
           </div>
         </div>
       </div>
@@ -575,7 +596,7 @@ function BracketRound({ title, matches, getFlag }: { title: string; matches: any
               <span className="text-[10px] text-text-muted">{m.roundLabel || 'Eliminatoria'}</span>
               {m.isPlayed && (
                 <MatchSeal
-                  status={m.winner ? 'correct' : 'pending'}
+                  status={m.winner ? 'correct-winner' : 'pending'}
                   compact
                 />
               )}

@@ -64,7 +64,7 @@ export default function ResultCard({ prediction, homeTeam, awayTeam, matchResult
         const predWinner = prediction.predictedScoreHome > prediction.predictedScoreAway ? 'home'
           : prediction.predictedScoreHome < prediction.predictedScoreAway ? 'away' : 'draw';
         const realWinner = rh > ra ? 'home' : rh < ra ? 'away' : 'draw';
-        return predWinner === realWinner ? 'correct' as const : 'incorrect' as const;
+        return predWinner === realWinner ? 'correct-winner' as const : 'incorrect-winner' as const;
       })()
     : null;
 

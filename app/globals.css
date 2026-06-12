@@ -277,6 +277,22 @@ body {
 .seal-correct .seal-dot { background: var(--accent-emerald); animation: pulse-dot 2s ease-in-out infinite; }
 .seal-incorrect .seal-dot { background: var(--accent-crimson); }
 
+/* ═══ NEW: 5-category seals ═══ */
+.seal-exact {
+  background: rgba(201, 162, 39, 0.15);
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  color: var(--accent-gold);
+  box-shadow: 0 0 14px rgba(201, 162, 39, 0.15);
+}
+.seal-exact .seal-dot { background: var(--accent-gold); animation: pulse-dot 1.5s ease-in-out infinite; }
+
+.seal-score-wrong {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--accent-amber);
+}
+.seal-score-wrong .seal-dot { background: var(--accent-amber); }
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }

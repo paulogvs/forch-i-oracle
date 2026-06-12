@@ -33,9 +33,12 @@ export default function HomePage() {
   const [dashError, setDashError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [liveMatches, setLiveMatches] = useState<any[]>([]);
+  const [recentResults, setRecentResults] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboard();
+    loadLiveScores();
     const sorted = WORLD_CUP_TEAMS
       .map(t => ({ name: t.name, elo: ELO_RATINGS[t.name]?.elo || 1500, flag: t.flag }))
       .sort((a, b) => b.elo - a.elo)
@@ -56,11 +59,12 @@ export default function HomePage() {
     updateCountdown();
     const countdownInterval = setInterval(updateCountdown, 60000);
 
-    // Auto-refresh every 30 minutes
+    // Auto-refresh every 5 minutes (faster during tournament)
     const refreshInterval = setInterval(() => {
       console.log('[dashboard] Auto-refreshing...');
       loadDashboard();
-    }, 30 * 60 * 1000);
+      loadLiveScores();
+    }, 5 * 60 * 1000);
 
     return () => {
       clearInterval(countdownInterval);
@@ -82,6 +86,19 @@ export default function HomePage() {
       setDashError('No se pudieron cargar las métricas');
     }
     finally { setLoading(false); }
+  };
+
+  const loadLiveScores = async () => {
+    try {
+      const res = await fetch('/api/live-scores');
+      const data = await res.json();
+      if (data.success) {
+        setLiveMatches(data.live || []);
+        setRecentResults(data.finished || []);
+      }
+    } catch (err) {
+      console.error('[dashboard] Error loading live scores:', err);
+    }
   };
 
   const acc = accuracyData?.accuracy;
@@ -147,6 +164,60 @@ export default function HomePage() {
             </svg>
           } />
         </div>
+
+        {/* ═══ LIVE MATCHES (from worldcup26.ir) ═══ */}
+        {liveMatches.length > 0 && (
+          <section className="mb-4 animate-fade-in">
+            <h3 className="text-xs font-bold text-accent-crimson uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-accent-crimson animate-pulse" />
+              En Vivo Ahora
+            </h3>
+            <div className="space-y-1.5">
+              {liveMatches.map((m: any, i: number) => (
+                <div key={m.id || i} className="glass-card p-3 border-l-2 border-l-accent-crimson">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-bold text-white">{m.homeTeam}</span>
+                      <span className="font-mono font-bold text-accent-blue text-sm px-2 py-0.5 rounded bg-accent-blue/10">
+                        {m.homeScore} - {m.awayScore}
+                      </span>
+                      <span className="font-bold text-white">{m.awayTeam}</span>
+                    </div>
+                    <span className="text-[10px] text-accent-crimson font-bold animate-pulse">
+                      🔴 {m.timeElapsed || 'VIVO'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ═══ RECENT RESULTS ═══ */}
+        {recentResults.length > 0 && (
+          <section className="mb-4 animate-fade-in">
+            <h3 className="text-xs font-bold text-accent-emerald uppercase tracking-wider mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-accent-emerald" />
+              Resultados Recientes
+            </h3>
+            <div className="space-y-1.5">
+              {recentResults.slice(0, 5).map((m: any, i: number) => (
+                <div key={m.id || i} className="glass-card p-2.5 border-l-2 border-l-accent-emerald">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white">{m.homeTeam}</span>
+                      <span className="font-mono font-bold text-accent-emerald px-2 py-0.5 rounded bg-accent-emerald/10">
+                        {m.homeScore} - {m.awayScore}
+                      </span>
+                      <span className="text-white">{m.awayTeam}</span>
+                    </div>
+                    <span className="text-[10px] text-text-muted">FT</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Prediction bar */}
         <div className="glass-card p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

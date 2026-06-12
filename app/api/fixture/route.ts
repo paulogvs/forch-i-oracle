@@ -1,5 +1,6 @@
 // FORCH.i ORACLE — API Route: Full Tournament Fixture Prediction (v3 Ensemble Engine)
 // Predicts ALL 128 matches using the 4-model ensemble for maximum accuracy.
+// Response is cached for 5 minutes to avoid redundant recomputation.
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
@@ -8,10 +9,35 @@ import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/l
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
 
+// ═══ RESPONSE CACHE (5 minutes) ═══
+interface FixtureCacheEntry { data: unknown; expiresAt: number; }
+const fixtureCache = new Map<string, FixtureCacheEntry>();
+const FIXTURE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getFixtureCache(key: string): unknown | null {
+  const entry = fixtureCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { fixtureCache.delete(key); return null; }
+  return entry.data;
+}
+
+function setFixtureCache(key: string, data: unknown): void {
+  fixtureCache.set(key, { data, expiresAt: Date.now() + FIXTURE_CACHE_TTL });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const { useDynamic = true, useEnhanced: useEnhancedFlag = true, realResults = [] } = body;
+
+    // Check cache (skip if real results submitted)
+    const cacheKey = `fixture-${useEnhancedFlag}-${useDynamic}`;
+    if (realResults.length === 0) {
+      const cached = getFixtureCache(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached);
+      }
+    }
 
     const db = await getDataLayerAsync();
 
@@ -256,7 +282,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const response = {
       success: true,
       fixture,
       groupStandings,
@@ -267,7 +293,14 @@ export async function POST(request: NextRequest) {
       useEnhanced: useEnhancedFlag,
       realResultsIngested: realResults.length,
       totalRealResults: getResultsCount(),
-    });
+    };
+
+    // Cache the response (skip if real results were submitted)
+    if (realResults.length === 0) {
+      setFixtureCache(cacheKey, response);
+    }
+
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('[fixture:v2] Error:', error);
