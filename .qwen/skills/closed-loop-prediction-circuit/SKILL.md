@@ -1,13 +1,61 @@
 ---
 name: closed-loop-prediction-circuit
-description: Build a self-updating prediction system where real results automatically trigger re-simulation, updated predictions, and drift tracking — no manual input required
+description: Build a self-updating prediction system where real results automatically trigger re-simulation, updated predictions, and drift tracking — with file persistence for serverless environments
 source: auto-skill
-extracted_at: '2026-06-11T23:20:55.867Z'
+extracted_at: '2026-06-12T00:35:00.000Z'
 ---
 
 ## Closed-Loop Prediction Circuit
 
 A circular data flow where real-world results automatically improve future predictions without any manual intervention.
+
+### Critical: File Persistence for Serverless
+
+**In Vercel serverless, each API call is a new process — in-memory data is lost between requests.**
+
+Without file persistence, the closed loop breaks:
+```
+Request 1: Save MEX 2-0 RSA → Memory ✅
+Request 2: Read results → New process → Memory empty ❌
+```
+
+**Solution:** Use a JSON file store alongside in-memory:
+
+```typescript
+// lib/file-store.ts
+import fs from 'fs';
+const DATA_DIR = process.env.NODE_ENV === 'production'
+  ? '/tmp/forchi-oracle'  // Vercel serverless writable dir
+  : path.join(process.cwd(), '.forchi-data');  // Local dev
+
+export function saveResult(result: PersistedResult) {
+  const results = readJson(RESULTS_FILE, []);
+  if (!results.find(r => r.matchId === result.matchId)) {
+    results.push(result);
+    writeJson(RESULTS_FILE, results);
+  }
+}
+
+export function getResults(): PersistedResult[] {
+  return readJson(RESULTS_FILE, []);
+}
+```
+
+In the data layer, persist on every save:
+```typescript
+// lib/data-layer/in-memory.ts
+async function submitMatchResult(input: RealMatchResultInput) {
+  matchResultsStore.push(input);  // In-memory (fast access)
+  saveFileResult({...input, submittedAt: new Date().toISOString()});  // File (persistence)
+}
+
+async function getMatchResults() {
+  // Merge in-memory + file results
+  const fileResults = getFileResults();
+  const fileIds = new Set(matchResultsStore.map(r => r.matchId));
+  return [...matchResultsStore, ...fileResults.filter(f => !fileIds.has(f.matchId))];
+}
+```
 
 ### Architecture
 
@@ -23,7 +71,7 @@ A circular data flow where real-world results automatically improve future predi
 │  ┌────────────────────────────┐               │
 │  │  Cron Ingest (GitHub Actions)│              │
 │  │  1. Scrape finished results │               │
-│  │  2. Save to data layer      │               │
+│  │  2. Save to file store      │ ←─ PERSISTENCE
 │  │  3. Update team form/Elo    │               │
 │  │  4. Re-simulate full bracket│               │
 │  └────────────────────────────┘               │

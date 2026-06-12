@@ -17,15 +17,15 @@ Dashboard → shows accuracy metrics
 Predicción → shows 128 match predictions
 Simulador → shows Top 8 champion + bracket
 En Vivo → shows real vs predicted
-Benchmark → shows model comparison
+Benchmark → shows model comparison + leaderboard (removed — asked for manual input)
 ```
 
 **After (4 pages with nested tabs):**
 ```
 Dashboard → accuracy metrics
 Predicción → [🔮 Predicciones | 🏆 Top 8 | 📐 Bracket]  ← 3 tabs merged
-En Vivo → real vs predicted
-Benchmark → model comparison
+En Vivo → [📋 Tabla de Grupos | 🏆 Eliminatorias]  ← 2 tabs
+Benchmark → [📊 Consenso | 🤖 Modelos | ℹ️ Acerca de]  ← 3 tabs, NO leaderboard
 ```
 
 ### Implementation Pattern

@@ -1,275 +1,144 @@
 # FORCH.i ORACLE — Supabase Setup Guide
 
-## Prerequisites
+## What is Supabase?
 
-- You already have a [Supabase account](https://supabase.com/dashboard)
-- Your Next.js app is working locally (`npm run dev`)
+Supabase is an open-source PostgreSQL database service. We use it as the **persistent backend** for FORCH.i ORACLE so that:
+
+- **Results survive Vercel deploys** (unlike file-based JSON)
+- **Cron jobs write real data** every 6-12 hours
+- **The closed-loop prediction circuit works** automatically
+- **Zero manual intervention** needed once configured
 
 ---
 
-## Step 1: Create Supabase Project
+## Step-by-Step Setup
 
-1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
-2. Click **"New Project"**
-3. Fill in:
-   - **Project name**: `forch-i-oracle`
+### Step 1: Create Supabase Project (Free)
+
+1. Go to [https://supabase.com](https://supabase.com)
+2. Click **"Start your project"** → Sign in with GitHub
+3. Click **"New project"**
+4. Fill in:
+   - **Project name**: `forchi-oracle`
    - **Database password**: Generate a strong password (save it!)
-   - **Region**: Choose closest to you (e.g., `US East` for iad1 Vercel region)
-4. Click **"Create new project"**
-5. Wait ~2 minutes for the database to be ready
+   - **Region**: Choose closest to you (e.g., `US East` for Americas)
+5. Click **"Create new project"** → Wait ~2 minutes
 
----
+### Step 2: Get Your API Keys
 
-## Step 2: Get Your Keys
+1. In your Supabase project dashboard, go to **Settings** (⚙️) → **API**
+2. Copy these two values:
+   - **Project URL** → Looks like `https://xxxxx.supabase.co`
+   - **`service_role` secret** → Starts with `eyJhbG...` (⚠️ NOT the `anon` key!)
 
-1. In your Supabase dashboard, go to **Settings** ⚙️ → **API**
-2. Copy these values:
-   - **Project URL**: `https://xxxxxxxxxxxx.supabase.co`
-   - **`anon` public key**: `eyJhbG...` (starts with eyJ)
-   - **`service_role` key** (secret, ⚠️ never expose to frontend): `eyJhbG...`
+### Step 3: Run SQL Migration
 
----
+1. In Supabase dashboard, click **SQL Editor** (left sidebar)
+2. Click **"New query"**
+3. Open the file `supabase/migrations/001_initial_schema.sql` from this repo
+4. **Copy ALL the SQL** and paste it into the Supabase SQL Editor
+5. Click **"Run"** (or press Ctrl+Enter)
+6. You should see: `Success. No rows returned` (or similar)
 
-## Step 3: Run the Schema SQL
+**What this creates:**
+- `match_results` — Real World Cup match scores
+- `team_forms` — Team recent form, momentum, dynamic Elo
+- `predictions` — Current predictions for each match
+- `tournament_probs` — Champion probabilities
+- `cron_status` — Cron job execution tracking
 
-1. In Supabase dashboard, go to **SQL Editor** (left sidebar)
-2. Click **"New Query"**
-3. Open `supabase/schema.sql` from your project
-4. Copy ALL the SQL content
-5. Paste into the SQL Editor
-6. Click **"Run"** (or Cmd+Enter)
-7. You should see "Success. No rows returned" — this is normal for CREATE TABLE
+### Step 4: Add Environment Variables to Vercel
 
-**Verify**: Go to **Table Editor** (left sidebar) and confirm you see these tables:
-- `teams`
-- `matches`
-- `match_predictions`
-- `team_form`
-- `champion_probabilities`
-- `cron_job_status`
+1. Go to your Vercel project: [https://vercel.com](https://vercel.com) → your project → **Settings** → **Environment Variables**
+2. Add these two variables:
 
----
+| Variable | Value | Environment |
+|---|---|---|
+| `SUPABASE_URL` | `https://xxxxx.supabase.co` | Production, Preview, Development |
+| `SUPABASE_SERVICE_KEY` | `eyJhbG...` (service_role key) | Production, Preview, Development |
 
-## Step 4: Add Environment Variables
+3. Click **"Save"**
+4. **Redeploy** your app (go to Deployments → ⋮ → Redeploy)
 
-Create or update `.env.local` in your project root:
+### Step 5: Verify Setup
 
-```env
-# Existing
-GROQ_API_KEY=gsk_...
-FOOTBALL_API_KEY=your-api-football-key
+1. In Supabase **Table Editor**, you should see 5 tables:
+   - `match_results`
+   - `team_forms`
+   - `predictions`
+   - `tournament_probs`
+   - `cron_status`
 
-# Supabase (from Step 2)
-SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJhbGc...  # ← use service_role key (NOT anon)
+2. In Supabase **SQL Editor**, run:
+   ```sql
+   SELECT * FROM cron_status;
+   ```
+   You should see 3 rows with status `never_run`.
 
-# Cron secret (generate your own)
-CRON_SECRET=your-secret-here-make-it-long-and-random
-```
+### Step 6: Test with a Fictional Result
 
-> ⚠️ **Important**: Use `SUPABASE_SERVICE_KEY` (service_role), NOT the `anon` key.
-> The service_role key bypasses Row Level Security, which is needed for API routes and cron jobs.
-
----
-
-## Step 5: Install Supabase Client
-
-```bash
-npm install @supabase/supabase-js
-```
-
----
-
-## Step 6: Verify Connection
-
-The app automatically detects Supabase when `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are set.
-
-To verify:
-
-```bash
-npm run dev
-```
-
-You should see in the console:
-```
-[data-layer] Using Supabase data layer
-```
-
-If you don't see those variables, it falls back to in-memory:
-```
-[data-layer] Using in-memory data layer (Supabase not configured)
-```
-
----
-
-## Step 7: Seed Initial Data
-
-### Option A: Run the seed script (recommended)
-
-Create `scripts/seed-supabase.ts`:
-
-```typescript
-// scripts/seed-supabase.ts
-import { createClient } from '@supabase/supabase-js';
-import { WORLD_CUP_TEAMS, ELO_RATINGS, POWER_RATINGS } from '../lib/teams';
-import { ALL_MATCHES } from '../lib/matches';
-
-async function seed() {
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!
-  );
-
-  console.log('Seeding teams...');
-  const teams = WORLD_CUP_TEAMS.map(t => ({
-    id: t.name,
-    fifa_code: t.code,
-    name: t.name,
-    group_char: t.group,
-    confederation: t.confederation,
-    elo_rating: ELO_RATINGS[t.name] ?? 1500,
-    power_ratings: POWER_RATINGS[t.name] ?? { attack: 50, defense: 50, midfield: 50 },
-  }));
-
-  const { error: teamError } = await supabase
-    .from('teams')
-    .upsert(teams, { onConflict: 'id' });
-
-  if (teamError) {
-    console.error('Team seed error:', teamError);
-    return;
-  }
-  console.log(`✅ Seeded ${teams.length} teams`);
-
-  console.log('Seeding matches...');
-  const matches = ALL_MATCHES.map(m => ({
-    id: m.id,
-    match_number: m.matchday,
-    group_char: m.group,
-    round: m.round,
-    home_team_id: m.homeTeam,
-    away_team_id: m.awayTeam,
-    match_date: m.date,
-    match_time: m.time,
-    venue: m.venue,
-    city: m.city,
-    status: 'scheduled',
-  }));
-
-  const { error: matchError } = await supabase
-    .from('matches')
-    .upsert(matches, { onConflict: 'id' });
-
-  if (matchError) {
-    console.error('Match seed error:', matchError);
-    return;
-  }
-  console.log(`✅ Seeded ${matches.length} matches`);
-  console.log('🎉 Seed complete!');
-}
-
-seed().catch(console.error);
-```
-
-Run it:
-
-```bash
-npx tsx scripts/seed-supabase.ts
-```
-
-### Option B: Use the in-memory auto-seed
-
-When you first access the app without Supabase configured, the in-memory store auto-seeds from `lib/teams.ts` and `lib/matches.ts`. When you connect Supabase, the seed script (Option A) does the same thing in the database.
-
----
-
-## Step 8: Activate Cron Jobs
-
-### On Vercel (Production)
-
-The cron jobs are already configured in `vercel.json`:
-
-```json
-"crons": [
-  { "path": "/api/cron/ingest?secret=${CRON_SECRET}", "schedule": "0 */6 * * *" },
-  { "path": "/api/cron/recalculate?secret=${CRON_SECRET}", "schedule": "0 */12 * * *" },
-  { "path": "/api/cron/simulate?secret=${CRON_SECRET}", "schedule": "0 0 * * *" }
-]
-```
-
-When you deploy to Vercel, these will auto-activate. Make sure `CRON_SECRET` is set in Vercel environment variables.
-
-### Local Testing
-
-Run cron jobs manually:
-
-```bash
-# Data ingestion
-curl "http://localhost:3000/api/cron/ingest?secret=your-secret-here"
-
-# Recalculate predictions
-curl "http://localhost:3000/api/cron/recalculate?secret=your-secret-here"
-
-# Tournament simulation
-curl "http://localhost:3000/api/cron/simulate?secret=your-secret-here"
-
-# Check status
-curl "http://localhost:3000/api/cron/status?secret=your-secret-here"
-```
-
----
-
-## Step 9: Deploy to Vercel
-
-1. Add environment variables in Vercel dashboard:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_KEY`
-   - `CRON_SECRET`
-   - `GROQ_API_KEY`
-   - `FOOTBALL_API_KEY`
-
-2. Deploy:
+1. Use the API directly:
    ```bash
-   vercel --prod
+   curl -X POST https://YOUR-VERCEL-APP.vercel.app/api/match-result \
+     -H "Content-Type: application/json" \
+     -d '{"matchId":"A1","homeTeam":"México","awayTeam":"Sudáfrica","homeScore":2,"awayScore":0}'
    ```
 
-3. Verify cron jobs are running in Vercel dashboard → **Crons** tab.
+2. Check Supabase **Table Editor** → `match_results` → You should see the result!
+
+3. Refresh your app's `/live` page → The result should appear with standings updated!
+
+---
+
+## How the Closed Loop Works
+
+```
+┌─────────────────────────────────────────────────────┐
+│              CIRCUITO CERRADO AUTOMÁTICO              │
+│                                                      │
+│  API-Football (league ID 9)                         │
+│      ↓ (cada 6h via GitHub Actions cron)            │
+│  Cron Ingest → Escribe match_results a Supabase     │
+│      ↓                                               │
+│  Data Layer lee de Supabase                         │
+│      ↓                                               │
+│  ┌─────────────────────────────────────────────┐    │
+│  │  Panel En Vivo  → Goles reales + tablas     │    │
+│  │  Dashboard      → Métricas de precisión     │    │
+│  │  Predicción     → Predicciones actualizadas │    │
+│  └─────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `SUPABASE_URL` | Yes (for persistence) | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Yes (for persistence) | Service role secret key |
+| `GROQ_API_KEY` | Yes | Groq AI API key |
+| `FOOTBALL_API_KEY` | Optional | API-Football key for cron ingestion |
+| `CRON_SECRET` | Optional | Secret to protect cron endpoints |
 
 ---
 
 ## Troubleshooting
 
-### "Supabase not configured" error
-- Check `.env.local` has both `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`
-- Restart dev server after adding env vars
+### "Esperando primeros resultados" even after adding results
+- Check Vercel env vars: `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` must be set
+- Redeploy after adding env vars
+- Check Supabase Table Editor → `match_results` has data
 
-### "relation does not exist" error
-- The SQL schema wasn't run. Go to Supabase SQL Editor and run `supabase/schema.sql`
+### Build fails on Vercel
+- The `@supabase/supabase-js` package is installed
+- Run `npm run build` locally to verify
 
-### Cron jobs not running
-- Check `CRON_SECRET` is set in Vercel env vars
-- Check Vercel dashboard → **Crons** tab for job history
-- Test manually with curl first
-
-### Predictions not showing up
-- Run the recalculate cron job manually
-- Check `/api/cron/status` for last run time and errors
+### Local development without Supabase
+- Don't set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`
+- The app falls back to in-memory + file-store mode automatically
 
 ---
 
-## Architecture Summary
-
-```
-┌─────────────────────────────────────────────────┐
-│  Vercel Cron (every 6h / 12h / daily)           │
-│       ↓                                          │
-│  /api/cron/ingest → API-Football → Supabase     │
-│  /api/cron/recalculate → Engine → Supabase      │
-│  /api/cron/simulate → 100 sims → Supabase       │
-│                                                  │
-│  User → /api/predict → Check Supabase cache     │
-│         → If miss → Calculate → Save → Return    │
-└─────────────────────────────────────────────────┘
-```
-
-Without Supabase, everything falls back to in-memory (current behavior preserved).
+*FORCH.i © 2026 · Built by Paulo Velasco*

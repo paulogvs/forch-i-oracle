@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { NextRequest } from 'next/server';
 
 // Mock the modules that make external calls
 vi.mock('@/lib/groq', () => ({
@@ -60,7 +61,7 @@ describe('POST /api/predict', () => {
           return null;
         },
       },
-    } as unknown as Request;
+    } as unknown as NextRequest;
   }
 
   it('should return 400 when teams are missing', async () => {

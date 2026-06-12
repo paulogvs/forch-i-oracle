@@ -1,8 +1,8 @@
 ---
 name: live-tournament-prediction-pipeline
-description: Closed-loop prediction system — real results trigger full bracket re-simulation with drift tracking and auto-updating live dashboard
+description: Closed-loop prediction system — real results trigger full bracket re-simulation with drift tracking and auto-updating live dashboard, with file persistence for serverless
 source: auto-skill
-extracted_at: '2026-06-11T19:58:28.551Z'
+extracted_at: '2026-06-12T00:40:00.000Z'
 ---
 
 # Closed-Loop Live Tournament Prediction Pipeline
