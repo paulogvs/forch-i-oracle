@@ -1,21 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import ChampionConsensusCard from '@/components/ChampionConsensusCard';
 import ConsensusTable from '@/components/ConsensusTable';
 import { ALL_MODELS, getModelInfo, validate } from '@/lib/worldcup-bench-data';
 import type { ModelInfo } from '@/lib/worldcup-bench-data';
 
-const LeaderboardTable = dynamic(() => import('@/components/LeaderboardTable'), {
-  loading: () => <div className="glass-card p-6"><div className="skeleton h-48 w-full" /></div>,
-  ssr: false,
-});
-
 export default function BenchmarkPage() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [validation, setValidation] = useState<{ ok: boolean; modelsLoaded: number; groupMatches: number; errors: string[] } | null>(null);
-  const [activeTab, setActiveTab] = useState<'consensus' | 'models' | 'leaderboard' | 'about'>('consensus');
+  const [activeTab, setActiveTab] = useState<'consensus' | 'models' | 'about'>('consensus');
 
   useEffect(() => {
     setModels(ALL_MODELS.map((name) => getModelInfo(name)));
@@ -25,7 +19,6 @@ export default function BenchmarkPage() {
   const TABS = [
     { id: 'consensus' as const, label: 'Consenso' },
     { id: 'models' as const, label: 'Modelos' },
-    { id: 'leaderboard' as const, label: 'Leaderboard' },
     { id: 'about' as const, label: 'Acerca de' },
   ];
 
@@ -126,12 +119,6 @@ export default function BenchmarkPage() {
         </div>
       )}
 
-      {activeTab === 'leaderboard' && (
-        <div className="animate-fade-in">
-          <LeaderboardTable />
-        </div>
-      )}
-
       {activeTab === 'about' && (
         <div className="glass-card p-4 sm:p-6 space-y-3 text-xs sm:text-sm text-text-secondary animate-fade-in">
           <h2 className="text-sm font-bold text-white">Acerca de WorldCupBench</h2>
@@ -157,7 +144,7 @@ export default function BenchmarkPage() {
           </ul>
 
           <p className="pt-2 text-[11px] text-text-muted">
-            Datos descargados el 2026-06-11. Leaderboard se actualiza con resultados reales del Mundial.
+            Datos descargados el 2026-06-11. Precisión se actualiza con resultados reales del Mundial.
           </p>
         </div>
       )}

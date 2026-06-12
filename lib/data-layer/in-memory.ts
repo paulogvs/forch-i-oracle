@@ -15,6 +15,16 @@ import type {
 } from './types';
 import { WORLD_CUP_TEAMS, ELO_RATINGS, POWER_RATINGS } from '../teams';
 import { ALL_MATCHES } from '../matches';
+import {
+  getResults as getFileResults,
+  saveResult as saveFileResult,
+  clearResults as clearFileResults,
+  getForms as getFileForms,
+  saveForm as saveFileForm,
+  getPredictions as getFilePredictions,
+  savePrediction as saveFilePrediction,
+  clearPredictions as clearFilePredictions,
+} from '../file-store';
 
 // ═══════════════════════════════════════════════════════════════
 // IN-Memory Store
@@ -224,6 +234,24 @@ async function savePrediction(prediction: Omit<DBMatchPrediction, 'id' | 'predic
     predictedAt: now,
   };
   predictionsStore.set(prediction.matchId, saved);
+
+  // Persist to file store
+  saveFilePrediction({
+    matchId: prediction.matchId,
+    homeWin: prediction.homeWin,
+    draw: prediction.draw,
+    awayWin: prediction.awayWin,
+    mostLikelyScore: prediction.mostLikelyScore,
+    expectedGoalsHome: prediction.expectedGoalsHome,
+    expectedGoalsAway: prediction.expectedGoalsAway,
+    over25Probability: prediction.over25Probability,
+    bttsProbability: prediction.bttsProbability,
+    confidence: prediction.confidence,
+    dataQualityScore: prediction.dataQualityScore,
+    modelVersion: prediction.modelVersion,
+    topScores: prediction.topScores || [],
+  });
+
   return saved;
 }
 
@@ -266,6 +294,19 @@ async function saveTeamForm(form: Omit<DBTeamForm, 'id' | 'updatedAt'>): Promise
     updatedAt: now,
   };
   teamFormsStore.set(form.teamId, saved);
+
+  // Persist to file store
+  saveFileForm({
+    teamId: form.teamId,
+    last5: form.last5,
+    xgFor: form.xgFor,
+    xgAgainst: form.xgAgainst,
+    momentum: form.momentum,
+    matchesPlayed: form.matchesPlayed,
+    eloDynamic: form.eloDynamic ?? 1500,
+    updatedAt: now,
+  });
+
   return saved;
 }
 
@@ -318,6 +359,17 @@ async function submitMatchResult(input: RealMatchResultInput): Promise<void> {
     matchResultsStore.push(input);
   }
 
+  // Persist to file store
+  saveFileResult({
+    matchId: input.matchId,
+    homeTeam: (matchResultsStore.find(r => r.matchId === input.matchId) as any)?.homeTeamId || '',
+    awayTeam: (matchResultsStore.find(r => r.matchId === input.matchId) as any)?.awayTeamId || '',
+    homeScore: input.homeScore,
+    awayScore: input.awayScore,
+    winner: input.winner,
+    submittedAt: new Date().toISOString(),
+  });
+
   // Update match status and score
   ensureInitialized();
   const match = matchesStore.get(input.matchId);
@@ -332,11 +384,21 @@ async function submitMatchResult(input: RealMatchResultInput): Promise<void> {
 }
 
 async function getMatchResults(): Promise<RealMatchResultInput[]> {
-  return [...matchResultsStore];
+  // Merge in-memory + file results (file results persist across requests)
+  const fileResults = getFileResults();
+  const fileIds = new Set(matchResultsStore.map(r => r.matchId));
+  const merged = [...matchResultsStore];
+  for (const fr of fileResults) {
+    if (!fileIds.has(fr.matchId)) {
+      merged.push(fr as any);
+    }
+  }
+  return merged;
 }
 
 async function clearMatchResults(): Promise<void> {
   matchResultsStore.length = 0;
+  clearFileResults();
 }
 
 // ═══════════════════════════════════════════════════════════════

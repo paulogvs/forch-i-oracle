@@ -166,15 +166,25 @@ if (results.resultsIngested > 0) {
 
 ## Panel 3 (En Vivo) Implementation
 
-3 tabs within the panel:
+2 tabs within the panel:
 
-1. **Grupos** — Live group standings recalculated from real results (PJ, PG, PE, PP, GF, GC, DG, Pts)
+1. **Tabla de Grupos** — Live group standings recalculated from real results (PJ, PG, PE, PP, GF, GC, DG, Pts)
 2. **Eliminatorias** — Live knockout bracket advancing with real winners
-3. **Ingresar Resultado** — Form to enter a real result → triggers auto-recalculate
+
+**NO manual entry form** — all data comes automatically from cron ingest. Include a prominent "🔄 Actualizar" button that calls `loadData()` to refresh all data from the server.
 
 Match display format:
 ```
 [Real: ARG 2 - 1 FRA] ✅ | [Pred: ARG 1 - 1 FRA] | ⬆ +7%
+```
+
+The GET `/api/simulate-tournament` endpoint must return `liveStandings` and `liveBracket` alongside results:
+```ts
+return NextResponse.json({
+  success: true, results, total: results.length,
+  liveStandings: await getLiveStandings(),
+  liveBracket: await getLiveBracket(),
+});
 ```
 
 ## Timezone Handling
