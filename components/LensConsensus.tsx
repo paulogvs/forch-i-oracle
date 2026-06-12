@@ -75,7 +75,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     name: 'Defensa',
     verdict: prediction.homeDefenseStrength > prediction.awayDefenseStrength ? homeTeam : awayTeam,
     confidence: Math.abs(prediction.homeDefenseStrength - prediction.awayDefenseStrength),
-    color: 'text-purple-400',
+    color: 'text-accent-secondary',
     insight: prediction.homeDefenseStrength > prediction.awayDefenseStrength
       ? `${homeTeam} defensa más sólida`
       : `${awayTeam} defensa más sólida`,
@@ -100,7 +100,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
   const isSplit = sortedVotes.length > 1 && sortedVotes[0][1] === sortedVotes[1][1];
 
   return (
-    <div className="glass-card p-5 mb-4">
+    <div className="surface p-5 mb-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-xs font-bold text-fg-primary uppercase tracking-wider">Consenso</h3>
@@ -121,7 +121,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
       <div className="flex rounded-full overflow-hidden h-1.5 mb-5 bg-white/[0.04]">
         {sortedVotes.map(([team, count], i) => {
           const pct = (count / 5) * 100;
-          const barColors = ['bg-accent-premium', 'bg-text-muted', 'bg-text-muted/60', 'bg-text-muted/40'];
+          const barColors = ['bg-accent-premium', 'bg-fg-tertiary', 'bg-fg-tertiary/60', 'bg-fg-tertiary/40'];
           return (
             <div
               key={team}
@@ -167,7 +167,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
               <div className="mt-2 w-full bg-white/[0.06] rounded-full h-1">
                 <div
                   className={`h-1 rounded-full transition-all duration-700 ${
-                    isForHome ? 'bg-accent-premium' : 'bg-text-muted'
+                    isForHome ? 'bg-accent-premium' : 'bg-fg-tertiary'
                   }`}
                   style={{ width: `${Math.min(100, lens.confidence)}%` }}
                 />

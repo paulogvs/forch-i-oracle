@@ -9,6 +9,7 @@ const config: Config = {
         surface:  'var(--surface)',
         elevated: 'var(--elevated)',
         overlay:  'var(--overlay)',
+        raised:   'var(--raised)',
 
         border: {
           subtle: 'var(--border-subtle)',
@@ -22,13 +23,22 @@ const config: Config = {
           disabled:  'var(--text-disabled)',
         },
         accent: {
-          primary: 'var(--accent-primary)',
-          premium: 'var(--accent-premium)',
+          primary:   'var(--accent-primary)',
+          secondary: 'var(--accent-secondary)',
+          premium:   'var(--accent-premium)',
+          emerald:   'var(--accent-emerald)',
         },
         state: {
           success: 'var(--state-success)',
           warning: 'var(--state-warning)',
           danger:  'var(--state-danger)',
+        },
+        tint: {
+          blue:   'var(--surface-blue)',
+          green:  'var(--surface-green)',
+          gold:   'var(--surface-gold)',
+          red:    'var(--surface-red)',
+          violet: 'var(--surface-violet)',
         },
       },
       fontFamily: {
@@ -36,7 +46,7 @@ const config: Config = {
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
-        sm: '6px', md: '10px', lg: '14px', xl: '20px',
+        sm: '8px', md: '12px', lg: '16px', xl: '24px',
       },
       maxWidth: {
         page: '1280px',

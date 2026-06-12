@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   const db = await getDataLayerAsync();
 
-  const jobs = ['ingest-data', 'recalculate-predictions', 'simulate-tournament'];
+  const jobs = ['ingest', 'recalculate', 'simulate'];
   const statuses: Record<string, unknown> = {};
 
   for (const jobName of jobs) {

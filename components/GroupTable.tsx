@@ -57,8 +57,8 @@ export default function GroupTable({ selectedGroup }: GroupTableProps) {
             onClick={() => setActiveGroup(group)}
             className={`shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
               group === activeGroup
-                ? 'bg-white/15 text-white border border-white/20'
-                : 'bg-white/[0.03] text-fg-disabled hover:bg-white/[0.06] hover:text-fg-secondary border border-transparent'
+                ? 'bg-fg-primary/15 text-fg-primary border border-fg-primary/20'
+                : 'bg-raised/30 text-fg-disabled hover:bg-raised/60 hover:text-fg-secondary border border-transparent'
             }`}
           >
             {group}
@@ -67,8 +67,8 @@ export default function GroupTable({ selectedGroup }: GroupTableProps) {
       </div>
 
       {/* Table */}
-      <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-white/[0.06]">
+      <div className="bg-raised/30 border border-border-subtle rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-border-subtle">
           <h3 className="text-sm font-bold text-fg-primary text-center">Grupo {activeGroup}</h3>
         </div>
 
@@ -90,7 +90,7 @@ export default function GroupTable({ selectedGroup }: GroupTableProps) {
               {standings.map((team) => (
                 <tr
                   key={team.code}
-                  className={`border-t border-white/[0.04] transition-colors ${
+                  className={`border-t border-border-subtle/40 transition-colors ${
                     team.position <= 2
                       ? 'bg-state-success/5'
                       : team.position === 3
@@ -127,7 +127,7 @@ export default function GroupTable({ selectedGroup }: GroupTableProps) {
         </div>
 
         {/* Legend */}
-        <div className="p-3 border-t border-white/[0.06] flex flex-wrap gap-4 text-[10px]">
+        <div className="p-3 border-t border-border-subtle flex flex-wrap gap-4 text-[10px]">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-state-success" />
             <span className="text-fg-disabled">Clasifica</span>

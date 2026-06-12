@@ -39,20 +39,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {NAV.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
+            // Color accent per nav item
+            const accentMap: Record<string, string> = {
+              '/': 'text-accent-primary bg-accent-primary/10',
+              '/fixture': 'text-accent-premium bg-accent-premium/10',
+              '/live': 'text-accent-emerald bg-accent-emerald/10',
+              '/benchmark': 'text-accent-secondary bg-accent-secondary/10',
+            };
+            const accentColor = accentMap[item.href] || 'text-accent-primary bg-accent-primary/10';
+            const dotColor: Record<string, string> = {
+              '/': 'bg-accent-primary',
+              '/fixture': 'bg-accent-premium',
+              '/live': 'bg-accent-emerald',
+              '/benchmark': 'bg-accent-secondary',
+            };
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 h-10 px-3 rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-3 h-10 px-3 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200',
                   active
-                    ? 'bg-elevated text-fg-primary'
+                    ? `${accentColor}`
                     : 'text-fg-secondary hover:text-fg-primary hover:bg-elevated/60',
                 )}
               >
-                <Icon className={cn('h-4 w-4', active ? 'text-accent-primary' : '')} />
+                <Icon className={cn('h-4 w-4')} />
                 <span>{item.label}</span>
-                {active && <span className="ml-auto h-1 w-1 rounded-full bg-accent-primary" />}
+                {active && <span className={cn('ml-auto h-1.5 w-1.5 rounded-full', dotColor[item.href])} />}
               </Link>
             );
           })}
@@ -83,13 +97,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {NAV.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
+            const colorMap: Record<string, string> = {
+              '/': 'text-accent-primary',
+              '/fixture': 'text-accent-premium',
+              '/live': 'text-accent-emerald',
+              '/benchmark': 'text-accent-secondary',
+            };
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(
                     'h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors',
-                    active ? 'text-accent-primary' : 'text-fg-tertiary',
+                    active ? colorMap[item.href] : 'text-fg-tertiary',
                   )}
                   aria-current={active ? 'page' : undefined}
                 >

@@ -1,32 +1,1175 @@
 {
   "A1": {
     "matchId": "A1",
-    "homeWin": 62,
+    "homeWin": 56,
     "draw": 25,
-    "awayWin": 13,
+    "awayWin": 19,
     "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.09,
-    "expectedGoalsAway": 0.56,
-    "over25Probability": 45,
-    "bttsProbability": 42,
-    "confidence": "alta",
-    "dataQualityScore": 40,
-    "modelVersion": "2.0",
+    "expectedGoalsHome": 1.65,
+    "expectedGoalsAway": 0.82,
+    "over25Probability": 46,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 2,
         "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12.3
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.9
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.4
+      }
+    ]
+  },
+  "A3": {
+    "matchId": "A3",
+    "homeWin": 47,
+    "draw": 28,
+    "awayWin": 25,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.45,
+    "expectedGoalsAway": 0.97,
+    "over25Probability": 46,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.8
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.5
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.1
+      }
+    ]
+  },
+  "A2": {
+    "matchId": "A2",
+    "homeWin": 44,
+    "draw": 29,
+    "awayWin": 27,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.35,
+    "expectedGoalsAway": 0.98,
+    "over25Probability": 42,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12.1
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11.8
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.2
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.9
+      }
+    ]
+  },
+  "A4": {
+    "matchId": "A4",
+    "homeWin": 43,
+    "draw": 28,
+    "awayWin": 29,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.37,
+    "expectedGoalsAway": 1.07,
+    "over25Probability": 47,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.1
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.5
+      }
+    ]
+  },
+  "A5": {
+    "matchId": "A5",
+    "homeWin": 28,
+    "draw": 28,
+    "awayWin": 44,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.04,
+    "expectedGoalsAway": 1.39,
+    "over25Probability": 47,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.1
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.1
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.1
+      }
+    ]
+  },
+  "A6": {
+    "matchId": "A6",
+    "homeWin": 26,
+    "draw": 29,
+    "awayWin": 45,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.96,
+    "expectedGoalsAway": 1.37,
+    "over25Probability": 42,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 91,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11.4
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 10.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9
+      }
+    ]
+  },
+  "B1": {
+    "matchId": "B1",
+    "homeWin": 42,
+    "draw": 28,
+    "awayWin": 30,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.39,
+    "expectedGoalsAway": 1.12,
+    "over25Probability": 51,
+    "bttsProbability": 31,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
         "probability": 13.9
       },
       {
         "home": 1,
         "away": 0,
-        "probability": 12.8
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.8
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.1
+      }
+    ]
+  },
+  "B3": {
+    "matchId": "B3",
+    "homeWin": 20,
+    "draw": 25,
+    "awayWin": 55,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.89,
+    "expectedGoalsAway": 1.67,
+    "over25Probability": 50,
+    "bttsProbability": 28,
+    "confidence": "media",
+    "dataQualityScore": 91,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 12.6
       },
       {
         "home": 1,
         "away": 1,
+        "probability": 11.5
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.3
+      }
+    ]
+  },
+  "B2": {
+    "matchId": "B2",
+    "homeWin": 56,
+    "draw": 25,
+    "awayWin": 19,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.73,
+    "expectedGoalsAway": 0.89,
+    "over25Probability": 52,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.9
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.3
+      }
+    ]
+  },
+  "B4": {
+    "matchId": "B4",
+    "homeWin": 47,
+    "draw": 28,
+    "awayWin": 25,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.49,
+    "expectedGoalsAway": 1.01,
+    "over25Probability": 49,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.6
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.3
+      }
+    ]
+  },
+  "B5": {
+    "matchId": "B5",
+    "homeWin": 54,
+    "draw": 26,
+    "awayWin": 20,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.69,
+    "expectedGoalsAway": 0.95,
+    "over25Probability": 54,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.4
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 10.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.1
+      }
+    ]
+  },
+  "B6": {
+    "matchId": "B6",
+    "homeWin": 44,
+    "draw": 28,
+    "awayWin": 28,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.4,
+    "expectedGoalsAway": 1.04,
+    "over25Probability": 47,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.3
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.9
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 8.7
+      }
+    ]
+  },
+  "C1": {
+    "matchId": "C1",
+    "homeWin": 56,
+    "draw": 24,
+    "awayWin": 20,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.78,
+    "expectedGoalsAway": 0.92,
+    "over25Probability": 56,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.8
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.5
+      }
+    ]
+  },
+  "C3": {
+    "matchId": "C3",
+    "homeWin": 26,
+    "draw": 28,
+    "awayWin": 46,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.99,
+    "expectedGoalsAway": 1.41,
+    "over25Probability": 45,
+    "bttsProbability": 28,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 10.4
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.2
+      }
+    ]
+  },
+  "C2": {
+    "matchId": "C2",
+    "homeWin": 20,
+    "draw": 26,
+    "awayWin": 54,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.86,
+    "expectedGoalsAway": 1.56,
+    "over25Probability": 44,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 12.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.5
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.1
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.4
+      }
+    ]
+  },
+  "C4": {
+    "matchId": "C4",
+    "homeWin": 75,
+    "draw": 16,
+    "awayWin": 9,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.37,
+    "expectedGoalsAway": 0.62,
+    "over25Probability": 58,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 87,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15.2
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.5
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 7.8
+      }
+    ]
+  },
+  "C5": {
+    "matchId": "C5",
+    "homeWin": 16,
+    "draw": 22,
+    "awayWin": 62,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.86,
+    "expectedGoalsAway": 1.98,
+    "over25Probability": 61,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 12
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.7
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 8.7
+      }
+    ]
+  },
+  "C6": {
+    "matchId": "C6",
+    "homeWin": 68,
+    "draw": 21,
+    "awayWin": 11,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.94,
+    "expectedGoalsAway": 0.6,
+    "over25Probability": 43,
+    "bttsProbability": 20,
+    "confidence": "alta",
+    "dataQualityScore": 90,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 17
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 13.9
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.1
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.6
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.3
+      }
+    ]
+  },
+  "D1": {
+    "matchId": "D1",
+    "homeWin": 53,
+    "draw": 26,
+    "awayWin": 21,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.61,
+    "expectedGoalsAway": 0.9,
+    "over25Probability": 49,
+    "bttsProbability": 28,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.8
+      },
+      {
+        "home": 1,
+        "away": 0,
         "probability": 11.4
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.5
+      }
+    ]
+  },
+  "D3": {
+    "matchId": "D3",
+    "homeWin": 40,
+    "draw": 28,
+    "awayWin": 32,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.37,
+    "expectedGoalsAway": 1.18,
+    "over25Probability": 52,
+    "bttsProbability": 32,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.2
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.2
+      }
+    ]
+  },
+  "D2": {
+    "matchId": "D2",
+    "homeWin": 46,
+    "draw": 28,
+    "awayWin": 26,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.46,
+    "expectedGoalsAway": 1.03,
+    "over25Probability": 49,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.2
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.1
+      }
+    ]
+  },
+  "D4": {
+    "matchId": "D4",
+    "homeWin": 47,
+    "draw": 27,
+    "awayWin": 26,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.49,
+    "expectedGoalsAway": 1.05,
+    "over25Probability": 51,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.2
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.1
+      }
+    ]
+  },
+  "D5": {
+    "matchId": "D5",
+    "homeWin": 33,
+    "draw": 27,
+    "awayWin": 40,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.28,
+    "expectedGoalsAway": 1.42,
+    "over25Probability": 59,
+    "bttsProbability": 34,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.2
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.1
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 7.5
+      }
+    ]
+  },
+  "D6": {
+    "matchId": "D6",
+    "homeWin": 32,
+    "draw": 30,
+    "awayWin": 38,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.07,
+    "expectedGoalsAway": 1.19,
+    "over25Probability": 40,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.6
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 12.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 8.2
+      }
+    ]
+  },
+  "E1": {
+    "matchId": "E1",
+    "homeWin": 74,
+    "draw": 17,
+    "awayWin": 9,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.42,
+    "expectedGoalsAway": 0.65,
+    "over25Probability": 61,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 87,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14.5
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.3
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.5
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 7.8
+      }
+    ]
+  },
+  "E3": {
+    "matchId": "E3",
+    "homeWin": 27,
+    "draw": 27,
+    "awayWin": 46,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.05,
+    "expectedGoalsAway": 1.48,
+    "over25Probability": 51,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.2
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.4
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.7
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9
+      }
+    ]
+  },
+  "E2": {
+    "matchId": "E2",
+    "homeWin": 70,
+    "draw": 18,
+    "awayWin": 12,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.28,
+    "expectedGoalsAway": 0.76,
+    "over25Probability": 64,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.8
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 10.3
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.1
+      }
+    ]
+  },
+  "E4": {
+    "matchId": "E4",
+    "homeWin": 64,
+    "draw": 22,
+    "awayWin": 14,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.89,
+    "expectedGoalsAway": 0.75,
+    "over25Probability": 50,
+    "bttsProbability": 25,
+    "confidence": "media",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.5
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.6
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.2
+      }
+    ]
+  },
+  "E5": {
+    "matchId": "E5",
+    "homeWin": 28,
+    "draw": 28,
+    "awayWin": 44,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.06,
+    "expectedGoalsAway": 1.41,
+    "over25Probability": 49,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.8
       },
       {
         "home": 0,
@@ -34,9 +1177,1777 @@
         "probability": 9.8
       },
       {
+        "home": 0,
+        "away": 2,
+        "probability": 9.4
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.2
+      }
+    ]
+  },
+  "E6": {
+    "matchId": "E6",
+    "homeWin": 19,
+    "draw": 23,
+    "awayWin": 58,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.96,
+    "expectedGoalsAway": 1.9,
+    "over25Probability": 62,
+    "bttsProbability": 32,
+    "confidence": "media",
+    "dataQualityScore": 91,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11.5
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.1
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.3
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 8.3
+      }
+    ]
+  },
+  "F1": {
+    "matchId": "F1",
+    "homeWin": 52,
+    "draw": 26,
+    "awayWin": 22,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.69,
+    "expectedGoalsAway": 1.01,
+    "over25Probability": 57,
+    "bttsProbability": 32,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.4
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.9
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.6
+      }
+    ]
+  },
+  "F3": {
+    "matchId": "F3",
+    "homeWin": 40,
+    "draw": 29,
+    "awayWin": 31,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.31,
+    "expectedGoalsAway": 1.12,
+    "over25Probability": 47,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.3
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.3
+      }
+    ]
+  },
+  "F2": {
+    "matchId": "F2",
+    "homeWin": 66,
+    "draw": 20,
+    "awayWin": 14,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.09,
+    "expectedGoalsAway": 0.79,
+    "over25Probability": 60,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.7
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.4
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.2
+      }
+    ]
+  },
+  "F4": {
+    "matchId": "F4",
+    "homeWin": 23,
+    "draw": 27,
+    "awayWin": 50,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.93,
+    "expectedGoalsAway": 1.5,
+    "over25Probability": 46,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 91,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.9
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.4
+      }
+    ]
+  },
+  "F5": {
+    "matchId": "F5",
+    "homeWin": 56,
+    "draw": 24,
+    "awayWin": 20,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.79,
+    "expectedGoalsAway": 0.92,
+    "over25Probability": 56,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.7
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.5
+      }
+    ]
+  },
+  "F6": {
+    "matchId": "F6",
+    "homeWin": 17,
+    "draw": 24,
+    "awayWin": 59,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.8,
+    "expectedGoalsAway": 1.79,
+    "over25Probability": 50,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 96,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 13.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.1
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.7
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 8.9
+      }
+    ]
+  },
+  "G1": {
+    "matchId": "G1",
+    "homeWin": 61,
+    "draw": 23,
+    "awayWin": 16,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.89,
+    "expectedGoalsAway": 0.85,
+    "over25Probability": 56,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.8
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 7.9
+      }
+    ]
+  },
+  "G3": {
+    "matchId": "G3",
+    "homeWin": 59,
+    "draw": 25,
+    "awayWin": 16,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.7,
+    "expectedGoalsAway": 0.77,
+    "over25Probability": 45,
+    "bttsProbability": 25,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12.9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10
+      },
+      {
         "home": 2,
         "away": 1,
         "probability": 9.3
+      }
+    ]
+  },
+  "G2": {
+    "matchId": "G2",
+    "homeWin": 56,
+    "draw": 24,
+    "awayWin": 20,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.76,
+    "expectedGoalsAway": 0.91,
+    "over25Probability": 55,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 91,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.2
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.8
+      }
+    ]
+  },
+  "G4": {
+    "matchId": "G4",
+    "homeWin": 24,
+    "draw": 28,
+    "awayWin": 48,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.95,
+    "expectedGoalsAway": 1.44,
+    "over25Probability": 44,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.3
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.2
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.7
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.2
+      }
+    ]
+  },
+  "G5": {
+    "matchId": "G5",
+    "homeWin": 35,
+    "draw": 29,
+    "awayWin": 36,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.2,
+    "expectedGoalsAway": 1.22,
+    "over25Probability": 46,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.4
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.1
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.3
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8.1
+      }
+    ]
+  },
+  "G6": {
+    "matchId": "G6",
+    "homeWin": 16,
+    "draw": 23,
+    "awayWin": 61,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.78,
+    "expectedGoalsAway": 1.82,
+    "over25Probability": 50,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 13.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.1
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.7
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 8.9
+      }
+    ]
+  },
+  "H1": {
+    "matchId": "H1",
+    "homeWin": 74,
+    "draw": 17,
+    "awayWin": 9,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.35,
+    "expectedGoalsAway": 0.63,
+    "over25Probability": 58,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15.2
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.5
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 7.8
+      }
+    ]
+  },
+  "H3": {
+    "matchId": "H3",
+    "homeWin": 18,
+    "draw": 24,
+    "awayWin": 58,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.84,
+    "expectedGoalsAway": 1.74,
+    "over25Probability": 50,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 13
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.3
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.1
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.3
+      }
+    ]
+  },
+  "H2": {
+    "matchId": "H2",
+    "homeWin": 73,
+    "draw": 17,
+    "awayWin": 10,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.39,
+    "expectedGoalsAway": 0.69,
+    "over25Probability": 63,
+    "bttsProbability": 25,
+    "confidence": "alta",
+    "dataQualityScore": 88,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.9
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.8
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.2
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 7.6
+      }
+    ]
+  },
+  "H4": {
+    "matchId": "H4",
+    "homeWin": 65,
+    "draw": 22,
+    "awayWin": 13,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.88,
+    "expectedGoalsAway": 0.67,
+    "over25Probability": 45,
+    "bttsProbability": 23,
+    "confidence": "media",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15.1
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 13
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.5
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.4
+      }
+    ]
+  },
+  "H5": {
+    "matchId": "H5",
+    "homeWin": 33,
+    "draw": 31,
+    "awayWin": 36,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.07,
+    "expectedGoalsAway": 1.11,
+    "over25Probability": 36,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 14
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.2
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 7.5
+      }
+    ]
+  },
+  "H6": {
+    "matchId": "H6",
+    "homeWin": 27,
+    "draw": 25,
+    "awayWin": 48,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.22,
+    "expectedGoalsAway": 1.69,
+    "over25Probability": 68,
+    "bttsProbability": 36,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 8.3
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 7.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 6.2
+      }
+    ]
+  },
+  "I1": {
+    "matchId": "I1",
+    "homeWin": 69,
+    "draw": 19,
+    "awayWin": 12,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.26,
+    "expectedGoalsAway": 0.77,
+    "over25Probability": 64,
+    "bttsProbability": 27,
+    "confidence": "alta",
+    "dataQualityScore": 81,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.8
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.9
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.5
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.4
+      }
+    ]
+  },
+  "I3": {
+    "matchId": "I3",
+    "homeWin": 21,
+    "draw": 25,
+    "awayWin": 54,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.96,
+    "expectedGoalsAway": 1.7,
+    "over25Probability": 55,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 90,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.6
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11.4
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.4
+      }
+    ]
+  },
+  "I2": {
+    "matchId": "I2",
+    "homeWin": 75,
+    "draw": 16,
+    "awayWin": 9,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.42,
+    "expectedGoalsAway": 0.62,
+    "over25Probability": 60,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.4
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 8.1
+      }
+    ]
+  },
+  "I4": {
+    "matchId": "I4",
+    "homeWin": 39,
+    "draw": 27,
+    "awayWin": 34,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.39,
+    "expectedGoalsAway": 1.26,
+    "over25Probability": 57,
+    "bttsProbability": 34,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.1
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8
+      }
+    ]
+  },
+  "I5": {
+    "matchId": "I5",
+    "homeWin": 16,
+    "draw": 20,
+    "awayWin": 64,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.92,
+    "expectedGoalsAway": 2.19,
+    "over25Probability": 71,
+    "bttsProbability": 32,
+    "confidence": "alta",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11.1
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.5
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 9.3
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.3
+      },
+      {
+        "home": 1,
+        "away": 3,
+        "probability": 8
+      }
+    ]
+  },
+  "I6": {
+    "matchId": "I6",
+    "homeWin": 60,
+    "draw": 24,
+    "awayWin": 16,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.77,
+    "expectedGoalsAway": 0.79,
+    "over25Probability": 48,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9
+      }
+    ]
+  },
+  "J1": {
+    "matchId": "J1",
+    "homeWin": 70,
+    "draw": 19,
+    "awayWin": 11,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.18,
+    "expectedGoalsAway": 0.66,
+    "over25Probability": 54,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15.1
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.3
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.7
+      }
+    ]
+  },
+  "J3": {
+    "matchId": "J3",
+    "homeWin": 58,
+    "draw": 24,
+    "awayWin": 18,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.8,
+    "expectedGoalsAway": 0.86,
+    "over25Probability": 54,
+    "bttsProbability": 28,
+    "confidence": "media",
+    "dataQualityScore": 91,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.9
+      }
+    ]
+  },
+  "J2": {
+    "matchId": "J2",
+    "homeWin": 69,
+    "draw": 19,
+    "awayWin": 12,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.26,
+    "expectedGoalsAway": 0.78,
+    "over25Probability": 65,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.6
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 10.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.5
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8
+      }
+    ]
+  },
+  "J4": {
+    "matchId": "J4",
+    "homeWin": 28,
+    "draw": 30,
+    "awayWin": 42,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.98,
+    "expectedGoalsAway": 1.3,
+    "over25Probability": 40,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.2
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 12.3
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.8
+      }
+    ]
+  },
+  "J5": {
+    "matchId": "J5",
+    "homeWin": 33,
+    "draw": 28,
+    "awayWin": 39,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.19,
+    "expectedGoalsAway": 1.35,
+    "over25Probability": 52,
+    "bttsProbability": 32,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.8
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.1
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8.8
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 7.9
+      }
+    ]
+  },
+  "J6": {
+    "matchId": "J6",
+    "homeWin": 12,
+    "draw": 20,
+    "awayWin": 68,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.67,
+    "expectedGoalsAway": 2.05,
+    "over25Probability": 52,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 15.2
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 11.4
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8.9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.8
+      }
+    ]
+  },
+  "K1": {
+    "matchId": "K1",
+    "homeWin": 73,
+    "draw": 17,
+    "awayWin": 10,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.31,
+    "expectedGoalsAway": 0.65,
+    "over25Probability": 58,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 88,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14.8
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.8
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.1
+      }
+    ]
+  },
+  "K3": {
+    "matchId": "K3",
+    "homeWin": 16,
+    "draw": 23,
+    "awayWin": 61,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.78,
+    "expectedGoalsAway": 1.87,
+    "over25Probability": 52,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 13.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.7
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.4
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 9.2
+      }
+    ]
+  },
+  "K2": {
+    "matchId": "K2",
+    "homeWin": 71,
+    "draw": 18,
+    "awayWin": 11,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.25,
+    "expectedGoalsAway": 0.68,
+    "over25Probability": 58,
+    "bttsProbability": 25,
+    "confidence": "alta",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14.4
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.2
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.1
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.6
+      }
+    ]
+  },
+  "K4": {
+    "matchId": "K4",
+    "homeWin": 70,
+    "draw": 19,
+    "awayWin": 11,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.12,
+    "expectedGoalsAway": 0.66,
+    "over25Probability": 53,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15.2
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.8
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9
+      }
+    ]
+  },
+  "K5": {
+    "matchId": "K5",
+    "homeWin": 34,
+    "draw": 27,
+    "awayWin": 39,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.31,
+    "expectedGoalsAway": 1.42,
+    "over25Probability": 61,
+    "bttsProbability": 35,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 7.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 7.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.2
+      }
+    ]
+  },
+  "K6": {
+    "matchId": "K6",
+    "homeWin": 36,
+    "draw": 29,
+    "awayWin": 35,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.21,
+    "expectedGoalsAway": 1.17,
+    "over25Probability": 45,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 14.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11.1
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.1
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 7.8
+      }
+    ]
+  },
+  "L1": {
+    "matchId": "L1",
+    "homeWin": 57,
+    "draw": 24,
+    "awayWin": 19,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.79,
+    "expectedGoalsAway": 0.92,
+    "over25Probability": 56,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.6
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 7.5
+      }
+    ]
+  },
+  "L3": {
+    "matchId": "L3",
+    "homeWin": 47,
+    "draw": 28,
+    "awayWin": 25,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.44,
+    "expectedGoalsAway": 0.95,
+    "over25Probability": 44,
+    "bttsProbability": 28,
+    "confidence": "media",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.8
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.9
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9
+      }
+    ]
+  },
+  "L2": {
+    "matchId": "L2",
+    "homeWin": 70,
+    "draw": 19,
+    "awayWin": 11,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.19,
+    "expectedGoalsAway": 0.67,
+    "over25Probability": 56,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 86,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14.5
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 10.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.2
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.9
+      }
+    ]
+  },
+  "L4": {
+    "matchId": "L4",
+    "homeWin": 16,
+    "draw": 24,
+    "awayWin": 60,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.75,
+    "expectedGoalsAway": 1.72,
+    "over25Probability": 45,
+    "bttsProbability": 24,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 14
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.6
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.3
+      }
+    ]
+  },
+  "L5": {
+    "matchId": "L5",
+    "homeWin": 12,
+    "draw": 21,
+    "awayWin": 67,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.67,
+    "expectedGoalsAway": 2,
+    "over25Probability": 50,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 96,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 15.3
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 11.1
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.1
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9
+      }
+    ]
+  },
+  "L6": {
+    "matchId": "L6",
+    "homeWin": 62,
+    "draw": 23,
+    "awayWin": 15,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 1.87,
+    "expectedGoalsAway": 0.75,
+    "over25Probability": 50,
+    "bttsProbability": 26,
+    "confidence": "media",
+    "dataQualityScore": 85,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.5
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.5
       }
     ]
   }

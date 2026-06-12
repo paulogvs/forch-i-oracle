@@ -25,19 +25,6 @@ const BASE_URL = 'https://v3.football.api-sports.io';
 const FD_BASE_URL = 'https://api.football-data.org/v4';
 const FD_WC_COMPETITION = 'WC'; // World Cup competition code
 
-// worldcup26.ir round_of → our round format
-function mapWC26Round(roundOf: string): string {
-  switch (roundOf) {
-    case 'group': return 'group';
-    case '16': return 'round-32';
-    case '8': return 'round-16';
-    case '4': return 'quarter';
-    case '2': return 'semi';
-    case '3': return 'third';
-    default: return 'final';
-  }
-}
-
 // Parse scorers string from worldcup26.ir
 function parseWC26Scorers(scorersStr: string): string[] {
   if (!scorersStr || scorersStr === '{}' || scorersStr === '[]') return [];
@@ -355,14 +342,58 @@ export async function GET(request: Request) {
       }
     }
 
-    // AUTO-RECALCULATE: If new results were ingested, trigger recalculate cron
+    // AUTO-RECALCULATE: If new results were ingested, trigger recalculate AND simulate
     if (results.resultsIngested > 0) {
-      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested.`);
+      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested. Triggering auto-recalculate...`);
       diagnostics.push({
         step: 'ingest_summary',
         status: 'ok',
         message: `${results.resultsIngested} results ingested, ${results.formsUpdated} forms updated`,
       });
+
+      // Trigger recalculate automatically
+      try {
+        const recalcUrl = new URL(request.url);
+        recalcUrl.pathname = '/api/cron/recalculate';
+        recalcUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
+        const recalcRes = await fetch(recalcUrl.toString(), { signal: AbortSignal.timeout(120000) });
+        const recalcData = await recalcRes.json().catch(() => ({}));
+        diagnostics.push({
+          step: 'auto_recalculate',
+          status: recalcRes.ok ? 'ok' : 'warn',
+          message: recalcRes.ok
+            ? `Auto-recalculate triggered: ${recalcData.predictionsSaved ?? '?'} predictions updated`
+            : `Auto-recalculate failed: HTTP ${recalcRes.status}`,
+        });
+      } catch (err) {
+        diagnostics.push({
+          step: 'auto_recalculate',
+          status: 'warn',
+          message: `Auto-recalculate error: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
+
+      // Trigger simulate automatically
+      try {
+        const simUrl = new URL(request.url);
+        simUrl.pathname = '/api/cron/simulate';
+        simUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
+        const simRes = await fetch(simUrl.toString(), { signal: AbortSignal.timeout(120000) });
+        const simData = await simRes.json().catch(() => ({}));
+        diagnostics.push({
+          step: 'auto_simulate',
+          status: simRes.ok ? 'ok' : 'warn',
+          message: simRes.ok
+            ? `Auto-simulate triggered: ${simData.simulationsCompleted ?? '?'} sims, top: ${simData.topTeam ?? '?'}`
+            : `Auto-simulate failed: HTTP ${simRes.status}`,
+        });
+      } catch (err) {
+        diagnostics.push({
+          step: 'auto_simulate',
+          status: 'warn',
+          message: `Auto-simulate error: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
     }
 
     // Check for name mapping failures
@@ -557,6 +588,10 @@ async function processFixtures(
   let skippedNoMatch = 0;
   let skippedAlreadyIngested = 0;
 
+  // Hoist results lookup outside loop (fix N+1)
+  const existingResults = await db.getMatchResults();
+  const existingResultIds = new Set(existingResults.map(r => r.matchId));
+
   for (const fixture of fixtures) {
     try {
       const status = fixture.fixture?.status?.short;
@@ -613,8 +648,7 @@ async function processFixtures(
       }
 
       // Check if we already have this result
-      const existingResults = await db.getMatchResults();
-      if (existingResults.some(r => r.matchId === match!.id)) {
+      if (existingResultIds.has(match!.id)) {
         skippedAlreadyIngested++;
         continue;
       }

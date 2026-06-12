@@ -49,7 +49,7 @@ export function TopBar() {
           )}
         </div>
 
-        <Button variant="ghost" size="sm" onClick={handleRefresh} aria-label="Actualizar datos">
+        <Button variant={isLive ? 'primary' : 'ghost'} size="sm" onClick={handleRefresh} aria-label="Actualizar datos">
           <RefreshCw className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Actualizar</span>
         </Button>

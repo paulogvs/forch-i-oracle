@@ -2,6 +2,7 @@
 
 import { getChampionConsensus, getTeamStageConsensus, ALL_MODELS, getModelInfo } from '@/lib/worldcup-bench-data';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface TeamData {
   team: string;
@@ -26,94 +27,91 @@ export default function ChampionConsensusCard() {
   const topTeam = championData[0];
 
   return (
-    <div className="glass-card p-6 mb-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="text-2xl">🏆</div>
+    <div className="surface p-5 rounded-[var(--r-lg)] border border-border-subtle">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-10 h-10 rounded-[var(--r-md)] bg-tint-gold flex items-center justify-center text-xl">🏆</div>
         <div>
-          <h2 className="text-lg font-bold text-white">Champion Consensus</h2>
-          <p className="text-sm text-[var(--wc-silver)]">
-            Across {ALL_MODELS.length} AI models — pre-tournament predictions
+          <h2 className="text-base font-bold text-fg-primary">Consenso de Campeón</h2>
+          <p className="text-xs text-fg-tertiary">
+            {ALL_MODELS.length} modelos IA · Predicciones pre-torneo
           </p>
         </div>
       </div>
 
       {/* Top pick highlight */}
       {topTeam && (
-        <div className="champion-podium mb-6">
-          <div className="text-3xl font-black text-[var(--wc-gold)] mb-1">
-            {topTeam.team}
-          </div>
-          <div className="text-sm text-[var(--wc-silver)]">
-            Top pick — {topTeam.count}/{ALL_MODELS.length} models ({topTeam.pct}%)
+        <div className="surface-gold p-4 rounded-[var(--r-lg)] mb-5 text-center">
+          <div className="text-2xl font-black text-accent-premium mb-1">{topTeam.team}</div>
+          <div className="text-xs text-fg-secondary">
+            Top pick — {topTeam.count}/{ALL_MODELS.length} modelos ({topTeam.pct}%)
           </div>
         </div>
       )}
 
       {/* Horizontal bar chart */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {championData.map(({ team, count, pct }) => (
           <div key={team} className="flex items-center gap-3">
-            <div className="w-8 text-right text-sm font-bold text-white">{team}</div>
+            <div className="w-24 text-right text-xs font-bold text-fg-primary truncate">{team}</div>
             <div className="flex-1">
-              <div className="h-7 rounded-lg overflow-hidden relative glass-card" style={{ border: 'none', background: 'rgba(255,255,255,0.04)' }}>
+              <div className="h-7 rounded-lg overflow-hidden relative bg-raised/50">
                 <div
                   className="h-full rounded-lg transition-all duration-700"
                   style={{
                     width: `${(count / maxCount) * 100}%`,
                     background: count === maxCount
-                      ? 'linear-gradient(90deg, var(--wc-gold), #E6BC4A)'
-                      : 'linear-gradient(90deg, var(--wc-blue), var(--wc-blue-glow))',
+                      ? 'var(--gradient-gold)'
+                      : 'var(--gradient-blue)',
                     opacity: 0.8,
                   }}
                 />
                 <div className="absolute inset-0 flex items-center justify-end pr-3">
-                  <span className="text-xs font-bold text-white drop-shadow-lg">
+                  <span className="text-[10px] font-bold text-white drop-shadow-lg">
                     {count}/{ALL_MODELS.length}
                   </span>
                 </div>
               </div>
             </div>
+            <span className="text-xs font-mono text-fg-tertiary w-10 text-right">{pct}%</span>
           </div>
         ))}
       </div>
 
       {/* Top 4 finish breakdown */}
-      <div className="mt-6">
-        <h3 className="text-sm font-semibold text-[var(--wc-silver)] mb-3 uppercase tracking-wider">
-          Teams by Top-4 finish consensus
+      <div className="mt-5 pt-4 border-t border-border-subtle">
+        <h3 className="text-xs font-semibold text-fg-secondary uppercase tracking-wider mb-3">
+          Equipos por consenso Top-4
         </h3>
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {teamData.filter(t => t.totalTop4 > 0).map((team) => (
             <div key={team.team}>
               <button
                 onClick={() => setExpandedTeam(expandedTeam === team.team ? null : team.team)}
-                className="match-row w-full text-left flex items-center gap-2"
+                className="w-full text-left flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-elevated/50 transition-colors"
               >
-                <div className="w-8 text-sm font-bold">{team.team}</div>
+                <div className="w-20 text-xs font-bold text-fg-primary truncate">{team.team}</div>
                 <div className="flex gap-1 flex-1">
                   {Array.from({ length: team.champion }).map((_, i) => (
-                    <div key={`champ-${i}`} className="w-3 h-3 rounded-full" style={{ background: 'var(--wc-gold)' }} title="Champion" />
+                    <div key={`champ-${i}`} className="w-3 h-3 rounded-full bg-accent-premium" title="Champion" />
                   ))}
                   {Array.from({ length: team.runnerUp }).map((_, i) => (
-                    <div key={`ru-${i}`} className="w-3 h-3 rounded-full" style={{ background: 'var(--wc-silver)' }} title="Runner-up" />
+                    <div key={`ru-${i}`} className="w-3 h-3 rounded-full bg-accent-secondary" title="Runner-up" />
                   ))}
                   {Array.from({ length: team.thirdPlace }).map((_, i) => (
-                    <div key={`3rd-${i}`} className="w-3 h-3 rounded-full" style={{ background: '#CD7F32' }} title="Third place" />
+                    <div key={`3rd-${i}`} className="w-3 h-3 rounded-full bg-accent-primary" title="Third place" />
                   ))}
                   {Array.from({ length: team.fourthPlace }).map((_, i) => (
-                    <div key={`4th-${i}`} className="w-3 h-3 rounded-sm" style={{ background: 'var(--wc-silver)', opacity: 0.5 }} title="Fourth place" />
+                    <div key={`4th-${i}`} className="w-3 h-3 rounded-sm bg-fg-tertiary/40" title="Fourth place" />
                   ))}
                 </div>
-                <div className="text-xs text-[var(--wc-silver)]">{team.totalTop4}</div>
+                <div className="text-[11px] text-fg-tertiary font-mono">{team.totalTop4}</div>
               </button>
               {expandedTeam === team.team && (
-                <div className="px-4 pb-2 text-xs text-[var(--wc-silver)] space-y-1">
-                  <div className="flex gap-4">
-                    <span>🥇 Champion: {team.champion}</span>
-                    <span>🥈 Runner-up: {team.runnerUp}</span>
-                    <span>🥉 Third: {team.thirdPlace}</span>
-                    <span>4th: {team.fourthPlace}</span>
-                  </div>
+                <div className="px-4 pb-2 text-[11px] text-fg-tertiary flex gap-3">
+                  <span>🥇 {team.champion}</span>
+                  <span>🥈 {team.runnerUp}</span>
+                  <span>🥉 {team.thirdPlace}</span>
+                  <span>4° {team.fourthPlace}</span>
                 </div>
               )}
             </div>

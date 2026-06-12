@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
 interface BadgeProps {
-  variant?: 'neutral' | 'success' | 'warning' | 'danger' | 'premium' | 'info';
+  variant?: 'neutral' | 'success' | 'warning' | 'danger' | 'premium' | 'info' | 'live' | 'violet';
   children: React.ReactNode;
   className?: string;
 }
@@ -13,6 +13,8 @@ const VAR = {
   danger:  'bg-state-danger/10 text-state-danger border-state-danger/20',
   premium: 'bg-accent-premium/10 text-accent-premium border-accent-premium/20',
   info:    'bg-accent-primary/10 text-accent-primary border-accent-primary/20',
+  live:    'bg-accent-emerald/10 text-accent-emerald border-accent-emerald/20',
+  violet:  'bg-accent-secondary/10 text-accent-secondary border-accent-secondary/20',
 };
 
 export function Badge({ variant = 'neutral', children, className }: BadgeProps) {

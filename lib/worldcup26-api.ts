@@ -144,7 +144,7 @@ export interface WC26Team {
 }
 
 export interface WC26Group {
- 组: string; // group letter
+  group: string; // group letter
   teams: {
     id: number;
     name_en: string;
@@ -322,7 +322,7 @@ export function convertWC26Game(game: WC26Game): ProcessedWC26Match | null {
   const homeScore = parseInt(game.home_score) || 0;
   const awayScore = parseInt(game.away_score) || 0;
   const isFinished = game.finished === 'TRUE';
-  const isLive = !isFinished && game.time_elapsed !== 'not started';
+  const isLive = !isFinished && game.time_elapsed !== 'not started' && game.time_elapsed !== 'notstarted';
 
   let winner: string | 'draw' = 'draw';
   if (isFinished) {

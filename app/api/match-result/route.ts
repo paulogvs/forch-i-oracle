@@ -272,6 +272,17 @@ export async function POST(request: NextRequest) {
     revalidateTag('fixture');
     revalidateTag('tournament');
 
+    // AUTO-SIMULATE: After match result, re-simulate tournament
+    try {
+      const simUrl = new URL(request.url);
+      simUrl.pathname = '/api/cron/simulate';
+      simUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
+      await fetch(simUrl.toString(), { signal: AbortSignal.timeout(120000) }).catch(() => {});
+      console.log('[match-result] Auto-simulate triggered');
+    } catch (err) {
+      console.warn('[match-result] Auto-simulate error:', err);
+    }
+
     return NextResponse.json({
       success: true,
       message: `Resultado registrado: ${homeTeam} ${homeScore}-${awayScore} ${awayTeam}`,

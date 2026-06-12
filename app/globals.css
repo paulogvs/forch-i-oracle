@@ -3,41 +3,60 @@
 @tailwind utilities;
 
 :root {
-  /* ─── NEUTRAL ─── */
-  --canvas:        #06080D;
-  --surface:       #0D1117;
-  --elevated:      #161B22;
-  --overlay:       #1F2630;
+  /* ─── NEUTRAL — más rango para jerarquía visual ─── */
+  --canvas:        #05070B;
+  --surface:       #0C1017;
+  --elevated:      #151C25;
+  --overlay:       #1E2732;
+  --raised:        #283445;
 
-  --border-subtle: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
-  --border-focus:  #2B7FFF;
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+  --border-focus:  #3B82F6;
 
   /* ─── TEXT ─── */
   --text-primary:   #F0F6FC;
-  --text-secondary: #8B98A8;
-  --text-tertiary:  #5A6677;
+  --text-secondary: #94A3B8;
+  --text-tertiary:  #64748B;
   --text-disabled:  #3A4350;
 
   /* ─── ACCENT ─── */
-  --accent-primary: #2B7FFF;
-  --accent-premium: #D4AF37;
-  --state-success:  #00C853;
-  --state-warning:  #FF8C42;
-  --state-danger:   #FF3D57;
+  --accent-primary:   #3B82F6;
+  --accent-secondary: #8B5CF6;
+  --accent-premium:   #E2B340;
+  --accent-emerald:   #10B981;
+
+  /* ─── STATE ─── */
+  --state-success:  #22C55E;
+  --state-warning:  #F59E0B;
+  --state-danger:   #EF4444;
+
+  /* ─── SURFACE TINTS ─── */
+  --surface-blue:   rgba(59,130,246,0.08);
+  --surface-green:  rgba(16,185,129,0.08);
+  --surface-gold:   rgba(226,179,64,0.08);
+  --surface-red:    rgba(239,68,68,0.08);
+  --surface-violet: rgba(139,92,246,0.08);
+
+  /* ─── GRADIENTS ─── */
+  --gradient-gold:  linear-gradient(135deg, #E2B340 0%, #FFE69A 50%, #E2B340 100%);
+  --gradient-live:  linear-gradient(90deg, #10B981, #22C55E);
+  --gradient-blue:  linear-gradient(135deg, #3B82F6, #8B5CF6);
 
   /* ─── SHADOWS ─── */
-  --shadow-sm:        0 1px 2px rgba(0,0,0,0.4);
-  --shadow-md:        0 4px 12px rgba(0,0,0,0.35);
-  --shadow-lg:        0 16px 40px rgba(0,0,0,0.4);
-  --shadow-glow-blue: 0 0 0 1px rgba(43,127,255,0.4), 0 0 24px rgba(43,127,255,0.15);
-  --shadow-glow-gold: 0 0 0 1px rgba(212,175,55,0.4), 0 0 24px rgba(212,175,55,0.15);
+  --shadow-sm:        0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:        0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:        0 16px 48px rgba(0,0,0,0.5);
+  --shadow-glow-blue: 0 0 0 1px rgba(59,130,246,0.5), 0 0 32px rgba(59,130,246,0.2);
+  --shadow-glow-gold: 0 0 0 1px rgba(226,179,64,0.5), 0 0 32px rgba(226,179,64,0.2);
+  --shadow-glow-green: 0 0 0 1px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.15);
+  --shadow-glow-red:  0 0 0 1px rgba(239,68,68,0.4), 0 0 16px rgba(239,68,68,0.12);
 
   /* ─── RADII ─── */
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 20px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
 
   /* ─── MOTION ─── */
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
@@ -68,7 +87,8 @@ body {
   background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-lg);
-  transition: border-color var(--d-normal) var(--ease-out);
+  transition: border-color var(--d-normal) var(--ease-out),
+              background var(--d-normal) var(--ease-out);
 }
 .surface:hover { border-color: var(--border-strong); }
 
@@ -93,6 +113,45 @@ body {
 }
 .surface-interactive:active { transform: translateY(0); }
 
+/* ─── THEMATIC SURFACES ─── */
+.surface-live {
+  background: var(--surface-green);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-glow-green);
+  animation: livePulse 3s ease-in-out infinite;
+}
+
+.surface-gold {
+  background: var(--surface-gold);
+  border: 1px solid rgba(226,179,64,0.25);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.surface-blue {
+  background: var(--surface-blue);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--r-lg);
+}
+
+.surface-danger {
+  background: var(--surface-red);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: var(--r-lg);
+}
+
+.surface-violet {
+  background: var(--surface-violet);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: var(--r-lg);
+}
+
+@keyframes livePulse {
+  0%, 100% { box-shadow: var(--shadow-glow-green); }
+  50%      { box-shadow: 0 0 0 1px rgba(16,185,129,0.6), 0 0 30px rgba(16,185,129,0.25); }
+}
+
 /* ─── TYPOGRAPHY ─── */
 .h-display { font-size: 32px; line-height: 1.1; letter-spacing: -0.03em; font-weight: 700; }
 .h-page    { font-size: 24px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 600; }
@@ -105,7 +164,7 @@ body {
 
 /* ─── TEXT GRADIENTS ─── */
 .text-gold {
-  background: linear-gradient(135deg, #D4AF37 0%, #FFE69A 50%, #D4AF37 100%);
+  background: linear-gradient(135deg, #E2B340 0%, #FFE69A 50%, #E2B340 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
@@ -129,8 +188,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 @keyframes pulseDot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,200,83,0.6); }
-  70%      { box-shadow: 0 0 0 6px rgba(0,200,83,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  70%      { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
 }
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -190,13 +249,13 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
   color: var(--text-secondary);
 }
 .seal-correct {
-  background: rgba(0,200,83,0.12);
-  border: 1px solid rgba(0,200,83,0.25);
+  background: rgba(34,197,94,0.12);
+  border: 1px solid rgba(34,197,94,0.25);
   color: var(--state-success);
 }
 .seal-incorrect {
-  background: rgba(255,61,87,0.12);
-  border: 1px solid rgba(255,61,87,0.25);
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.25);
   color: var(--state-danger);
 }
 .seal-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -204,8 +263,8 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .seal-correct .seal-dot { background: var(--state-success); animation: pulse-dot 2s ease-in-out infinite; }
 .seal-incorrect .seal-dot { background: var(--state-danger); }
 .seal-exact {
-  background: rgba(201,162,39,0.15);
-  border: 1px solid rgba(201,162,39,0.35);
+  background: rgba(226,179,64,0.15);
+  border: 1px solid rgba(226,179,64,0.35);
   color: var(--accent-premium);
 }
 .seal-exact .seal-dot { background: var(--accent-premium); animation: pulse-dot 1.5s ease-in-out infinite; }

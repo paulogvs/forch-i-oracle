@@ -1,37 +1,23 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
+import { cn } from '@/lib/utils';
 
-type TabType = 'grupos' | 'eliminatorias';
-type PhaseFilter = string;
+type SubPanel = 'ahora' | 'resultados' | 'pendientes';
 
 interface LiveMatch {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  date: string;
-  round: string;
-  group: string;
-  realHome: number | null;
-  realAway: number | null;
-  isPlayed: boolean;
-  predHome: number | null;
-  predAway: number | null;
-  analysis?: string;
-  homeKeyPlayers?: string[];
-  awayKeyPlayers?: string[];
-  homeScorers?: string[];
-  awayScorers?: string[];
-  isLive?: boolean;
-  timeElapsed?: string;
+  id: string; homeTeam: string; awayTeam: string; date: string; round: string; group: string;
+  realHome: number | null; realAway: number | null; isPlayed: boolean;
+  predHome: number | null; predAway: number | null;
+  homeScorers?: string[]; awayScorers?: string[];
+  isLive?: boolean; timeElapsed?: string;
 }
 
 export default function LivePage() {
-  const [tab, setTab] = useState<TabType>('grupos');
-  const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>('all');
+  const [subPanel, setSubPanel] = useState<SubPanel>('resultados');
   const [matches, setMatches] = useState<LiveMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,117 +26,58 @@ export default function LivePage() {
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      // Fetch predictions, tournament sim, AND live scores from worldcup26.ir
       const [fixtureRes, simRes, liveScoresRes] = await Promise.all([
-        fetch('/api/fixture', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ useEnhanced: true }),
-        }),
+        fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ useEnhanced: true }) }),
         fetch('/api/simulate-tournament'),
         fetch('/api/live-scores'),
       ]);
+      const [fixtureData, simData, liveScoresData] = await Promise.all([fixtureRes.json(), simRes.json(), liveScoresRes.json()]);
 
-      const [fixtureData, simData, liveScoresData] = await Promise.all([
-        fixtureRes.json(),
-        simRes.json(),
-        liveScoresRes.json(),
-      ]);
-
-      // Build real results map from tournament sim (Supabase data)
       const realResultsMap = new Map<string, { home: number; away: number }>();
       if (simData.success && simData.results) {
-        for (const r of simData.results) {
-          realResultsMap.set(r.matchId, { home: r.homeScore, away: r.awayScore });
-        }
+        for (const r of simData.results) realResultsMap.set(r.matchId, { home: r.homeScore, away: r.awayScore });
       }
 
-      // Build live scores map from worldcup26.ir (instant, no ingest needed)
       const wc26ResultsMap = new Map<string, { home: number; away: number; homeScorers: string[]; awayScorers: string[] }>();
       if (liveScoresData.success && liveScoresData.finished) {
         for (const m of liveScoresData.finished) {
-          const entry = { home: m.homeScore, away: m.awayScore, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] };
-          // Match by team names (both sources use Spanish names)
-          const key = `${m.homeTeam}|${m.awayTeam}`;
-          wc26ResultsMap.set(key, entry);
-          // Also try reversed
-          const keyRev = `${m.awayTeam}|${m.homeTeam}`;
-          wc26ResultsMap.set(keyRev, { home: m.awayScore, away: m.homeScore, homeScorers: m.awayScorers || [], awayScorers: m.homeScorers || [] });
+          wc26ResultsMap.set(`${m.homeTeam}|${m.awayTeam}`, { home: m.homeScore, away: m.awayScore, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] });
+          wc26ResultsMap.set(`${m.awayTeam}|${m.homeTeam}`, { home: m.awayScore, away: m.homeScore, homeScorers: m.awayScorers || [], awayScorers: m.homeScorers || [] });
         }
       }
 
-      // Build live matches map (currently playing)
-      const wc26LiveMap = new Map<string, { home: number; away: number; timeElapsed: string; homeScorers: string[]; awayScorers: string[] }>();
+      // Only truly live (not "notstarted")
+      const wc26LiveMap = new Map<string, { home: number; away: number; timeElapsed: string }>();
       if (liveScoresData.success && liveScoresData.live) {
         for (const m of liveScoresData.live) {
-          const entry = { home: m.homeScore, away: m.awayScore, timeElapsed: m.timeElapsed, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] };
-          const key = `${m.homeTeam}|${m.awayTeam}`;
-          wc26LiveMap.set(key, entry);
+          if (m.timeElapsed && m.timeElapsed !== 'not started' && m.timeElapsed !== 'notstarted') {
+            wc26LiveMap.set(`${m.homeTeam}|${m.awayTeam}`, { home: m.homeScore, away: m.awayScore, timeElapsed: m.timeElapsed });
+          }
         }
       }
 
       const predMap = new Map();
       if (fixtureData.success && fixtureData.fixture) {
-        for (const m of fixtureData.fixture) {
-          predMap.set(m.id, {
-            homeGoals: m.predictedScore?.[0] ?? null,
-            awayGoals: m.predictedScore?.[1] ?? null,
-          });
-        }
+        for (const m of fixtureData.fixture) predMap.set(m.id, { homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null });
       }
 
       const allMatches: LiveMatch[] = ALL_MATCHES.map(m => {
         const pred = predMap.get(m.id);
-        // Try Supabase results first, then worldcup26.ir
         let real = realResultsMap.get(m.id);
-        let homeScorers: string[] = [];
-        let awayScorers: string[] = [];
-        let isLive = false;
-        let timeElapsed = '';
-
+        let isLive = false; let timeElapsed = '';
         if (!real) {
-          // Try worldcup26.ir finished by team name matching
-          const wc26Key = `${m.homeTeam}|${m.awayTeam}`;
-          const wc26 = wc26ResultsMap.get(wc26Key);
-          if (wc26) {
-            real = { home: wc26.home, away: wc26.away };
-            homeScorers = wc26.homeScorers;
-            awayScorers = wc26.awayScorers;
-          }
+          const wc26 = wc26ResultsMap.get(`${m.homeTeam}|${m.awayTeam}`);
+          if (wc26) real = { home: wc26.home, away: wc26.away };
         }
-
-        // Check if match is currently live
-        const liveKey = `${m.homeTeam}|${m.awayTeam}`;
-        const liveMatch = wc26LiveMap.get(liveKey);
-        if (liveMatch) {
-          isLive = true;
-          timeElapsed = liveMatch.timeElapsed;
-          homeScorers = liveMatch.homeScorers;
-          awayScorers = liveMatch.awayScorers;
-        }
-
+        const liveMatch = wc26LiveMap.get(`${m.homeTeam}|${m.awayTeam}`);
+        if (liveMatch) { isLive = true; timeElapsed = liveMatch.timeElapsed; }
         return {
-          id: m.id,
-          homeTeam: m.homeTeam,
-          awayTeam: m.awayTeam,
-          date: m.date,
-          round: m.round,
-          group: m.group,
-          realHome: real?.home ?? null,
-          realAway: real?.away ?? null,
-          isPlayed: real !== undefined,
-          predHome: pred?.homeGoals ?? null,
-          predAway: pred?.awayGoals ?? null,
-          analysis: pred?.analysis || '',
-          homeKeyPlayers: pred?.homeKeyPlayers || [],
-          awayKeyPlayers: pred?.awayKeyPlayers || [],
-          homeScorers,
-          awayScorers,
-          isLive,
-          timeElapsed,
+          id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, date: m.date, round: m.round, group: m.group,
+          realHome: real?.home ?? null, realAway: real?.away ?? null, isPlayed: real !== undefined,
+          predHome: pred?.homeGoals ?? null, predAway: pred?.awayGoals ?? null,
+          isLive, timeElapsed,
         };
       });
 
@@ -159,473 +86,198 @@ export default function LivePage() {
       setLiveBracket(simData.success ? simData.bracket : null);
       setLastUpdate(new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
-      console.error('[live] Error loading:', err);
-      setError('No se pudieron cargar los datos en vivo');
-    } finally {
-      setLoading(false);
-    }
+      console.error('[live] Error:', err); setError('No se pudieron cargar los datos');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { const interval = setInterval(loadData, 30 * 60 * 1000); return () => clearInterval(interval); }, [loadData]);
 
-  // Auto-refresh every 30 minutes
-  useEffect(() => {
-    const interval = setInterval(loadData, 30 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+  const liveNow = matches.filter(m => m.isLive);
+  const finished = matches.filter(m => m.isPlayed && !m.isLive);
+  const upcoming = matches.filter(m => !m.isPlayed && !m.isLive);
 
-  const TABS: { id: TabType; label: string; icon: JSX.Element }[] = [
-    {
-      id: 'grupos',
-      label: 'Tabla de Grupos',
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-2.625 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0118 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0118 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 016 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 12 6 12.504 6 13.125M15 12h1.5m-1.5 0c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-1.5 0h-1.5m1.5 0c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125" />
-        </svg>
-      ),
-    },
-    {
-      id: 'eliminatorias',
-      label: 'Eliminatorias',
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52m0 0a6.003 6.003 0 01-2.48-5.228m0 0c.26 0 .515.02.77.054" />
-        </svg>
-      ),
-    },
-  ];
-
-  const PHASES = [
-    { id: 'all', label: 'Todos' },
-    { id: 'group', label: 'Grupos' },
-    { id: 'round-32', label: '1/16' },
-    { id: 'round-16', label: '1/8' },
-    { id: 'quarter', label: '1/4' },
-    { id: 'semi', label: 'Semis' },
-    { id: 'final', label: 'Final' },
-  ];
-
-  const filtered = phaseFilter === 'all' ? matches : matches.filter(m => m.round === phaseFilter);
-  const playedMatches = matches.filter(m => m.isPlayed);
-  const correctCount = matches.filter(m => {
-    if (!m.isPlayed || m.predHome === null || m.predAway === null || m.realHome === null || m.realAway === null) return false;
-    const predWinner = m.predHome > m.predAway ? 'home' : m.predHome < m.predAway ? 'away' : 'draw';
-    const realWinner = m.realHome > m.realAway ? 'home' : m.realHome < m.realAway ? 'away' : 'draw';
-    return predWinner === realWinner;
+  const correctCount = finished.filter(m => {
+    if (m.predHome === null || m.predAway === null || m.realHome === null || m.realAway === null) return false;
+    const pw = m.predHome > m.predAway ? 'home' : m.predHome < m.predAway ? 'away' : 'draw';
+    const rw = m.realHome > m.realAway ? 'home' : m.realHome < m.realAway ? 'away' : 'draw';
+    return pw === rw;
   }).length;
-  const accuracy = playedMatches.length > 0 ? Math.round((correctCount / playedMatches.length) * 100) : 0;
+  const accuracy = finished.length > 0 ? Math.round((correctCount / finished.length) * 100) : 0;
 
-  const getFlag = (name: string) => getTeamByName(name)?.flag || '🏳️';
-  const getRoundLabel = (round: string) => {
-    const labels: Record<string, string> = {
-      group: 'Grupo', 'round-32': '1/16', 'round-16': '1/8',
-      quarter: '1/4', semi: 'Semi', third: '3°', final: 'Final',
-    };
-    return labels[round] || round;
-  };
-  const formatDate = (d: string) => {
-    const dt = new Date(d + 'T12:00:00');
-    return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
-  };
-
-  // Group matches by date
-  const byDate = new Map<string, LiveMatch[]>();
-  const sortedDates = Array.from(new Set(filtered.map(m => m.date))).sort();
-  for (const date of sortedDates) {
-    byDate.set(date, filtered.filter(m => m.date === date));
-  }
-
-  const hasRealResults = playedMatches.length > 0;
+  const getFlag = (n: string) => getTeamByName(n)?.flag || '🏳️';
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-6 animate-fade-in">
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 flex items-center gap-2">
-              <span className="w-8 h-8 rounded-card-sm bg-state-success/10 flex items-center justify-center">
-                <svg className="w-4 h-4 text-state-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-                </svg>
-              </span>
-              Mundial en Vivo
-            </h1>
-            <p className="text-xs sm:text-sm text-fg-secondary">
-              Resultados reales auto-actualizados · Tabla y bracket recalculados dinámicamente
-            </p>
+    <div className="max-w-3xl mx-auto space-y-4 animate-fade">
+      {/* Hero */}
+      <div className={cn("p-4 rounded-[var(--r-lg)]", liveNow.length > 0 ? "surface-live" : "surface-blue")}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{liveNow.length > 0 ? '📡' : '📊'}</span>
+            <div>
+              <h1 className="text-base font-bold text-fg-primary">
+                En Vivo
+                {liveNow.length > 0 && <span className="live-dot inline-block w-2 h-2 rounded-full bg-accent-emerald ml-2" />}
+              </h1>
+              <p className="text-[10px] text-fg-tertiary">
+                {liveNow.length > 0 ? `${liveNow.length} en juego` : 'Sin partidos en juego'}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            {lastUpdate && (
-              <div className="text-[10px] text-fg-disabled flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-state-success animate-pulse" />
-                Última actualización: {lastUpdate}
-              </div>
-            )}
-          </div>
+          {finished.length > 0 && (
+            <div className={cn("px-3 py-1.5 rounded-[var(--r-md)]", accuracy >= 50 ? "bg-tint-green" : "bg-tint-red")}>
+              <div className={cn("text-base font-bold font-mono", accuracy >= 50 ? "text-state-success" : "text-state-danger")}>{accuracy}%</div>
+              <div className="text-[9px] text-fg-tertiary">Precisión</div>
+            </div>
+          )}
         </div>
-
-        {/* Live stats bar */}
-        {hasRealResults && (
-          <div className="flex items-center gap-4 mt-4 text-xs">
-            <span className="flex items-center gap-1.5 text-state-success font-semibold">
-              <span className="w-5 h-5 rounded-full bg-state-success/15 flex items-center justify-center text-[10px]">✓</span>
-              {correctCount}/{playedMatches.length} correctas ({accuracy}%)
-            </span>
-            <span className="text-fg-disabled">·</span>
-            <span className="flex items-center gap-1.5 text-accent-primary">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-breathe" />
-              {matches.length - playedMatches.length} pendientes
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-white/[0.04] rounded-xl mb-4 animate-fade-in">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 ${
-              tab === t.id ? 'bg-accent-primary/20 text-accent-primary' : 'text-fg-secondary hover:text-white hover:bg-white/[0.04]'
-            }`}
-          >
-            {t.icon}
-            {t.label}
+      <div className="flex gap-1.5">
+        {([
+          { id: 'ahora' as const, label: '🔴 Juego', count: liveNow.length },
+          { id: 'resultados' as const, label: '✅ Resultados', count: finished.length },
+          { id: 'pendientes' as const, label: '⏳ Pendiente', count: upcoming.length },
+        ]).map(tab => (
+          <button key={tab.id} onClick={() => setSubPanel(tab.id)} className={cn(
+            "flex-1 py-2 px-2 rounded-[var(--r-md)] text-[11px] font-semibold transition-all border text-center",
+            subPanel === tab.id ? "bg-accent-primary/15 text-accent-primary border-accent-primary/30" : "text-fg-tertiary border-border-subtle"
+          )}>
+            <div>{tab.label}</div>
+            {tab.count > 0 && <div className="text-[10px] mt-0.5 font-mono">{tab.count}</div>}
           </button>
         ))}
       </div>
 
-      {/* Phase filter */}
-      <div className="flex overflow-x-auto scrollbar-hide gap-1.5 mb-5 pb-1">
-        {PHASES.map(p => (
-          <button
-            key={p.id}
-            onClick={() => setPhaseFilter(p.id)}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all duration-200 ${
-              phaseFilter === p.id
-                ? 'bg-accent-primary/20 text-accent-primary border border-accent-primary/30'
-                : 'bg-white/[0.04] text-fg-secondary border border-transparent hover:text-white'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {loading && <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-2 border-accent-primary/30 border-t-accent-primary animate-spin" /></div>}
+      {error && <div className="surface-danger p-4 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
 
-      {/* Error */}
-      {error && (
-        <div className="glass-card p-4 text-center mb-4 border border-state-danger/20">
-          <p className="text-state-danger text-sm">{error}</p>
-          <button onClick={loadData} className="btn-premium text-xs mt-2 px-3 py-1.5">🔄 Reintentar</button>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20">
-          <div className="w-10 h-10 rounded-full border-2 border-accent-primary/30 border-t-accent-primary animate-spin mb-4" />
-          <p className="text-sm text-fg-secondary">Cargando datos en vivo...</p>
-        </div>
-      )}
-
-      {/* ═══ TAB: Group Standings ═══ */}
-      {!loading && !error && tab === 'grupos' && (
-        <div className="animate-fade-in">
-          {hasRealResults ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {Object.entries(liveStandings).map(([group, teams]) => {
-                const played = (teams as any[]).some((t: any) => t.played > 0);
-                if (!played) return null;
-                return (
-                  <div key={group} className="glass-card p-3 animate-fade-in-up">
-                    <h3 className="text-xs font-bold text-accent-premium uppercase mb-2">Grupo {group}</h3>
-                    <table className="w-full text-[10px]">
-                      <thead>
-                        <tr className="text-fg-disabled">
-                          <th className="text-left pb-1" scope="col">#</th>
-                          <th className="text-left pb-1" scope="col">Equipo</th>
-                          <th className="text-center pb-1" scope="col">PJ</th>
-                          <th className="text-center pb-1" scope="col">DG</th>
-                          <th className="text-center pb-1" scope="col">Pts</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(teams as any[]).map((t: any, i: number) => (
-                          <tr key={t.name} className={`${i < 2 ? 'text-state-success' : ''}`}>
-                            <td className="py-0.5 text-fg-disabled">{i + 1}</td>
-                            <td className="py-0.5">
-                              <span className="mr-1">{getFlag(t.name)}</span>
-                              <span className="text-white truncate block max-w-[80px]">{t.name}</span>
-                            </td>
-                            <td className="py-0.5 text-center">{t.played}</td>
-                            <td className="py-0.5 text-center">{t.gd > 0 ? '+' : ''}{t.gd}</td>
-                            <td className="py-0.5 text-center font-bold">{t.points}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="glass-card p-10 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-accent-primary/10 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <p className="text-sm text-white font-semibold mb-1">Esperando primeros resultados</p>
-              <p className="text-xs text-fg-disabled max-w-sm mx-auto">
-                Los resultados se actualizan automáticamente desde worldcup26.ir (datos en tiempo real).
-                Cuando comience el Mundial, esta tabla se llenará sola con datos reales.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ═══ TAB: Knockout Bracket ═══ */}
-      {!loading && !error && tab === 'eliminatorias' && (
-        <div className="animate-fade-in space-y-6">
-          {liveBracket ? (
-            <>
-              {liveBracket.roundOf32 && liveBracket.roundOf32.length > 0 && (
-                <BracketRound title="1/16 Final" matches={liveBracket.roundOf32} getFlag={getFlag} />
-              )}
-              {liveBracket.roundOf16 && liveBracket.roundOf16.length > 0 && (
-                <BracketRound title="Octavos de Final" matches={liveBracket.roundOf16} getFlag={getFlag} />
-              )}
-              {liveBracket.quarters && liveBracket.quarters.length > 0 && (
-                <BracketRound title="Cuartos de Final" matches={liveBracket.quarters} getFlag={getFlag} />
-              )}
-              {liveBracket.semis && liveBracket.semis.length > 0 && (
-                <BracketRound title="Semifinales" matches={liveBracket.semis} getFlag={getFlag} />
-              )}
-              {liveBracket.final && (
-                <div className="glass-card p-6 text-center border border-accent-premium/20">
-                  <div className="w-16 h-16 mx-auto rounded-full bg-accent-premium/10 flex items-center justify-center mb-3">
-                    <svg className="w-8 h-8 text-accent-premium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52" />
-                    </svg>
-                  </div>
-                  <div className="text-lg font-bold text-gold">{liveBracket.champion || 'Por definir'}</div>
-                  <div className="text-xs text-fg-disabled mt-1">Campeón Simulado</div>
-                  {liveBracket.final.homeTeam && (
-                    <div className="mt-3 flex items-center justify-center gap-4 text-sm">
-                      <span className="text-white">{getFlag(liveBracket.final.homeTeam)} {liveBracket.final.homeTeam}</span>
-                      <span className="font-bold text-accent-primary">{liveBracket.final.homeScore} — {liveBracket.final.awayScore}</span>
-                      <span className="text-white">{liveBracket.final.awayTeam} {getFlag(liveBracket.final.awayTeam)}</span>
-                    </div>
-                  )}
+      {/* ═══ EN JUEGO ═══ */}
+      {!loading && !error && subPanel === 'ahora' && (
+        liveNow.length > 0 ? (
+          <div className="space-y-2">
+            {liveNow.map(m => (
+              <div key={m.id} className="surface-live p-3 rounded-[var(--r-lg)]">
+                <div className="flex items-center gap-2 mb-1"><span className="live-dot w-1.5 h-1.5 rounded-full bg-accent-emerald" /><span className="text-[10px] font-bold text-accent-emerald uppercase">{m.timeElapsed}</span></div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 flex-1"><span className="text-base">{getFlag(m.homeTeam)}</span><span className="text-xs font-bold text-fg-primary">{m.homeTeam}</span></div>
+                  <div className="px-2.5 py-1 bg-canvas/50 rounded-md"><span className="font-mono font-bold text-lg text-accent-emerald tabular-nums">{m.realHome} - {m.realAway}</span></div>
+                  <div className="flex items-center gap-1.5 flex-1 justify-end"><span className="text-xs font-bold text-fg-primary">{m.awayTeam}</span><span className="text-base">{getFlag(m.awayTeam)}</span></div>
                 </div>
-              )}
-            </>
-          ) : (
-            <div className="glass-card p-10 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-accent-premium/10 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-accent-premium" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52" />
-                </svg>
               </div>
-              <p className="text-sm text-white font-semibold mb-1">Bracket en espera</p>
-              <p className="text-xs text-fg-disabled max-w-sm mx-auto">
-                Las eliminatorias se arman automáticamente conforme avanzan los resultados de fase de grupos.
-              </p>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">Sin partidos en juego ahora</p></div>
+        )
       )}
 
-      {/* ═══ Match List — All results vs predictions ═══ */}
-      {!loading && !error && hasRealResults && byDate.size > 0 && (
-        <div className="mt-8 animate-fade-in">
-          <h3 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
-            <svg className="w-4 h-4 text-accent-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-            </svg>
-            Todos los Partidos — Real vs Predicho
-          </h3>
-          {Array.from(byDate.entries()).map(([date, dayMatches], dayIdx) => (
-            <div key={date} className="mb-4 animate-fade-in-up" style={{ animationDelay: `${dayIdx * 50}ms` }}>
-              <h4 className="text-[11px] font-bold text-accent-primary uppercase tracking-wider mb-2">
-                {formatDate(date)}
-              </h4>
-              <div className="space-y-1.5">
-                {dayMatches.map((m, mIdx) => {
-                  const hasReal = m.isPlayed && m.realHome !== null && m.realAway !== null;
-                  const hasPred = m.predHome !== null && m.predAway !== null;
+      {/* ═══ RESULTADOS ═══ */}
+      {!loading && !error && subPanel === 'resultados' && (
+        finished.length > 0 ? (
+          <div className="space-y-2">
+            {/* Summary bar */}
+            <div className="surface p-3 rounded-[var(--r-lg)]">
+              <div className="flex items-center justify-between text-[11px] mb-2">
+                <span className="text-fg-primary font-semibold">Precisión</span>
+                <div className="flex gap-2">
+                  <span className="text-state-success">{correctCount} ✓</span>
+                  <span className="text-state-danger">{finished.length - correctCount} ✗</span>
+                </div>
+              </div>
+              <div className="flex gap-0.5 h-2 rounded-full overflow-hidden">
+                <div className="bg-state-success/70 rounded-l-full" style={{ width: `${accuracy}%` }} />
+                <div className="bg-state-danger/70 rounded-r-full" style={{ width: `${100 - accuracy}%` }} />
+              </div>
+            </div>
+            {/* Result rows */}
+            {finished.map(m => {
+              const hasPred = m.predHome !== null && m.predAway !== null;
+              const pw = hasPred ? (m.predHome! > m.predAway! ? 'home' : m.predHome! < m.predAway! ? 'away' : 'draw') : null;
+              const rw = m.realHome !== null && m.realAway !== null ? (m.realHome > m.realAway ? 'home' : m.realHome < m.realAway ? 'away' : 'draw') : null;
+              const correct = pw && rw && pw === rw;
+              const exact = hasPred && m.realHome !== null && m.realAway !== null && m.predHome === m.realHome && m.predAway === m.realAway;
 
-                  // Compute dual seal status
-                  const sealResult = hasReal && hasPred
-                    ? computeSealStatus(m.predHome, m.predAway, m.realHome, m.realAway)
-                    : null;
-
-                  // Single seal for pending
-                  const sealStatus = hasReal
-                    ? (sealResult?.winnerStatus === 'correct' ? 'correct-winner' as const : 'incorrect-winner' as const)
-                    : 'pending' as const;
-
-                  return (
-                    <div
-                      key={m.id}
-                      className={`glass-card p-3 ${
-                        hasReal
-                          ? (sealResult?.winnerStatus === 'correct' ? 'border-l-2 border-l-state-success' : 'border-l-2 border-l-state-danger')
-                          : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* Seal — dual or single */}
-                        <div className="shrink-0">
-                          {sealResult ? (
-                            <MatchSeal
-                              dual
-                              winnerStatus={sealResult.winnerStatus}
-                              scoreStatus={sealResult.scoreStatus}
-                              delay={mIdx * 60}
-                            />
-                          ) : (
-                            <MatchSeal status={sealStatus} delay={mIdx * 60} />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 text-xs mb-0.5">
-                            <span className="text-fg-disabled font-mono w-10 text-[10px]">{m.id}</span>
-                            <span className="text-fg-disabled text-[10px]">{getRoundLabel(m.round)}</span>
-                            <span className="text-white truncate">{m.homeTeam}</span>
-                            <span className="text-fg-disabled">vs</span>
-                            <span className="text-white truncate text-right">{m.awayTeam}</span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px]">
-                            {hasReal && (
-                              <span className="font-bold text-state-success">
-                                Real: {m.realHome}-{m.realAway}
-                              </span>
-                            )}
-                            {hasPred && (
-                              <span className="text-accent-primary">
-                                Pred: {m.predHome}-{m.predAway}
-                              </span>
-                            )}
-                            {m.isLive && m.timeElapsed && (
-                              <span className="font-bold text-state-danger animate-pulse">
-                                🔴 {m.timeElapsed}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Goleadores — worldcup26.ir */}
-                          {((m.homeScorers && m.homeScorers.length > 0) || (m.awayScorers && m.awayScorers.length > 0)) && (
-                            <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[10px]">
-                              {m.homeScorers && m.homeScorers.length > 0 && (
-                                <span className="text-accent-premium">
-                                  ⚽ {m.homeScorers.join(', ')}
-                                </span>
-                              )}
-                              {m.awayScorers && m.awayScorers.length > 0 && (
-                                <span className="text-accent-premium">
-                                  ⚽ {m.awayScorers.join(', ')}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Groq analysis snippet */}
-                          {m.analysis && (
-                            <p className="text-[11px] text-fg-disabled mt-1.5 line-clamp-2 leading-relaxed">{m.analysis}</p>
-                          )}
-                        </div>
-
-                        <div className="flex gap-1 shrink-0">
-                          <span className="text-base">{getFlag(m.homeTeam)}</span>
-                          <span className="text-base">{getFlag(m.awayTeam)}</span>
-                        </div>
-                      </div>
+              return (
+                <div key={m.id} className={cn(
+                  "flex items-center gap-2 p-3 rounded-[var(--r-lg)] border",
+                  exact ? "bg-[#052E16] border-[#166534]"
+                  : correct ? "bg-[#14291E] border-[#1B6B3A]"
+                  : "bg-[#2A0A0A] border-[#991B1B]"
+                )}>
+                  {/* Home */}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <span className="text-base shrink-0">{getFlag(m.homeTeam)}</span>
+                    <span className={cn("text-xs truncate", rw === 'home' ? (exact ? "text-[#4ADE80] font-bold" : correct ? "text-[#4ADE80] font-bold" : "text-[#FCA5A5] font-bold") : (correct || exact ? "text-[#BBF7D0]" : "text-[#FECACA]"))}>{m.homeTeam}</span>
+                  </div>
+                  {/* Score: Real TOP, Pred BOTTOM */}
+                  <div className="shrink-0 flex flex-col items-center gap-0.5">
+                    <div className={cn("px-2.5 py-0.5 rounded-[var(--r-sm)]", exact ? "bg-[#166534]" : correct ? "bg-[#1B6B3A]" : "bg-[#991B1B]")}>
+                      <span className={cn("font-mono font-bold text-sm tabular-nums", exact ? "text-[#4ADE80]" : correct ? "text-[#FACC15]" : "text-[#FCA5A5]")}>{m.realHome}-{m.realAway}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+                    {hasPred && <span className="text-[9px] text-[#6B7280] font-mono">Pred: {m.predHome}-{m.predAway}</span>}
+                  </div>
+                  {/* Status icon */}
+                  <span className="text-xs shrink-0">{exact ? '🎯' : correct ? '✅' : '❌'}</span>
+                  {/* Away */}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                    <span className={cn("text-xs truncate text-right", rw === 'away' ? (exact ? "text-[#4ADE80] font-bold" : correct ? "text-[#4ADE80] font-bold" : "text-[#FCA5A5] font-bold") : (correct || exact ? "text-[#BBF7D0]" : "text-[#FECACA]"))}>{m.awayTeam}</span>
+                    <span className="text-base shrink-0">{getFlag(m.awayTeam)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">Sin resultados aún</p></div>
+        )
       )}
 
-      {/* Legend */}
-      <div className="glass-card p-4 mt-8 animate-fade-in">
-        <h4 className="text-[10px] font-bold text-fg-secondary uppercase tracking-wider mb-3">Leyenda</h4>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <MatchSeal status="pending" compact />
-            <span className="text-fg-secondary">Por jugar</span>
+      {/* ═══ PENDIENTES ═══ */}
+      {!loading && !error && subPanel === 'pendientes' && (
+        upcoming.length > 0 ? (
+          <div className="space-y-1">
+            {upcoming.slice(0, 30).map(m => (
+              <div key={m.id} className="flex items-center justify-between p-2.5 surface rounded-[var(--r-md)]">
+                <div className="flex items-center gap-1.5 flex-1"><span className="text-sm opacity-40">{getFlag(m.homeTeam)}</span><span className="text-[11px] text-fg-tertiary truncate">{m.homeTeam}</span></div>
+                <span className="text-[10px] text-fg-disabled font-mono px-2">vs</span>
+                <div className="flex items-center gap-1.5 flex-1 justify-end"><span className="text-[11px] text-fg-tertiary truncate text-right">{m.awayTeam}</span><span className="text-sm opacity-40">{getFlag(m.awayTeam)}</span></div>
+              </div>
+            ))}
+            {upcoming.length > 30 && <p className="text-[10px] text-fg-tertiary text-center">+{upcoming.length - 30} más</p>}
           </div>
-          <div className="flex items-center gap-2">
-            <MatchSeal status="exact-score" compact />
-            <span className="text-fg-secondary">Score exacto</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MatchSeal status="correct-winner" compact />
-            <span className="text-fg-secondary">Ganador correcto</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MatchSeal status="incorrect-score" compact />
-            <span className="text-fg-secondary">Ganador OK, score NO</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MatchSeal status="incorrect-winner" compact />
-            <span className="text-fg-secondary">Ganador incorrecto</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+        ) : (
+          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">Todos los partidos han sido jugados</p></div>
+        )
+      )}
 
-function BracketRound({ title, matches, getFlag }: { title: string; matches: any[]; getFlag: (n: string) => string }) {
-  return (
-    <div>
-      <h3 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-2">{title}</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {matches.map((m: any) => (
-          <div key={m.id} className={`glass-card p-3 ${m.isPlayed ? 'border-l-2 border-l-state-success' : ''}`}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-fg-disabled">{m.roundLabel || 'Eliminatoria'}</span>
-              {m.isPlayed && (
-                <MatchSeal
-                  status={m.winner ? 'correct-winner' : 'pending'}
-                  compact
-                />
-              )}
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className={`text-white ${m.winner === m.homeTeam ? 'font-bold text-accent-primary' : ''}`}>
-                  {getFlag(m.homeTeam)} {m.homeTeam}
-                </span>
-                <span className={`font-mono font-bold px-2 py-0.5 rounded ${
-                  m.winner === m.homeTeam ? 'bg-accent-primary/15 text-accent-primary' : 'bg-white/[0.06] text-fg-disabled'
-                }`}>
-                  {m.homeScore ?? '-'}
-                </span>
+      {/* Group Standings */}
+      {finished.length > 0 && Object.keys(liveStandings).length > 0 && (
+        <div className="space-y-3 mt-4 pt-4 border-t border-border-subtle">
+          <h3 className="text-xs font-bold text-fg-primary">📊 Tablas en Vivo</h3>
+          {Object.entries(liveStandings).map(([group, teams]) => {
+            if (!(teams as any[]).some((t: any) => t.played > 0)) return null;
+            return (
+              <div key={group} className="surface p-3 rounded-[var(--r-lg)]">
+                <h4 className="text-[11px] font-bold text-accent-premium uppercase mb-1.5">Grupo {group}</h4>
+                <table className="w-full text-[11px]">
+                  <thead><tr className="text-fg-tertiary text-[9px]"><th className="text-left pb-1 w-5">#</th><th className="text-left pb-1">Equipo</th><th className="text-center pb-1">PJ</th><th className="text-center pb-1">DG</th><th className="text-center pb-1">Pts</th></tr></thead>
+                  <tbody>{(teams as any[]).map((t: any, i: number) => (
+                    <tr key={t.name} className={cn(i < 2 ? 'bg-tint-green/20' : '', 'border-t border-border-subtle')}>
+                      <td className="py-1 text-fg-tertiary">{i + 1}</td>
+                      <td className="py-1"><div className="flex items-center gap-1"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[60px]", i < 2 ? "font-semibold text-fg-primary" : "text-fg-secondary")}>{t.name}</span></div></td>
+                      <td className="py-1 text-center text-fg-tertiary">{t.played}</td>
+                      <td className={cn("py-1 text-center font-mono", t.gd > 0 ? "text-state-success" : t.gd < 0 ? "text-state-danger" : "text-fg-tertiary")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
+                      <td className="py-1 text-center font-bold text-fg-primary">{t.points}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className={`text-white ${m.winner === m.awayTeam ? 'font-bold text-accent-primary' : ''}`}>
-                  {getFlag(m.awayTeam)} {m.awayTeam}
-                </span>
-                <span className={`font-mono font-bold px-2 py-0.5 rounded ${
-                  m.winner === m.awayTeam ? 'bg-accent-primary/15 text-accent-primary' : 'bg-white/[0.06] text-fg-disabled'
-                }`}>
-                  {m.awayScore ?? '-'}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

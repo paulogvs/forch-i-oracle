@@ -6,9 +6,9 @@ interface FormBubblesProps {
 }
 
 const colors = {
-  W: 'bg-state-success text-white',
-  D: 'bg-state-warning text-bg-primary',
-  L: 'bg-state-danger text-white',
+  W: 'bg-state-success text-canvas',
+  D: 'bg-state-warning text-canvas',
+  L: 'bg-state-danger text-canvas',
 };
 
 const labels = { W: 'V', D: 'E', L: 'D' };

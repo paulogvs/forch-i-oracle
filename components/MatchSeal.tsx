@@ -32,7 +32,7 @@ const sealConfig: Record<SealStatus, { text: string; className: string; dotColor
   pending: {
     text: 'POR JUGAR',
     className: 'seal seal-played',
-    dotColor: 'bg-text-muted',
+    dotColor: 'bg-fg-tertiary',
   },
   'correct-winner': {
     text: 'GANADOR ✓',

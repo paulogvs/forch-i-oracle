@@ -46,11 +46,13 @@ function Top8Row({
   item,
   inView,
   delay,
+  totalSims,
 }: {
   rank: number;
   item: ChampionProbability;
   inView: boolean;
   delay: number;
+  totalSims: number;
 }) {
   const pct = useCountUp(item.pct, 1200, inView);
 
@@ -89,12 +91,12 @@ function Top8Row({
             width: inView ? `${(item.pct / 35) * 100}%` : '0%',
             background:
               rank === 1
-                ? 'linear-gradient(to right, #D4AF37cc, #D4AF37)'
+                ? 'var(--gradient-gold)'
                 : rank === 2
-                ? 'linear-gradient(to right, #A8B5C4cc, #A8B5C4)'
+                ? 'linear-gradient(to right, #94A3B8cc, #94A3B8)'
                 : rank === 3
-                ? 'linear-gradient(to right, #D97706cc, #D97706)'
-                : 'linear-gradient(to right, #4B5563cc, #6B7280)',
+                ? 'linear-gradient(to right, #F59E0Bcc, #F59E0B)'
+                : 'linear-gradient(to right, var(--text-disabled), var(--text-tertiary))',
             transitionDelay: `${delay}ms`,
           }}
         />
@@ -105,7 +107,7 @@ function Top8Row({
       </span>
 
       <span className="text-[10px] text-fg-disabled w-16 text-right shrink-0 font-mono hidden sm:block">
-        {item.wins}/{Math.round(item.wins / (item.pct / 100))} sims
+        {item.wins}/{item.pct > 0 ? Math.round(item.wins / (item.pct / 100)) : totalSims} sims
       </span>
     </div>
   );
@@ -172,7 +174,7 @@ export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
       {/* Rows */}
       <div className="space-y-0.5">
         {data.map((item, idx) => (
-          <Top8Row key={item.team} rank={idx + 1} item={item} inView={inView} delay={idx * 100} />
+          <Top8Row key={item.team} rank={idx + 1} item={item} inView={inView} delay={idx * 100} totalSims={totalSims} />
         ))}
       </div>
 

@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 import { HTMLAttributes, forwardRef } from 'react';
 
 interface SurfaceProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'interactive';
+  variant?: 'default' | 'elevated' | 'interactive' | 'live' | 'gold' | 'blue' | 'danger' | 'violet';
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
@@ -11,6 +11,11 @@ const VAR = {
   default:     'surface',
   elevated:    'surface-elevated',
   interactive: 'surface-interactive',
+  live:        'surface-live',
+  gold:        'surface-gold',
+  blue:        'surface-blue',
+  danger:      'surface-danger',
+  violet:      'surface-violet',
 };
 
 export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(

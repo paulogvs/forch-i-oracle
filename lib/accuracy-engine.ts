@@ -248,11 +248,6 @@ export async function calculateAccuracyTrend(): Promise<AccuracyTrendPoint[]> {
       if (m.winnerCorrect) cumulativeCorrect++;
       if (m.goalError !== null) cumulativeError += m.goalError;
     }
-    const total = dayMatches.reduce((sum, m, i) => {
-      // Cumulative count up to this point
-      return 0;
-    }, 0) + trend.reduce((s, t) => s + t.matchesPlayed, 0);
-
     const runningTotal = trend.reduce((s, t) => s + t.matchesPlayed, 0) + dayMatches.length;
     const runningCorrect = trend.reduce((s, t) => {
       const acc = t.winnerAccuracy / 100;

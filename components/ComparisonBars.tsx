@@ -41,7 +41,7 @@ export default function ComparisonBars({ homeTeam, awayTeam, prediction }: Compa
                 style={{ width: `${homePct}%` }}
               />
               <div
-                className="bg-text-muted/40 rounded-r-full transition-all duration-1000"
+                className="bg-fg-tertiary/40 rounded-r-full transition-all duration-1000"
                 style={{ width: `${awayPct}%` }}
               />
             </div>
