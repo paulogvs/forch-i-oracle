@@ -179,6 +179,13 @@ function calculateMatchProbabilitiesPoisson(
 
   // Normalizar a porcentajes que sumen 100
   const total = homeWin + draw + awayWin;
+  if (total === 0) {
+    return {
+      homeWin: 33, draw: 34, awayWin: 33,
+      predictedScoreHome: 0, predictedScoreAway: 0,
+      scoreMatrix, over25: 0, btts: 0,
+    };
+  }
   const homeWinPct = Math.round((homeWin / total) * 100);
   const drawPct = Math.round((draw / total) * 100);
   const awayWinPct = 100 - homeWinPct - drawPct;

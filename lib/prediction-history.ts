@@ -5,6 +5,7 @@
 import { getDataLayer } from './data-layer';
 import { calculateStatisticalPrediction } from './predictor-engine';
 import { simulateTournament, simulateTournamentMulti, type RealMatchResult } from './tournament-sim';
+import { WORLD_CUP_TEAMS } from './teams';
 
 export interface PredictionSnapshot {
   matchId: string;
@@ -225,13 +226,12 @@ export async function getLiveStandings(): Promise<Record<string, Array<{
 }>>> {
   const db = getDataLayer();
   const realResults = await db.getMatchResults();
-  const { WORLD_CUP_TEAMS } = require('./teams');
 
   const standings: Record<string, any> = {};
 
   // Initialize standings for all groups
   for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
-    const teams = WORLD_CUP_TEAMS.filter((t: any) => t.group === letter);
+    const teams = WORLD_CUP_TEAMS.filter((t) => t.group === letter);
     standings[letter] = teams.map((t: any) => ({
       name: t.name,
       flag: t.flag,

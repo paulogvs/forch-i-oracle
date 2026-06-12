@@ -8,9 +8,8 @@
 
 import { NextResponse } from 'next/server';
 import { getDataLayer } from '@/lib/data-layer';
-import { getTeamEnglishName } from '@/lib/teams';
+import { WORLD_CUP_TEAMS } from '@/lib/teams';
 import { validateCronAuth } from '@/lib/cron-auth';
-import { recalculateAfterResult } from '@/lib/prediction-history';
 
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
@@ -83,23 +82,10 @@ export async function GET(request: Request) {
       results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results);
     }
 
-    // AUTO-RECALCULATE: If new results were ingested, re-simulate the bracket
+    // AUTO-RECALCULATE: If new results were ingested, trigger recalculate cron
+    // Note: Full re-simulation is handled by /api/cron/recalculate to avoid timeouts
     if (results.resultsIngested > 0) {
-      console.log(`[cron:ingest] ${results.resultsIngested} new results found — triggering re-simulation...`);
-
-      const allResults = await db.getMatchResults();
-      for (const r of allResults) {
-        try {
-          // Only process results that haven't been recalculated yet
-          // (In production, you'd track this with a flag; for now, re-process all)
-          await recalculateAfterResult(r.matchId, r.homeScore, r.awayScore);
-          console.log(`[cron:ingest] Re-simulated after: ${r.matchId}`);
-        } catch (err) {
-          console.warn(`[cron:ingest] Re-simulation failed for ${r.matchId}:`, err);
-        }
-      }
-
-      results.resultsIngested += allResults.length; // Count re-simulations
+      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested. Recalculation handled by /api/cron/recalculate.`);
     }
 
     const duration = Date.now() - startTime;
@@ -243,19 +229,6 @@ async function updateTeamForm(
   }
 }
 
-function mapApiNameToEnglishToSpanish(apiName: string | undefined): string | null {
-  if (!apiName) return null;
-
-  // The teams.ts file already has englishName mapping
-  // We need to go from API name → Spanish name
-  const { WORLD_CUP_TEAMS } = require('@/lib/teams');
-  const team = WORLD_CUP_TEAMS.find(
-    (t: any) => t.englishName.toLowerCase() === apiName.toLowerCase() ||
-               t.name.toLowerCase() === apiName.toLowerCase()
-  );
-  return team?.name || null;
-}
-
 // Aliases for common API name variations
 const NAME_ALIASES: Record<string, string> = {
   'Brazil': 'Brasil',
@@ -340,14 +313,9 @@ function mapApiNameToSpanish(apiName: string | undefined): string | null {
   if (NAME_ALIASES[apiName]) return NAME_ALIASES[apiName];
 
   // Try to find in WORLD_CUP_TEAMS
-  try {
-    const { WORLD_CUP_TEAMS } = require('@/lib/teams');
-    const team = WORLD_CUP_TEAMS.find(
-      (t: any) => t.englishName.toLowerCase() === apiName.toLowerCase() ||
-                 t.name.toLowerCase() === apiName.toLowerCase()
-    );
-    return team?.name || null;
-  } catch {
-    return NAME_ALIASES[apiName] || null;
-  }
+  const team = WORLD_CUP_TEAMS.find(
+    (t) => t.englishName.toLowerCase() === apiName.toLowerCase() ||
+               t.name.toLowerCase() === apiName.toLowerCase()
+  );
+  return team?.name || null;
 }

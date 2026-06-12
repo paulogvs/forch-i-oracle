@@ -26,7 +26,7 @@ async function seed() {
     name: t.name,
     group_char: t.group,
     confederation: t.confederation,
-    elo_rating: ELO_RATINGS[t.name] ?? 1500,
+    elo_rating: ELO_RATINGS[t.name]?.elo ?? 1500,
     power_ratings: POWER_RATINGS[t.name] ?? { attack: 50, defense: 50, midfield: 50 },
   }));
 

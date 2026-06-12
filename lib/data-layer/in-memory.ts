@@ -359,11 +359,15 @@ async function submitMatchResult(input: RealMatchResultInput): Promise<void> {
     matchResultsStore.push(input);
   }
 
+  // Look up team names from matches store
+  ensureInitialized();
+  const match = matchesStore.get(input.matchId);
+
   // Persist to file store
   saveFileResult({
     matchId: input.matchId,
-    homeTeam: (matchResultsStore.find(r => r.matchId === input.matchId) as any)?.homeTeamId || '',
-    awayTeam: (matchResultsStore.find(r => r.matchId === input.matchId) as any)?.awayTeamId || '',
+    homeTeam: match?.homeTeamId || '',
+    awayTeam: match?.awayTeamId || '',
     homeScore: input.homeScore,
     awayScore: input.awayScore,
     winner: input.winner,
@@ -371,8 +375,6 @@ async function submitMatchResult(input: RealMatchResultInput): Promise<void> {
   });
 
   // Update match status and score
-  ensureInitialized();
-  const match = matchesStore.get(input.matchId);
   if (match) {
     matchesStore.set(match.id, {
       ...match,
@@ -390,7 +392,7 @@ async function getMatchResults(): Promise<RealMatchResultInput[]> {
   const merged = [...matchResultsStore];
   for (const fr of fileResults) {
     if (!fileIds.has(fr.matchId)) {
-      merged.push(fr as any);
+      merged.push({ matchId: fr.matchId, homeScore: fr.homeScore, awayScore: fr.awayScore, winner: fr.winner });
     }
   }
   return merged;

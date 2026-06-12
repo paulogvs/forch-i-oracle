@@ -102,7 +102,13 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const winner = homeScore > awayScore ? 'home' : awayScore > homeScore ? 'away' : 'draw';
+    // Look up match to get team names for the winner field
+    const match = await db.getMatch(matchId);
+    const winner = homeScore > awayScore
+      ? (match?.homeTeamId || 'home')
+      : awayScore > homeScore
+        ? (match?.awayTeamId || 'away')
+        : 'draw';
 
     await db.submitMatchResult({
       matchId,
