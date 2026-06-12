@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { NextRequest } from 'next/server';
 
+// @ts-nocheck — vitest test file, mock objects don't satisfy NextRequest strictly
+
 // Mock the modules that make external calls
 vi.mock('@/lib/groq', () => ({
   getPrediction: vi.fn().mockResolvedValue({

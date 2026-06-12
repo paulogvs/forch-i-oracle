@@ -53,24 +53,12 @@ async function initAsync(): Promise<void> {
 
   if (hasEnv) {
     try {
-      // Check if @supabase/supabase-js is installed
-      let sdkAvailable = false;
-      try {
-        await import('@supabase/supabase-js');
-        sdkAvailable = true;
-      } catch {
-        sdkAvailable = false;
-      }
-
-      if (sdkAvailable) {
-        const { supabaseDataLayer } = await import('./supabase');
-        console.log('[data-layer] ✅ Using Supabase data layer');
-        supabaseActive = true;
-        dataLayerInstance = supabaseDataLayer as IDataLayer;
-        return;
-      } else {
-        console.warn('[data-layer] @supabase/supabase-js not installed — use: npm i @supabase/supabase-js');
-      }
+      // Try to load Supabase data layer (will fail if SDK not installed)
+      const { supabaseDataLayer } = await import('./supabase');
+      console.log('[data-layer] ✅ Using Supabase data layer');
+      supabaseActive = true;
+      dataLayerInstance = supabaseDataLayer as IDataLayer;
+      return;
     } catch (err) {
       console.warn('[data-layer] Failed to load Supabase, falling back to in-memory:', err);
     }
