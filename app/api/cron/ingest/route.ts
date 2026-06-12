@@ -14,20 +14,76 @@ import { validateCronAuth } from '@/lib/cron-auth';
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
 
-async function apiFetch(endpoint: string): Promise<Record<string, unknown> | null> {
+interface DiagnosticLog {
+  step: string;
+  status: 'ok' | 'warn' | 'error';
+  message: string;
+  details?: unknown;
+}
+
+async function apiFetch(endpoint: string, diagnostics: DiagnosticLog[]): Promise<Record<string, unknown> | null> {
   const API_KEY = getApiKey();
-  if (!API_KEY) return null;
+  if (!API_KEY) {
+    diagnostics.push({
+      step: 'api_key',
+      status: 'error',
+      message: 'FOOTBALL_API_KEY environment variable is not set',
+      details: { hint: 'Add FOOTBALL_API_KEY to Vercel Environment Variables (https://www.api-football.com/)' },
+    });
+    return null;
+  }
 
   try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    const url = `${BASE_URL}${endpoint}`;
+    diagnostics.push({ step: 'api_request', status: 'ok', message: `Fetching: ${url}` });
+
+    const response = await fetch(url, {
       headers: { 'x-apisports-key': API_KEY },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(15000),
     });
-    if (!response.ok) return null;
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => 'unable to read');
+      diagnostics.push({
+        step: 'api_response',
+        status: 'error',
+        message: `API returned HTTP ${response.status}`,
+        details: { status: response.status, body: body.slice(0, 500) },
+      });
+      return null;
+    }
+
     const data = await response.json();
-    if (data.errors && Object.keys(data.errors).length > 0) return null;
+
+    if (data.errors && Object.keys(data.errors).length > 0) {
+      diagnostics.push({
+        step: 'api_errors',
+        status: 'error',
+        message: 'API-Football returned errors',
+        details: data.errors,
+      });
+      return null;
+    }
+
+    const fixtureCount = data.response?.length ?? 0;
+    diagnostics.push({
+      step: 'api_success',
+      status: 'ok',
+      message: `Received ${fixtureCount} fixtures from API-Football`,
+      details: {
+        resultsAvailable: data.results?.available,
+        paging: data.paging,
+      },
+    });
+
     return data;
-  } catch {
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    diagnostics.push({
+      step: 'api_exception',
+      status: 'error',
+      message: `API request failed: ${msg}`,
+    });
     return null;
   }
 }
@@ -38,26 +94,60 @@ export async function GET(request: Request) {
 
   const startTime = Date.now();
   const db = await getDataLayerAsync();
+  const diagnostics: DiagnosticLog[] = [];
   const results = {
     fixturesProcessed: 0,
     resultsIngested: 0,
     formsUpdated: 0,
+    nameMappingFailures: [] as string[],
     errors: [] as string[],
   };
 
   try {
     console.log('[cron:ingest] Starting World Cup data ingestion...');
 
-    // 1. Fetch World Cup 2026 fixtures from API-Football
+    // Step 1: Check API key
+    const apiKey = getApiKey();
+    diagnostics.push({
+      step: 'config',
+      status: apiKey ? 'ok' : 'error',
+      message: apiKey ? `API key present (${apiKey.slice(0, 6)}...)` : 'FOOTBALL_API_KEY not set',
+    });
+
+    // Step 2: Check Supabase connection
+    try {
+      const teams = await db.getAllTeams();
+      diagnostics.push({
+        step: 'supabase',
+        status: 'ok',
+        message: `Supabase connected. ${teams.length} teams in database.`,
+      });
+    } catch (err) {
+      diagnostics.push({
+        step: 'supabase',
+        status: 'error',
+        message: `Supabase connection failed: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
+
+    // Step 3: Fetch World Cup 2026 fixtures from API-Football
     // League ID 9 = World Cup, Season 2026
-    const wcData = await apiFetch('/fixtures?league=9&season=2026');
+    const wcData = await apiFetch('/fixtures?league=9&season=2026', diagnostics);
 
     if (!wcData?.response) {
-      console.log('[cron:ingest] No World Cup fixtures found (tournament may not have started)');
+      diagnostics.push({
+        step: 'wc2026_fallback',
+        status: 'warn',
+        message: 'No WC 2026 fixtures found. Trying qualifiers (2025)...',
+      });
       // Try 2025 (qualifiers) as fallback
-      const wcQualData = await apiFetch('/fixtures?league=9&season=2025');
+      const wcQualData = await apiFetch('/fixtures?league=9&season=2025', diagnostics);
       if (!wcQualData?.response) {
-        console.log('[cron:ingest] No WC qualifiers found either. Using baseline data.');
+        diagnostics.push({
+          step: 'qualifiers_fallback',
+          status: 'warn',
+          message: 'No WC qualifiers found either. Using baseline data.',
+        });
         // Fall back to baseline: ensure all teams have basic form data
         const teams = await db.getAllTeams();
         for (const team of teams) {
@@ -76,16 +166,30 @@ export async function GET(request: Request) {
           }
         }
       } else {
-        results.fixturesProcessed = await processFixtures(wcQualData.response as any[], db, results);
+        results.fixturesProcessed = await processFixtures(wcQualData.response as any[], db, results, diagnostics);
       }
     } else {
-      results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results);
+      results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results, diagnostics);
     }
 
     // AUTO-RECALCULATE: If new results were ingested, trigger recalculate cron
-    // Note: Full re-simulation is handled by /api/cron/recalculate to avoid timeouts
     if (results.resultsIngested > 0) {
-      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested. Recalculation handled by /api/cron/recalculate.`);
+      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested.`);
+      diagnostics.push({
+        step: 'ingest_summary',
+        status: 'ok',
+        message: `${results.resultsIngested} results ingested, ${results.formsUpdated} forms updated`,
+      });
+    }
+
+    // Check for name mapping failures
+    if (results.nameMappingFailures.length > 0) {
+      diagnostics.push({
+        step: 'name_mapping',
+        status: 'warn',
+        message: `${results.nameMappingFailures.length} API team names could not be mapped`,
+        details: results.nameMappingFailures.slice(0, 10),
+      });
     }
 
     const duration = Date.now() - startTime;
@@ -106,7 +210,9 @@ export async function GET(request: Request) {
       fixturesProcessed: results.fixturesProcessed,
       resultsIngested: results.resultsIngested,
       formsUpdated: results.formsUpdated,
+      nameMappingFailures: results.nameMappingFailures.length > 0 ? results.nameMappingFailures : undefined,
       errors: results.errors.length > 0 ? results.errors : undefined,
+      diagnostics,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -119,16 +225,21 @@ export async function GET(request: Request) {
       error: msg,
     });
 
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: msg, diagnostics }, { status: 500 });
   }
 }
 
 async function processFixtures(
   fixtures: any[],
   db: IDataLayer,
-  results: { resultsIngested: number; formsUpdated: number; errors: string[] }
+  results: { resultsIngested: number; formsUpdated: number; nameMappingFailures: string[]; errors: string[] },
+  diagnostics: DiagnosticLog[]
 ): Promise<number> {
   let processed = 0;
+  let skippedNotFinished = 0;
+  let skippedNoMapping = 0;
+  let skippedNoMatch = 0;
+  let skippedAlreadyIngested = 0;
 
   for (const fixture of fixtures) {
     try {
@@ -139,21 +250,58 @@ async function processFixtures(
       const awayGoals = fixture.goals?.away;
 
       // Only process finished matches with scores
-      if (status !== 'FT' || homeGoals === null || awayGoals === null) continue;
+      if (status !== 'FT' || homeGoals === null || awayGoals === null) {
+        skippedNotFinished++;
+        continue;
+      }
 
       // Map API-Football team names to our Spanish names
       const homeTeam = mapApiNameToSpanish(homeName);
       const awayTeam = mapApiNameToSpanish(awayName);
 
-      if (!homeTeam || !awayTeam) continue;
+      if (!homeTeam || !awayTeam) {
+        skippedNoMapping++;
+        const unmapped = !homeTeam ? homeName : awayName;
+        if (unmapped) results.nameMappingFailures.push(unmapped);
+        continue;
+      }
 
       // Find matching match in our database
-      const match = await db.getMatchByTeams(homeTeam, awayTeam);
-      if (!match) continue;
+      let match = await db.getMatchByTeams(homeTeam, awayTeam);
+
+      // Fallback: try reversed order (in case home/away are swapped in API)
+      if (!match) {
+        match = await db.getMatchByTeams(awayTeam, homeTeam);
+      }
+
+      // Fallback 2: try with English names
+      if (!match) {
+        const homeEnglish = mapApiNameToEnglish(homeName);
+        const awayEnglish = mapApiNameToEnglish(awayName);
+        if (homeEnglish && awayEnglish) {
+          match = await db.getMatchByTeams(homeEnglish, awayEnglish);
+          if (!match) {
+            match = await db.getMatchByTeams(awayEnglish, homeEnglish);
+          }
+        }
+      }
+
+      if (!match) {
+        skippedNoMatch++;
+        diagnostics.push({
+          step: 'match_lookup',
+          status: 'warn',
+          message: `No match found for: ${homeTeam} vs ${awayTeam} (API: ${homeName} vs ${awayName})`,
+        });
+        continue;
+      }
 
       // Check if we already have this result
       const existingResults = await db.getMatchResults();
-      if (existingResults.some(r => r.matchId === match.id)) continue;
+      if (existingResults.some(r => r.matchId === match!.id)) {
+        skippedAlreadyIngested++;
+        continue;
+      }
 
       // Ingest the result
       const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
@@ -177,6 +325,20 @@ async function processFixtures(
       results.errors.push(`Fixture error: ${msg}`);
     }
   }
+
+  diagnostics.push({
+    step: 'fixture_processing',
+    status: 'ok',
+    message: `Processed ${fixtures.length} fixtures: ${processed} ingested, ${skippedAlreadyIngested} already existed, ${skippedNoMatch} no match found, ${skippedNoMapping} name mapping failed, ${skippedNotFinished} not yet finished`,
+    details: {
+      total: fixtures.length,
+      ingested: processed,
+      alreadyExisted: skippedAlreadyIngested,
+      noMatchFound: skippedNoMatch,
+      nameMappingFailed: skippedNoMapping,
+      notFinished: skippedNotFinished,
+    },
+  });
 
   return processed;
 }
@@ -318,4 +480,15 @@ function mapApiNameToSpanish(apiName: string | undefined): string | null {
                t.name.toLowerCase() === apiName.toLowerCase()
   );
   return team?.name || null;
+}
+
+function mapApiNameToEnglish(apiName: string | undefined): string | null {
+  if (!apiName) return null;
+
+  // Try to find in WORLD_CUP_TEAMS by englishName
+  const team = WORLD_CUP_TEAMS.find(
+    (t) => t.englishName.toLowerCase() === apiName.toLowerCase() ||
+               t.name.toLowerCase() === apiName.toLowerCase()
+  );
+  return team?.englishName || null;
 }

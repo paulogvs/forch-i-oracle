@@ -157,9 +157,32 @@ async function updateMatch(id: string, updates: Partial<DBMatch>): Promise<DBMat
 async function getMatchByTeams(homeTeamName: string, awayTeamName: string): Promise<DBMatch | null> {
   const client = getClient();
   if (!client) return null;
-  const { data, error } = await client.from('matches').select('*').ilike('home_team_id', homeTeamName).ilike('away_team_id', awayTeamName).single();
-  if (error || !data) return null;
-  return mapMatchRow(data);
+
+  // Try exact match first (case-insensitive)
+  let { data, error } = await client.from('matches').select('*')
+    .ilike('home_team_id', homeTeamName)
+    .ilike('away_team_id', awayTeamName)
+    .limit(1)
+    .single();
+
+  if (data && !error) return mapMatchRow(data);
+
+  // Fallback: try with normalized names (remove accents for matching)
+  const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const normalizedHome = normalize(homeTeamName);
+  const normalizedAway = normalize(awayTeamName);
+
+  // Get all matches and filter in JS (accent-insensitive)
+  const { data: allMatches } = await client.from('matches').select('*').limit(500);
+  if (allMatches) {
+    const match = allMatches.find((m: Record<string, unknown>) =>
+      normalize(m.home_team_id as string) === normalizedHome &&
+      normalize(m.away_team_id as string) === normalizedAway
+    );
+    if (match) return mapMatchRow(match);
+  }
+
+  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════
