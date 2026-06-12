@@ -8,11 +8,18 @@ import ComparisonBars from './ComparisonBars';
 import LensConsensus from './LensConsensus';
 import AnimatedNumber from './ui/AnimatedNumber';
 import ProbabilityBar from './ui/ProbabilityBar';
+import MatchSeal from './MatchSeal';
 
 interface ResultCardProps {
   prediction: Prediction;
   homeTeam: string;
   awayTeam: string;
+  /** Optional: match result data for seals */
+  matchResult?: {
+    isPlayed: boolean;
+    realHome?: number | null;
+    realAway?: number | null;
+  };
 }
 
 type Tab = 'consensus' | 'form' | 'stats' | 'analysis';
@@ -34,7 +41,7 @@ const factorIcons: Record<string, string> = {
   'Experiencia': '⭐',
 };
 
-export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCardProps) {
+export default function ResultCard({ prediction, homeTeam, awayTeam, matchResult }: ResultCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('consensus');
 
@@ -48,6 +55,18 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
   const isDraw = !winner;
 
   const allKeyPlayers = [...prediction.homeKeyPlayers, ...prediction.awayKeyPlayers].slice(0, 6);
+
+  // Determine seal status
+  const sealStatus = matchResult?.isPlayed && matchResult.realHome != null && matchResult.realAway != null
+    ? (() => {
+        const rh = matchResult.realHome!;
+        const ra = matchResult.realAway!;
+        const predWinner = prediction.predictedScoreHome > prediction.predictedScoreAway ? 'home'
+          : prediction.predictedScoreHome < prediction.predictedScoreAway ? 'away' : 'draw';
+        const realWinner = rh > ra ? 'home' : rh < ra ? 'away' : 'draw';
+        return predWinner === realWinner ? 'correct' as const : 'incorrect' as const;
+      })()
+    : null;
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
     { id: 'consensus', label: 'Consenso', icon: '🔮' },
@@ -63,9 +82,12 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
         <span className="text-[10px] uppercase tracking-wider font-semibold text-text-muted">
           Predicción FORCH.i
         </span>
-        <span className={`text-xs font-semibold ${confidenceColor[prediction.confidence] || 'text-text-tertiary'}`}>
-          {prediction.confidence === 'alta' ? '●' : prediction.confidence === 'media' ? '●' : '○'} {prediction.confidence}
-        </span>
+        <div className="flex items-center gap-2">
+          {sealStatus && <MatchSeal status={sealStatus} compact />}
+          <span className={`text-xs font-semibold ${confidenceColor[prediction.confidence] || 'text-text-tertiary'}`}>
+            {prediction.confidence === 'alta' ? '●' : prediction.confidence === 'media' ? '●' : '○'} {prediction.confidence}
+          </span>
+        </div>
       </div>
 
       {/* ═══ SCOREBOARD ═══ */}
@@ -165,7 +187,7 @@ export default function ResultCard({ prediction, homeTeam, awayTeam }: ResultCar
 
       {/* ═══ EXPANDED CONTENT ═══ */}
       {expanded && (
-        <div className="border-t border-white/[0.06]">
+        <div className="border-t border-white/[0.06] animate-fade-in">
           {/* Tabs */}
           <div className="flex border-b border-white/[0.06]">
             {tabs.map(tab => (

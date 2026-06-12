@@ -1,6 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import MainNav from '@/components/MainNav';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -33,8 +40,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className="antialiased bg-[#050B14] min-h-screen">
+    <html lang="es" className={inter.variable}>
+      <body className="antialiased bg-bg-primary min-h-screen">
         <div className="bg-mesh" aria-hidden="true" />
         <MainNav />
         <main className="lg:ml-56 min-h-screen pt-14">

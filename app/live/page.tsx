@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
+import MatchSeal from '@/components/MatchSeal';
 
 type TabType = 'grupos' | 'eliminatorias';
 type PhaseFilter = string;
@@ -31,25 +32,24 @@ export default function LivePage() {
   const [liveBracket, setLiveBracket] = useState<any>(null);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Get predictions
-      const fixtureRes = await fetch('/api/fixture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ useEnhanced: true }),
-      });
-      const fixtureData = await fixtureRes.json();
+      const [fixtureRes, simRes] = await Promise.all([
+        fetch('/api/fixture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ useEnhanced: true }),
+        }),
+        fetch('/api/simulate-tournament'),
+      ]);
 
-      // Get real results + live standings + bracket
-      const simRes = await fetch('/api/simulate-tournament');
-      const simData = await simRes.json();
+      const [fixtureData, simData] = await Promise.all([
+        fixtureRes.json(),
+        simRes.json(),
+      ]);
 
-      // Build real results map
       const realResultsMap = new Map<string, { home: number; away: number }>();
       if (simData.success && simData.results) {
         for (const r of simData.results) {
@@ -57,7 +57,6 @@ export default function LivePage() {
         }
       }
 
-      // Build predictions map
       const predMap = new Map();
       if (fixtureData.success && fixtureData.fixture) {
         for (const m of fixtureData.fixture) {
@@ -68,7 +67,6 @@ export default function LivePage() {
         }
       }
 
-      // Build live matches
       const allMatches: LiveMatch[] = ALL_MATCHES.map(m => {
         const pred = predMap.get(m.id);
         const real = realResultsMap.get(m.id);
@@ -97,11 +95,35 @@ export default function LivePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const TABS: { id: TabType; label: string; icon: string }[] = [
-    { id: 'grupos', label: 'Tabla de Grupos', icon: '📋' },
-    { id: 'eliminatorias', label: 'Eliminatorias', icon: '🏆' },
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Auto-refresh every 60s
+  useEffect(() => {
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  const TABS: { id: TabType; label: string; icon: JSX.Element }[] = [
+    {
+      id: 'grupos',
+      label: 'Tabla de Grupos',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-2.625 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0118 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0118 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 016 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 12 6 12.504 6 13.125M15 12h1.5m-1.5 0c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-1.5 0h-1.5m1.5 0c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125" />
+        </svg>
+      ),
+    },
+    {
+      id: 'eliminatorias',
+      label: 'Eliminatorias',
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52m0 0a6.003 6.003 0 01-2.48-5.228m0 0c.26 0 .515.02.77.054" />
+        </svg>
+      ),
+    },
   ];
 
   const PHASES = [
@@ -124,7 +146,7 @@ export default function LivePage() {
   }).length;
   const accuracy = playedMatches.length > 0 ? Math.round((correctCount / playedMatches.length) * 100) : 0;
 
-  const getFlag = (name: string) => getTeamByName(name)?.flag || '❓';
+  const getFlag = (name: string) => getTeamByName(name)?.flag || '🏳️';
   const getRoundLabel = (round: string) => {
     const labels: Record<string, string> = {
       group: 'Grupo', 'round-32': '1/16', 'round-16': '1/8',
@@ -139,37 +161,59 @@ export default function LivePage() {
 
   // Group matches by date
   const byDate = new Map<string, LiveMatch[]>();
-  for (const m of filtered) {
-    if (!byDate.has(m.date)) byDate.set(m.date, []);
-    byDate.get(m.date)!.push(m);
+  const sortedDates = Array.from(new Set(filtered.map(m => m.date))).sort();
+  for (const date of sortedDates) {
+    byDate.set(date, filtered.filter(m => m.date === date));
   }
 
-  // Check if there are any real results
   const hasRealResults = playedMatches.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-5 animate-fade-in">
+      <div className="mb-6 animate-fade-in">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">📈 Mundial en Vivo</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 flex items-center gap-2">
+              <span className="w-8 h-8 rounded-card-sm bg-accent-emerald/10 flex items-center justify-center">
+                <svg className="w-4 h-4 text-accent-emerald" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+              </span>
+              Mundial en Vivo
+            </h1>
             <p className="text-xs sm:text-sm text-text-secondary">
               Resultados reales auto-actualizados · Tabla y bracket recalculados dinámicamente
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {lastUpdate && <div className="text-[10px] text-text-muted hidden sm:block">Actualizado: {lastUpdate}</div>}
-            <button onClick={loadData} className="btn-premium text-xs px-4 py-2">🔄 Actualizar</button>
+            {lastUpdate && (
+              <div className="text-[10px] text-text-muted hidden sm:flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-emerald animate-pulse" />
+                {lastUpdate}
+              </div>
+            )}
+            <button onClick={loadData} className="btn-premium text-xs px-4 py-2 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+              </svg>
+              Actualizar
+            </button>
           </div>
         </div>
 
         {/* Live stats bar */}
         {hasRealResults && (
-          <div className="flex items-center gap-4 mt-3 text-xs">
-            <span className="text-accent-emerald font-semibold">✅ {correctCount}/{playedMatches.length} correctas ({accuracy}%)</span>
+          <div className="flex items-center gap-4 mt-4 text-xs">
+            <span className="flex items-center gap-1.5 text-accent-emerald font-semibold">
+              <span className="w-5 h-5 rounded-full bg-accent-emerald/15 flex items-center justify-center text-[10px]">✓</span>
+              {correctCount}/{playedMatches.length} correctas ({accuracy}%)
+            </span>
             <span className="text-text-muted">·</span>
-            <span className="text-accent-blue">⏳ {matches.length - playedMatches.length} pendientes</span>
+            <span className="flex items-center gap-1.5 text-accent-blue">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-breathe" />
+              {matches.length - playedMatches.length} pendientes
+            </span>
           </div>
         )}
       </div>
@@ -180,11 +224,12 @@ export default function LivePage() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-              tab === t.id ? 'bg-accent-blue/20 text-accent-blue' : 'text-text-secondary hover:text-white'
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              tab === t.id ? 'bg-accent-blue/20 text-accent-blue' : 'text-text-secondary hover:text-white hover:bg-white/[0.04]'
             }`}
           >
-            {t.icon} {t.label}
+            {t.icon}
+            {t.label}
           </button>
         ))}
       </div>
@@ -195,7 +240,7 @@ export default function LivePage() {
           <button
             key={p.id}
             onClick={() => setPhaseFilter(p.id)}
-            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all duration-200 ${
               phaseFilter === p.id
                 ? 'bg-accent-blue/20 text-accent-blue border border-accent-blue/30'
                 : 'bg-white/[0.04] text-text-secondary border border-transparent hover:text-white'
@@ -231,7 +276,7 @@ export default function LivePage() {
                 const played = (teams as any[]).some((t: any) => t.played > 0);
                 if (!played) return null;
                 return (
-                  <div key={group} className="glass-card p-3">
+                  <div key={group} className="glass-card p-3 animate-fade-in-up">
                     <h3 className="text-xs font-bold text-accent-gold uppercase mb-2">Grupo {group}</h3>
                     <table className="w-full text-[10px]">
                       <thead>
@@ -264,7 +309,11 @@ export default function LivePage() {
             </div>
           ) : (
             <div className="glass-card p-10 text-center">
-              <div className="text-4xl mb-3">⏳</div>
+              <div className="w-16 h-16 mx-auto rounded-full bg-accent-blue/10 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-accent-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
               <p className="text-sm text-white font-semibold mb-1">Esperando primeros resultados</p>
               <p className="text-xs text-text-muted max-w-sm mx-auto">
                 Los resultados se actualizan automáticamente cada 6 horas desde API-Football.
@@ -281,52 +330,24 @@ export default function LivePage() {
           {liveBracket ? (
             <>
               {liveBracket.roundOf32 && liveBracket.roundOf32.length > 0 && (
-                <>
-                  <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">1/16 Final</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {liveBracket.roundOf32.map((m: any) => (
-                      <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />
-                    ))}
-                  </div>
-                </>
+                <BracketRound title="1/16 Final" matches={liveBracket.roundOf32} getFlag={getFlag} />
               )}
-
               {liveBracket.roundOf16 && liveBracket.roundOf16.length > 0 && (
-                <>
-                  <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">Octavos de Final</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {liveBracket.roundOf16.map((m: any) => (
-                      <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />
-                    ))}
-                  </div>
-                </>
+                <BracketRound title="Octavos de Final" matches={liveBracket.roundOf16} getFlag={getFlag} />
               )}
-
               {liveBracket.quarters && liveBracket.quarters.length > 0 && (
-                <>
-                  <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">Cuartos de Final</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {liveBracket.quarters.map((m: any) => (
-                      <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />
-                    ))}
-                  </div>
-                </>
+                <BracketRound title="Cuartos de Final" matches={liveBracket.quarters} getFlag={getFlag} />
               )}
-
               {liveBracket.semis && liveBracket.semis.length > 0 && (
-                <>
-                  <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider">Semifinales</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {liveBracket.semis.map((m: any) => (
-                      <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />
-                    ))}
-                  </div>
-                </>
+                <BracketRound title="Semifinales" matches={liveBracket.semis} getFlag={getFlag} />
               )}
-
               {liveBracket.final && (
                 <div className="glass-card p-6 text-center border border-accent-gold/20">
-                  <div className="text-4xl mb-2">🏆</div>
+                  <div className="w-16 h-16 mx-auto rounded-full bg-accent-gold/10 flex items-center justify-center mb-3">
+                    <svg className="w-8 h-8 text-accent-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52" />
+                    </svg>
+                  </div>
                   <div className="text-lg font-bold text-gradient-gold">{liveBracket.champion || 'Por definir'}</div>
                   <div className="text-xs text-text-muted mt-1">Campeón Simulado</div>
                   {liveBracket.final.homeTeam && (
@@ -341,7 +362,11 @@ export default function LivePage() {
             </>
           ) : (
             <div className="glass-card p-10 text-center">
-              <div className="text-4xl mb-3">🏆</div>
+              <div className="w-16 h-16 mx-auto rounded-full bg-accent-gold/10 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-accent-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52" />
+                </svg>
+              </div>
               <p className="text-sm text-white font-semibold mb-1">Bracket en espera</p>
               <p className="text-xs text-text-muted max-w-sm mx-auto">
                 Las eliminatorias se arman automáticamente conforme avanzan los resultados de fase de grupos.
@@ -354,29 +379,41 @@ export default function LivePage() {
       {/* ═══ Match List — All results vs predictions ═══ */}
       {!loading && !error && hasRealResults && byDate.size > 0 && (
         <div className="mt-8 animate-fade-in">
-          <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
-            📊 Todos los Partidos — Real vs Predicho
+          <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4 text-accent-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            Todos los Partidos — Real vs Predicho
           </h3>
-          {Array.from(byDate.entries()).map(([date, dayMatches]) => (
-            <div key={date} className="mb-4">
+          {Array.from(byDate.entries()).map(([date, dayMatches], dayIdx) => (
+            <div key={date} className="mb-4 animate-fade-in-up" style={{ animationDelay: `${dayIdx * 50}ms` }}>
               <h4 className="text-[11px] font-bold text-accent-blue uppercase tracking-wider mb-2">
                 {formatDate(date)}
               </h4>
               <div className="space-y-1.5">
-                {dayMatches.map(m => {
+                {dayMatches.map((m, mIdx) => {
                   const hasReal = m.isPlayed && m.realHome !== null && m.realAway !== null;
                   const hasPred = m.predHome !== null && m.predAway !== null;
                   const isCorrect = hasReal && hasPred
                     ? ((m.realHome! > m.realAway!) === (m.predHome! > m.predAway!))
                     : null;
 
+                  // Determine seal status
+                  const sealStatus = hasReal
+                    ? isCorrect ? 'correct' as const : 'incorrect' as const
+                    : 'played' as const;
+
                   return (
-                    <div key={m.id} className={`glass-card p-3 flex items-center gap-3 ${
-                      m.isPlayed ? 'border-l-2 border-l-accent-emerald' : ''
-                    }`}>
-                      <span className="text-base w-6 text-center shrink-0">
-                        {m.isPlayed ? (isCorrect ? '✅' : '❌') : '⏳'}
-                      </span>
+                    <div
+                      key={m.id}
+                      className={`glass-card p-3 flex items-center gap-3 ${
+                        hasReal ? (isCorrect ? 'border-l-2 border-l-accent-emerald' : 'border-l-2 border-l-accent-crimson') : ''
+                      }`}
+                    >
+                      {/* Seal */}
+                      <div className="shrink-0">
+                        <MatchSeal status={sealStatus} delay={mIdx * 60} />
+                      </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 text-xs mb-0.5">
@@ -398,11 +435,6 @@ export default function LivePage() {
                               Pred: {m.predHome}-{m.predAway}
                             </span>
                           )}
-                          {hasReal && hasPred && (
-                            <span className={isCorrect ? 'text-accent-emerald' : 'text-accent-crimson'}>
-                              {isCorrect ? '✅ Ganador OK' : '❌ Incorrecto'}
-                            </span>
-                          )}
                         </div>
                       </div>
 
@@ -422,45 +454,65 @@ export default function LivePage() {
       {/* Legend */}
       <div className="glass-card p-4 mt-8 animate-fade-in">
         <h4 className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-3">Leyenda</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-          <div className="flex items-center gap-2"><span>✅</span> <span className="text-text-secondary">Predicción correcta</span></div>
-          <div className="flex items-center gap-2"><span>❌</span> <span className="text-text-secondary">Predicción incorrecta</span></div>
-          <div className="flex items-center gap-2"><span>⏳</span> <span className="text-text-secondary">Por jugar</span></div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 border-l-2 border-accent-emerald"></span> <span className="text-text-secondary">Resultado real</span></div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <MatchSeal status="correct" compact />
+            <span className="text-text-secondary">Predicción correcta</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MatchSeal status="incorrect" compact />
+            <span className="text-text-secondary">Predicción incorrecta</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MatchSeal status="played" compact />
+            <span className="text-text-secondary">Por jugar / Sin predicción</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function BracketMatchCard({ match, getFlag }: { match: any; getFlag: (n: string) => string }) {
+function BracketRound({ title, matches, getFlag }: { title: string; matches: any[]; getFlag: (n: string) => string }) {
   return (
-    <div className={`glass-card p-3 ${match.isPlayed ? 'border-l-2 border-l-accent-emerald' : ''}`}>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] text-text-muted">{match.roundLabel || 'Eliminatoria'}</span>
-        {match.isPlayed && <span className="text-[10px] text-accent-emerald">✅</span>}
-      </div>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className={`text-white ${match.winner === match.homeTeam ? 'font-bold text-accent-blue' : ''}`}>
-            {getFlag(match.homeTeam)} {match.homeTeam}
-          </span>
-          <span className={`font-mono font-bold px-2 py-0.5 rounded ${
-            match.winner === match.homeTeam ? 'bg-accent-blue/15 text-accent-blue' : 'bg-white/[0.06] text-text-muted'
-          }`}>
-            {match.homeScore ?? '-'}
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className={`text-white ${match.winner === match.awayTeam ? 'font-bold text-accent-blue' : ''}`}>
-            {getFlag(match.awayTeam)} {match.awayTeam}
-          </span>
-          <span className={`font-mono font-bold px-2 py-0.5 rounded ${
-            match.winner === match.awayTeam ? 'bg-accent-blue/15 text-accent-blue' : 'bg-white/[0.06] text-text-muted'
-          }`}>
-            {match.awayScore ?? '-'}
-          </span>
-        </div>
+    <div>
+      <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {matches.map((m: any) => (
+          <div key={m.id} className={`glass-card p-3 ${m.isPlayed ? 'border-l-2 border-l-accent-emerald' : ''}`}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-text-muted">{m.roundLabel || 'Eliminatoria'}</span>
+              {m.isPlayed && (
+                <MatchSeal
+                  status={m.winner ? 'correct' : 'played'}
+                  compact
+                />
+              )}
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className={`text-white ${m.winner === m.homeTeam ? 'font-bold text-accent-blue' : ''}`}>
+                  {getFlag(m.homeTeam)} {m.homeTeam}
+                </span>
+                <span className={`font-mono font-bold px-2 py-0.5 rounded ${
+                  m.winner === m.homeTeam ? 'bg-accent-blue/15 text-accent-blue' : 'bg-white/[0.06] text-text-muted'
+                }`}>
+                  {m.homeScore ?? '-'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className={`text-white ${m.winner === m.awayTeam ? 'font-bold text-accent-blue' : ''}`}>
+                  {getFlag(m.awayTeam)} {m.awayTeam}
+                </span>
+                <span className={`font-mono font-bold px-2 py-0.5 rounded ${
+                  m.winner === m.awayTeam ? 'bg-accent-blue/15 text-accent-blue' : 'bg-white/[0.06] text-text-muted'
+                }`}>
+                  {m.awayScore ?? '-'}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

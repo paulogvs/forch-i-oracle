@@ -52,27 +52,27 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'sans-serif'],
         mono: ['SF Mono', 'Fira Code', 'JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
-        'sm': '8px',
-        'md': '12px',
-        'lg': '16px',
-        'xl': '24px',
-        '2xl': '32px',
+        'card': '16px',
+        'card-sm': '12px',
+        'pill': '9999px',
       },
       backdropBlur: {
         xs: '2px',
       },
       animation: {
-        'fade-in': 'fadeIn 0.4s ease-out both',
-        'fade-in-up': 'fadeInUp 0.5s ease-out both',
-        'scale-in': 'scaleIn 0.3s ease-out both',
-        'slide-up': 'slideUp 0.5s ease-out both',
-        'slide-down': 'slideDown 0.3s ease-out both',
+        'fade-in': 'fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'fade-in-up': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'scale-in': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'slide-down': 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both',
         'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
         'shimmer': 'shimmer 1.5s ease-in-out infinite',
+        'seal-stamp': 'sealStamp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+        'breathe': 'breathe 3s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -102,6 +102,15 @@ const config: Config = {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        sealStamp: {
+          '0%': { opacity: '0', transform: 'scale(1.8) rotate(-8deg)' },
+          '60%': { opacity: '1', transform: 'scale(0.95) rotate(1deg)' },
+          '100%': { opacity: '1', transform: 'scale(1) rotate(0deg)' },
+        },
+        breathe: {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.6' },
+          '50%': { transform: 'scale(1.05)', opacity: '1' },
         },
       },
     },
