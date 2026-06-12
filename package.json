@@ -12,10 +12,18 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/typography": "^0.5.20",
+    "clsx": "^2.1.1",
     "groq-sdk": "^0.9.0",
+    "lucide-react": "^1.18.0",
     "next": "^14.2.0",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "sonner": "^2.0.7",
+    "swr": "^2.4.1",
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.14"
   },
   "optionalDependencies": {
     "@supabase/supabase-js": "^2.108.1"

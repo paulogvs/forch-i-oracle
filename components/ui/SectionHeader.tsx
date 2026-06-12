@@ -1,4 +1,4 @@
-interface SectionHeaderProps {
+﻿interface SectionHeaderProps {
   title: string;
   subtitle?: string;
   icon?: string;
@@ -24,7 +24,7 @@ export default function SectionHeader({
         </h2>
       </div>
       {subtitle && (
-        <p className="text-sm text-text-secondary">{subtitle}</p>
+        <p className="text-sm text-fg-secondary">{subtitle}</p>
       )}
       <div className="mt-3 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     </div>

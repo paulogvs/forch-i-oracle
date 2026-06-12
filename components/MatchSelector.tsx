@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import {
@@ -53,8 +53,8 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
           onClick={() => setActiveTab('groups')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-200 ${
             activeTab === 'groups'
-              ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20'
-              : 'text-text-secondary hover:text-white'
+              ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20'
+              : 'text-fg-secondary hover:text-white'
           }`}
         >
           Grupos
@@ -65,8 +65,8 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 py-2 px-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
               activeTab === tab.id
-                ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20'
-                : 'text-text-secondary hover:text-white'
+                ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20'
+                : 'text-fg-secondary hover:text-white'
             }`}
           >
             {tab.label}
@@ -76,8 +76,8 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
           onClick={() => setActiveTab('table')}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-200 ${
             activeTab === 'table'
-              ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20'
-              : 'text-text-secondary hover:text-white'
+              ? 'bg-accent-primary text-white shadow-lg shadow-accent-primary/20'
+              : 'text-fg-secondary hover:text-white'
           }`}
         >
           Tablas
@@ -94,7 +94,7 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
               className={`shrink-0 w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 ${
                 activeGroup === group
                   ? 'bg-white/15 text-white border border-white/20'
-                  : 'bg-white/[0.03] text-text-muted hover:bg-white/[0.06] hover:text-text-secondary border border-transparent'
+                  : 'bg-white/[0.03] text-fg-disabled hover:bg-white/[0.06] hover:text-fg-secondary border border-transparent'
               }`}
             >
               {group}
@@ -106,7 +106,7 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
       {/* ═══ ROUND TITLE (knockout) ═══ */}
       {isKnockout && (
         <div className="mb-4">
-          <span className="text-xs text-text-secondary font-medium">{getRoundName(activeTab)}</span>
+          <span className="text-xs text-fg-secondary font-medium">{getRoundName(activeTab)}</span>
         </div>
       )}
 
@@ -136,7 +136,7 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
                 disabled={isTBD}
                 className={`w-full text-left rounded-xl p-4 transition-all duration-200 border ${
                   isSelected
-                    ? 'bg-accent-gold/10 border-accent-gold/30 shadow-lg shadow-accent-gold/5'
+                    ? 'bg-accent-premium/10 border-accent-premium/30 shadow-lg shadow-accent-premium/5'
                     : isTBD
                     ? 'bg-white/[0.02] border-white/[0.04] opacity-40 cursor-not-allowed'
                     : 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1]'
@@ -144,13 +144,13 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
               >
                 {/* Meta row */}
                 <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] text-text-muted font-medium">
+                  <span className="text-[11px] text-fg-disabled font-medium">
                     {isKnockout
                       ? `${formatMatchDate(match)} · ${formatMatchTime(match)}`
                       : `J${match.matchday} · ${formatMatchDate(match)} · ${formatMatchTime(match)}`}
                   </span>
                   {isTBD && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-amber/20 text-accent-amber font-semibold">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-state-warning/20 text-state-warning font-semibold">
                       TBD
                     </span>
                   )}
@@ -159,24 +159,24 @@ export default function MatchSelector({ onMatchSelect, selectedMatchId }: MatchS
                 {/* Teams row */}
                 <div className="flex items-center gap-3">
                   <div className="flex-1 text-right">
-                    <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-text-primary'}`}>
+                    <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-fg-primary'}`}>
                       {homeFlag} {match.homeTeam}
                     </span>
                   </div>
                   <div className="shrink-0 px-3">
-                    <span className={`text-xs font-bold ${isSelected ? 'text-accent-gold' : 'text-text-muted'}`}>
+                    <span className={`text-xs font-bold ${isSelected ? 'text-accent-premium' : 'text-fg-disabled'}`}>
                       VS
                     </span>
                   </div>
                   <div className="flex-1 text-left">
-                    <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-text-primary'}`}>
+                    <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-fg-primary'}`}>
                       {awayFlag} {match.awayTeam}
                     </span>
                   </div>
                 </div>
 
                 {/* Venue */}
-                <div className="mt-2.5 text-center text-[11px] text-text-muted">
+                <div className="mt-2.5 text-center text-[11px] text-fg-disabled">
                   {match.venue} · {match.city}
                 </div>
               </button>

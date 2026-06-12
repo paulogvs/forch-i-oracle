@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import GroupCard from './GroupCard';
@@ -37,7 +37,7 @@ export default function FixtureView({ bracket, top8 = [], totalSims = 100 }: Fix
   return (
     <div className="relative z-10">
       {/* Tab nav */}
-      <div className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-2xl border-b border-white/[0.06]">
+      <div className="sticky top-0 z-50 bg-canvas/80 backdrop-blur-2xl border-b border-white/[0.06]">
         <div ref={tabsRef} className="flex overflow-x-auto scrollbar-hide px-2">
           {TABS.map((tab) => (
             <button
@@ -45,8 +45,8 @@ export default function FixtureView({ bracket, top8 = [], totalSims = 100 }: Fix
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 min-w-0 py-3 px-2 text-xs font-semibold transition-all duration-200 border-b-2 ${
                 activeTab === tab.id
-                  ? 'text-white border-accent-blue'
-                  : 'text-text-muted border-transparent hover:text-text-secondary'
+                  ? 'text-white border-accent-primary'
+                  : 'text-fg-disabled border-transparent hover:text-fg-secondary'
               }`}
             >
               {tab.label}

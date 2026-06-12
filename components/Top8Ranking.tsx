@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -55,9 +55,9 @@ function Top8Row({
   const pct = useCountUp(item.pct, 1200, inView);
 
   const rankColors: Record<number, string> = {
-    1: 'bg-accent-gold text-bg-primary',
-    2: 'bg-text-secondary text-bg-primary',
-    3: 'bg-accent-amber/80 text-white',
+    1: 'bg-accent-premium text-canvas',
+    2: 'bg-fg-secondary text-canvas',
+    3: 'bg-state-warning/80 text-white',
   };
 
   const rankBadge = rankColors[rank] ? (
@@ -65,7 +65,7 @@ function Top8Row({
       {rank}
     </span>
   ) : (
-    <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-white/[0.06] text-text-muted">
+    <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-white/[0.06] text-fg-disabled">
       {rank}
     </span>
   );
@@ -79,7 +79,7 @@ function Top8Row({
 
       <div className="flex items-center gap-2 w-32 md:w-40 shrink-0">
         <span className="text-lg">{item.flag}</span>
-        <span className="text-xs md:text-sm font-semibold text-text-primary truncate">{item.team}</span>
+        <span className="text-xs md:text-sm font-semibold text-fg-primary truncate">{item.team}</span>
       </div>
 
       <div className="flex-1 h-5 md:h-6 bg-white/[0.04] rounded-full overflow-hidden">
@@ -100,11 +100,11 @@ function Top8Row({
         />
       </div>
 
-      <span className="text-sm md:text-base font-bold text-accent-gold w-14 text-right shrink-0 font-mono">
+      <span className="text-sm md:text-base font-bold text-accent-premium w-14 text-right shrink-0 font-mono">
         {pct.toFixed(1)}%
       </span>
 
-      <span className="text-[10px] text-text-muted w-16 text-right shrink-0 font-mono hidden sm:block">
+      <span className="text-[10px] text-fg-disabled w-16 text-right shrink-0 font-mono hidden sm:block">
         {item.wins}/{Math.round(item.wins / (item.pct / 100))} sims
       </span>
     </div>
@@ -134,23 +134,23 @@ export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
   if (!data || data.length === 0) return null;
 
   return (
-    <div ref={ref} className="glass-card p-6 md:p-8">
+    <div ref={ref} className="surface p-6 md:p-8">
       {/* Header */}
       <div className="text-center mb-6">
-        <h3 className="text-base md:text-lg font-bold text-text-primary mb-1">Probabilidad de Campeón</h3>
-        <p className="text-[11px] text-text-muted">
+        <h3 className="text-base md:text-lg font-bold text-fg-primary mb-1">Probabilidad de Campeón</h3>
+        <p className="text-[11px] text-fg-disabled">
           Basado en {totalSims} simulaciones con motor Poisson + Elo + xG
         </p>
       </div>
 
       {/* Leader insight */}
       {data.length > 0 && (
-        <div className="mb-5 p-3 bg-accent-gold/10 border border-accent-gold/20 rounded-xl text-center">
-          <p className="text-[10px] text-accent-gold font-semibold uppercase tracking-wider mb-1">Favorito</p>
-          <p className="text-text-primary font-bold text-base">
+        <div className="mb-5 p-3 bg-accent-premium/10 border border-accent-premium/20 rounded-xl text-center">
+          <p className="text-[10px] text-accent-premium font-semibold uppercase tracking-wider mb-1">Favorito</p>
+          <p className="text-fg-primary font-bold text-base">
             {data[0].flag} {data[0].team}
           </p>
-          <p className="text-text-muted text-[11px]">
+          <p className="text-fg-disabled text-[11px]">
             Ganó {data[0].wins} de {totalSims} simulaciones
           </p>
         </div>
@@ -158,12 +158,12 @@ export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
 
       {/* Dark horse */}
       {data.length >= 4 && (
-        <div className="mb-5 p-3 bg-accent-emerald/10 border border-accent-emerald/20 rounded-xl text-center">
-          <p className="text-[10px] text-accent-emerald font-semibold uppercase tracking-wider mb-1">Dark Horse</p>
-          <p className="text-text-primary font-bold">
+        <div className="mb-5 p-3 bg-state-success/10 border border-state-success/20 rounded-xl text-center">
+          <p className="text-[10px] text-state-success font-semibold uppercase tracking-wider mb-1">Dark Horse</p>
+          <p className="text-fg-primary font-bold">
             {data[3].flag} {data[3].team}
           </p>
-          <p className="text-text-muted text-[11px]">
+          <p className="text-fg-disabled text-[11px]">
             {data[3].pct}% — valor oculto
           </p>
         </div>
@@ -176,7 +176,7 @@ export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
         ))}
       </div>
 
-      <p className="text-[10px] text-text-muted text-center mt-4">
+      <p className="text-[10px] text-fg-disabled text-center mt-4">
         Simulaciones estadísticas — no reflejan cuotas de apuestas
       </p>
     </div>

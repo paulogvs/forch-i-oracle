@@ -1,0 +1,43 @@
+{
+  "A1": {
+    "matchId": "A1",
+    "homeWin": 62,
+    "draw": 25,
+    "awayWin": 13,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.09,
+    "expectedGoalsAway": 0.56,
+    "over25Probability": 45,
+    "bttsProbability": 42,
+    "confidence": "alta",
+    "dataQualityScore": 40,
+    "modelVersion": "2.0",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12.8
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.4
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.3
+      }
+    ]
+  }
+}

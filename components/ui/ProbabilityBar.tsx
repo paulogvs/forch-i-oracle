@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -41,7 +41,7 @@ export default function ProbabilityBar({
       {/* Bar */}
       <div ref={ref} className={`flex ${h} rounded-full overflow-hidden bg-white/5`}>
         <div
-          className="bg-gradient-to-r from-accent-blue to-accent-cyan transition-all duration-700 ease-out"
+          className="bg-gradient-to-r from-accent-primary to-accent-primary transition-all duration-700 ease-out"
           style={{ width: mounted ? `${(homeWin / total) * 100}%` : '0%' }}
         />
         <div
@@ -49,16 +49,16 @@ export default function ProbabilityBar({
           style={{ width: mounted ? `${(draw / total) * 100}%` : '0%', transitionDelay: '0.1s' }}
         />
         <div
-          className="bg-gradient-to-r from-accent-gold to-yellow-400 transition-all duration-700 ease-out"
+          className="bg-gradient-to-r from-accent-premium to-yellow-400 transition-all duration-700 ease-out"
           style={{ width: mounted ? `${(awayWin / total) * 100}%` : '0%', transitionDelay: '0.2s' }}
         />
       </div>
 
       {/* Labels */}
       <div className="flex justify-between mt-2 text-xs font-mono">
-        <span className="text-accent-blue font-semibold">{homeWin}%</span>
-        <span className="text-text-tertiary">{draw}%</span>
-        <span className="text-accent-gold font-semibold">{awayWin}%</span>
+        <span className="text-accent-primary font-semibold">{homeWin}%</span>
+        <span className="text-fg-tertiary">{draw}%</span>
+        <span className="text-accent-premium font-semibold">{awayWin}%</span>
       </div>
     </div>
   );

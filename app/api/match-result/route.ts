@@ -9,6 +9,7 @@
 // Trigger: POST /api/match-result
 
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import {
   calculateMomentum,
@@ -20,6 +21,7 @@ import {
 import { calculateEnhancedPrediction } from '@/lib/enhanced-engine';
 import { addMatchResult, getDynamicStats } from '@/lib/prediction-store';
 import { getKeyFactors } from '@/lib/predictor-engine';
+import { batchProcess } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -175,83 +177,87 @@ export async function POST(request: NextRequest) {
            m.homeTeamId === awayTeam || m.awayTeamId === awayTeam
     );
 
-    // Recalculate predictions for affected matches (auto-recalculate)
+    // Recalculate predictions for affected matches using batch processing
     let recalculated = 0;
-    for (const match of affectedMatches) {
-      try {
-        // Delete stale prediction first
-        await db.deletePrediction(match.id);
 
-        // Get updated team forms
-        const mHomeForm = await db.getTeamForm(match.homeTeamId);
-        const mAwayForm = await db.getTeamForm(match.awayTeamId);
+    const recalcOne = async (match: { id: string; homeTeamId: string; awayTeamId: string; venue?: string }) => {
+      // Delete stale prediction first
+      await db.deletePrediction(match.id).catch(() => {});
 
-        const homeCtx: EnhancedPredictionContext = {
-          teamName: match.homeTeamId,
-          venue: match.venue,
-          recentMatches: mHomeForm?.last5?.map(f => ({
-            opponent: f.opponent,
-            goalsFor: f.goalsFor,
-            goalsAgainst: f.goalsAgainst,
-            result: f.result,
-            date: f.date,
-            competition: (f as any).competition || 'World Cup',
-          })),
-          daysSinceLastMatch: mHomeForm?.updatedAt
-            ? Math.floor((Date.now() - new Date(mHomeForm.updatedAt).getTime()) / 86400000)
-            : undefined,
-        };
+      // Get updated team forms
+      const [mHomeForm, mAwayForm] = await Promise.all([
+        db.getTeamForm(match.homeTeamId),
+        db.getTeamForm(match.awayTeamId),
+      ]);
 
-        const awayCtx: EnhancedPredictionContext = {
-          teamName: match.awayTeamId,
-          venue: match.venue,
-          recentMatches: mAwayForm?.last5?.map(f => ({
-            opponent: f.opponent,
-            goalsFor: f.goalsFor,
-            goalsAgainst: f.goalsAgainst,
-            result: f.result,
-            date: f.date,
-            competition: (f as any).competition || 'World Cup',
-          })),
-          daysSinceLastMatch: mAwayForm?.updatedAt
-            ? Math.floor((Date.now() - new Date(mAwayForm.updatedAt).getTime()) / 86400000)
-            : undefined,
-        };
+      const homeCtx: EnhancedPredictionContext = {
+        teamName: match.homeTeamId,
+        venue: match.venue,
+        recentMatches: mHomeForm?.last5?.map(f => ({
+          opponent: f.opponent,
+          goalsFor: f.goalsFor,
+          goalsAgainst: f.goalsAgainst,
+          result: f.result,
+          date: f.date,
+          competition: (f as any).competition || 'World Cup',
+        })),
+        daysSinceLastMatch: mHomeForm?.updatedAt
+          ? Math.floor((Date.now() - new Date(mHomeForm.updatedAt).getTime()) / 86400000)
+          : undefined,
+      };
 
-        const enhanced = await calculateEnhancedPrediction(match.homeTeamId, match.awayTeamId, homeCtx, awayCtx);
-        const homeFormArray = mHomeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
-        const awayFormArray = mAwayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
-        const factors = getKeyFactors(enhanced, match.homeTeamId, match.awayTeamId, homeFormArray, awayFormArray);
+      const awayCtx: EnhancedPredictionContext = {
+        teamName: match.awayTeamId,
+        venue: match.venue,
+        recentMatches: mAwayForm?.last5?.map(f => ({
+          opponent: f.opponent,
+          goalsFor: f.goalsFor,
+          goalsAgainst: f.goalsAgainst,
+          result: f.result,
+          date: f.date,
+          competition: (f as any).competition || 'World Cup',
+        })),
+        daysSinceLastMatch: mAwayForm?.updatedAt
+          ? Math.floor((Date.now() - new Date(mAwayForm.updatedAt).getTime()) / 86400000)
+          : undefined,
+      };
 
-        await db.savePrediction({
-          matchId: match.id,
-          homeWin: enhanced.homeWin,
-          draw: enhanced.draw,
-          awayWin: enhanced.awayWin,
-          mostLikelyScore: `${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`,
-          expectedGoalsHome: enhanced.homeExpectedGoals,
-          expectedGoalsAway: enhanced.awayExpectedGoals,
-          over25Probability: enhanced.over25Probability,
-          bttsProbability: enhanced.bttsProbability,
-          keyFactors: factors,
-          confidence: enhanced.confidence,
-          dataQualityScore: enhanced.dataQualityScore,
-          modelVersion: '2.0',
-          homeAttack: enhanced.homeAttack,
-          homeDefense: enhanced.homeDefense,
-          homeMidfield: enhanced.homeMidfield,
-          awayAttack: enhanced.awayAttack,
-          awayDefense: enhanced.awayDefense,
-          awayMidfield: enhanced.awayMidfield,
-          homeElo: enhanced.homeElo,
-          awayElo: enhanced.awayElo,
-          topScores: enhanced.topScores,
-        });
+      const enhanced = await calculateEnhancedPrediction(match.homeTeamId, match.awayTeamId, homeCtx, awayCtx);
+      const homeFormArray = mHomeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
+      const awayFormArray = mAwayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
+      const factors = getKeyFactors(enhanced, match.homeTeamId, match.awayTeamId, homeFormArray, awayFormArray);
 
-        recalculated++;
-      } catch {
-        // Skip failed recalculations — non-critical
-      }
+      await db.savePrediction({
+        matchId: match.id,
+        homeWin: enhanced.homeWin,
+        draw: enhanced.draw,
+        awayWin: enhanced.awayWin,
+        mostLikelyScore: `${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`,
+        expectedGoalsHome: enhanced.homeExpectedGoals,
+        expectedGoalsAway: enhanced.awayExpectedGoals,
+        over25Probability: enhanced.over25Probability,
+        bttsProbability: enhanced.bttsProbability,
+        keyFactors: factors,
+        confidence: enhanced.confidence,
+        dataQualityScore: enhanced.dataQualityScore,
+        modelVersion: '2.0',
+        homeAttack: enhanced.homeAttack,
+        homeDefense: enhanced.homeDefense,
+        homeMidfield: enhanced.homeMidfield,
+        awayAttack: enhanced.awayAttack,
+        awayDefense: enhanced.awayDefense,
+        awayMidfield: enhanced.awayMidfield,
+        homeElo: enhanced.homeElo,
+        awayElo: enhanced.awayElo,
+        topScores: enhanced.topScores,
+      });
+
+      return true;
+    }
+
+    if (affectedMatches.length > 0) {
+      const results = await batchProcess(affectedMatches, recalcOne, 16);
+      recalculated = results.filter(Boolean).length;
     }
 
     console.log(`[match-result] Auto-recalculated ${recalculated} predictions for affected teams`);
@@ -262,6 +268,10 @@ export async function POST(request: NextRequest) {
       console.log('[match-result] Group stage match — tournament re-simulation recommended');
     }
 
+    // Invalidate caches so next request picks up new data
+    revalidateTag('fixture');
+    revalidateTag('tournament');
+
     return NextResponse.json({
       success: true,
       message: `Resultado registrado: ${homeTeam} ${homeScore}-${awayScore} ${awayTeam}`,
@@ -270,6 +280,8 @@ export async function POST(request: NextRequest) {
       homeFormUpdated: true,
       awayFormUpdated: true,
       predictionsRecalculated: recalculated,
+      revalidated: ['fixture', 'tournament'],
+      timestamp: new Date().toISOString(),
       homeDynamic: {
         elo: homeDynamic.elo,
         momentum: homeMomentum,

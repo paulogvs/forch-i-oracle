@@ -1,4 +1,4 @@
-interface TeamBadgeProps {
+﻿interface TeamBadgeProps {
   name: string;
   code?: string;
   flag: string;
@@ -38,7 +38,7 @@ export default function TeamBadge({
         {name}
       </div>
       {code && (
-        <div className={`${s.code} font-mono text-text-tertiary mt-0.5`}>
+        <div className={`${s.code} font-mono text-fg-tertiary mt-0.5`}>
           {code}
         </div>
       )}

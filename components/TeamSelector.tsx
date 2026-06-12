@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { TEAM_NAMES } from '@/lib/teams';
@@ -37,7 +37,7 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <label className="block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-2">
+      <label className="block text-[11px] font-semibold text-fg-secondary uppercase tracking-wider mb-2">
         {label}
       </label>
 
@@ -46,14 +46,14 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-left
-                   hover:border-white/[0.15] focus:border-accent-gold/50 focus:outline-none transition-all
+                   hover:border-white/[0.15] focus:border-accent-premium/50 focus:outline-none transition-all
                    flex items-center justify-between"
       >
-        <span className={value ? 'text-white text-sm font-medium' : 'text-text-muted text-sm'}>
+        <span className={value ? 'text-white text-sm font-medium' : 'text-fg-disabled text-sm'}>
           {flag ? `${flag} ${value}` : value || 'Seleccionar equipo...'}
         </span>
         <svg
-          className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-fg-disabled transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -64,7 +64,7 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-bg-elevated/95 border border-white/[0.08] rounded-xl shadow-2xl
+        <div className="absolute z-50 w-full mt-2 bg-overlay/95 border border-white/[0.08] rounded-xl shadow-2xl
                         backdrop-blur-2xl max-h-64 overflow-hidden">
           {/* Search */}
           <div className="p-2 border-b border-white/[0.06]">
@@ -74,7 +74,7 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-white text-sm
-                         placeholder-text-muted focus:outline-none focus:border-accent-gold/30"
+                         placeholder-text-muted focus:outline-none focus:border-accent-premium/30"
               autoFocus
             />
           </div>
@@ -93,7 +93,7 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
                     setIsOpen(false);
                     setSearch('');
                   }}
-                  className="w-full px-4 py-2.5 text-left text-sm text-text-primary hover:bg-white/[0.06] transition-colors
+                  className="w-full px-4 py-2.5 text-left text-sm text-fg-primary hover:bg-white/[0.06] transition-colors
                              flex items-center gap-2.5"
                 >
                   <span className="text-base">{teamFlag}</span>
@@ -102,7 +102,7 @@ export default function TeamSelector({ value, onChange, label, disabledTeam }: T
               );
             })}
             {filteredTeams.length === 0 && (
-              <div className="px-4 py-4 text-text-muted text-sm text-center">Sin resultados</div>
+              <div className="px-4 py-4 text-fg-disabled text-sm text-center">Sin resultados</div>
             )}
           </div>
         </div>

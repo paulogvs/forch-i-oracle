@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 interface FormBubblesProps {
   form: ('W' | 'D' | 'L')[];
@@ -6,9 +6,9 @@ interface FormBubblesProps {
 }
 
 const colors = {
-  W: 'bg-accent-emerald text-white',
-  D: 'bg-accent-amber text-bg-primary',
-  L: 'bg-accent-crimson text-white',
+  W: 'bg-state-success text-white',
+  D: 'bg-state-warning text-bg-primary',
+  L: 'bg-state-danger text-white',
 };
 
 const labels = { W: 'V', D: 'E', L: 'D' };
@@ -16,7 +16,7 @@ const labels = { W: 'V', D: 'E', L: 'D' };
 export default function FormBubbles({ form, label }: FormBubblesProps) {
   return (
     <div className="flex items-center gap-2">
-      {label && <span className="text-[10px] text-text-muted font-medium">{label}</span>}
+      {label && <span className="text-[10px] text-fg-disabled font-medium">{label}</span>}
       <div className="flex gap-1">
         {form.map((result, i) => (
           <div

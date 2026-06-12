@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import type { Prediction } from '@/lib/groq';
 
@@ -32,12 +32,12 @@ export default function ComparisonBars({ homeTeam, awayTeam, prediction }: Compa
         return (
           <div key={bar.label}>
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-text-primary font-medium">{bar.icon} {bar.label}</span>
-              <span className="text-text-muted font-mono text-[10px]">{bar.homeValue} vs {bar.awayValue}</span>
+              <span className="text-fg-primary font-medium">{bar.icon} {bar.label}</span>
+              <span className="text-fg-disabled font-mono text-[10px]">{bar.homeValue} vs {bar.awayValue}</span>
             </div>
             <div className="flex h-2 rounded-full overflow-hidden gap-0.5">
               <div
-                className="bg-accent-gold rounded-l-full transition-all duration-1000"
+                className="bg-accent-premium rounded-l-full transition-all duration-1000"
                 style={{ width: `${homePct}%` }}
               />
               <div
@@ -45,7 +45,7 @@ export default function ComparisonBars({ homeTeam, awayTeam, prediction }: Compa
                 style={{ width: `${awayPct}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] text-text-muted mt-0.5">
+            <div className="flex justify-between text-[10px] text-fg-disabled mt-0.5">
               <span>{homeTeam} {homePct}%</span>
               <span>{awayPct}% {awayTeam}</span>
             </div>

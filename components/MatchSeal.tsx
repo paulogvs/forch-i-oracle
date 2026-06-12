@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * MatchSeal — Visual stamp for match status (v2 — 5 categories with dual badges)
@@ -37,22 +37,22 @@ const sealConfig: Record<SealStatus, { text: string; className: string; dotColor
   'correct-winner': {
     text: 'GANADOR ✓',
     className: 'seal seal-correct',
-    dotColor: 'bg-accent-emerald',
+    dotColor: 'bg-state-success',
   },
   'incorrect-winner': {
     text: 'GANADOR ✗',
     className: 'seal seal-incorrect',
-    dotColor: 'bg-accent-crimson',
+    dotColor: 'bg-state-danger',
   },
   'exact-score': {
     text: 'SCORE ✓✓',
     className: 'seal seal-exact',
-    dotColor: 'bg-accent-gold',
+    dotColor: 'bg-accent-premium',
   },
   'incorrect-score': {
     text: 'SCORE ✗',
     className: 'seal seal-score-wrong',
-    dotColor: 'bg-accent-amber',
+    dotColor: 'bg-state-warning',
   },
 };
 

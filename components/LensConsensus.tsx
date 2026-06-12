@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import type { Prediction } from '@/lib/groq';
 import { getTeamByName } from '@/lib/teams';
@@ -34,7 +34,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     name: 'Estadístico',
     verdict: statVerdict,
     confidence: Math.abs(statDiff),
-    color: 'text-accent-gold',
+    color: 'text-accent-premium',
     insight: statDiff > 8
       ? `Poisson + Elo favorecen a ${homeTeam} (${prediction.homeWin}%)`
       : statDiff < -8
@@ -51,7 +51,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     name: 'Forma',
     verdict: formVerdict,
     confidence: Math.abs(formDiff) * 20,
-    color: 'text-accent-emerald',
+    color: 'text-state-success',
     insight: homeWins > awayWins
       ? `${homeTeam} mejor racha (${homeWins}V vs ${awayWins}V)`
       : awayWins > homeWins
@@ -64,7 +64,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     name: 'Plantel',
     verdict: prediction.homeAttackStrength > prediction.awayAttackStrength ? homeTeam : awayTeam,
     confidence: Math.abs(prediction.homeAttackStrength - prediction.awayAttackStrength),
-    color: 'text-accent-blue',
+    color: 'text-accent-primary',
     insight: prediction.homeAttackStrength > prediction.awayAttackStrength
       ? `${homeTeam} ataque superior`
       : `${awayTeam} ataque superior`,
@@ -87,7 +87,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     name: 'Local',
     verdict: homeTeam,
     confidence: homeAdvantage ? Math.abs(homeAdvantage.homeAdvantage) * 10 : 20,
-    color: 'text-accent-amber',
+    color: 'text-state-warning',
     insight: homeAdvantage ? homeAdvantage.description : `Factor local para ${homeTeam}`,
   };
 
@@ -103,17 +103,17 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     <div className="glass-card p-5 mb-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">Consenso</h3>
+        <h3 className="text-xs font-bold text-fg-primary uppercase tracking-wider">Consenso</h3>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06]">
-          <span className="text-[10px] text-text-muted">Voto:</span>
+          <span className="text-[10px] text-fg-disabled">Voto:</span>
           {isSplit ? (
-            <span className="text-[10px] font-bold text-text-secondary">Empate</span>
+            <span className="text-[10px] font-bold text-fg-secondary">Empate</span>
           ) : (
-            <span className="text-[10px] font-bold text-accent-gold">
+            <span className="text-[10px] font-bold text-accent-premium">
               {consensusLeader[0] === 'Empate' ? 'Empate' : `${getTeamFlag(consensusLeader[0])} ${consensusLeader[0]}`}
             </span>
           )}
-          <span className="text-[10px] text-text-muted">({consensusLeader[1]}/5)</span>
+          <span className="text-[10px] text-fg-disabled">({consensusLeader[1]}/5)</span>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
       <div className="flex rounded-full overflow-hidden h-1.5 mb-5 bg-white/[0.04]">
         {sortedVotes.map(([team, count], i) => {
           const pct = (count / 5) * 100;
-          const barColors = ['bg-accent-gold', 'bg-text-muted', 'bg-text-muted/60', 'bg-text-muted/40'];
+          const barColors = ['bg-accent-premium', 'bg-text-muted', 'bg-text-muted/60', 'bg-text-muted/40'];
           return (
             <div
               key={team}
@@ -154,20 +154,20 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
 
               <div className="mb-2">
                 {isDraw ? (
-                  <span className="text-xs font-bold text-text-muted">Empate</span>
+                  <span className="text-xs font-bold text-fg-disabled">Empate</span>
                 ) : (
-                  <span className={`text-xs font-bold ${isForHome ? 'text-accent-gold' : 'text-text-secondary'}`}>
+                  <span className={`text-xs font-bold ${isForHome ? 'text-accent-premium' : 'text-fg-secondary'}`}>
                     {lens.verdict === homeTeam ? `${homeFlag} ${homeTeam}` : `${awayFlag} ${awayTeam}`}
                   </span>
                 )}
               </div>
 
-              <p className="text-[10px] text-text-muted leading-snug">{lens.insight}</p>
+              <p className="text-[10px] text-fg-disabled leading-snug">{lens.insight}</p>
 
               <div className="mt-2 w-full bg-white/[0.06] rounded-full h-1">
                 <div
                   className={`h-1 rounded-full transition-all duration-700 ${
-                    isForHome ? 'bg-accent-gold' : 'bg-text-muted'
+                    isForHome ? 'bg-accent-premium' : 'bg-text-muted'
                   }`}
                   style={{ width: `${Math.min(100, lens.confidence)}%` }}
                 />
@@ -177,7 +177,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
         })}
       </div>
 
-      <p className="text-[10px] text-text-muted text-center mt-4">
+      <p className="text-[10px] text-fg-disabled text-center mt-4">
         Cada lente analiza desde una perspectiva diferente — datos reales, no opiniones
       </p>
     </div>
