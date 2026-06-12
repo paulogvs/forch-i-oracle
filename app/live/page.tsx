@@ -20,6 +20,9 @@ interface LiveMatch {
   isPlayed: boolean;
   predHome: number | null;
   predAway: number | null;
+  analysis?: string;
+  homeKeyPlayers?: string[];
+  awayKeyPlayers?: string[];
 }
 
 export default function LivePage() {
@@ -82,6 +85,9 @@ export default function LivePage() {
           isPlayed: real !== undefined,
           predHome: pred?.homeGoals ?? null,
           predAway: pred?.awayGoals ?? null,
+          analysis: pred?.analysis || '',
+          homeKeyPlayers: pred?.homeKeyPlayers || [],
+          awayKeyPlayers: pred?.awayKeyPlayers || [],
         };
       });
 
@@ -401,46 +407,53 @@ export default function LivePage() {
                   // Determine seal status
                   const sealStatus = hasReal
                     ? isCorrect ? 'correct' as const : 'incorrect' as const
-                    : 'played' as const;
+                    : 'pending' as const;
 
                   return (
                     <div
                       key={m.id}
-                      className={`glass-card p-3 flex items-center gap-3 ${
+                      className={`glass-card p-3 ${
                         hasReal ? (isCorrect ? 'border-l-2 border-l-accent-emerald' : 'border-l-2 border-l-accent-crimson') : ''
                       }`}
                     >
-                      {/* Seal */}
-                      <div className="shrink-0">
-                        <MatchSeal status={sealStatus} delay={mIdx * 60} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-xs mb-0.5">
-                          <span className="text-text-muted font-mono w-10 text-[10px]">{m.id}</span>
-                          <span className="text-text-muted text-[10px]">{getRoundLabel(m.round)}</span>
-                          <span className="text-white truncate">{m.homeTeam}</span>
-                          <span className="text-text-muted">vs</span>
-                          <span className="text-white truncate text-right">{m.awayTeam}</span>
+                      <div className="flex items-center gap-3">
+                        {/* Seal */}
+                        <div className="shrink-0">
+                          <MatchSeal status={sealStatus} delay={mIdx * 60} />
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px]">
-                          {hasReal && (
-                            <span className="font-bold text-accent-emerald">
-                              Real: {m.realHome}-{m.realAway}
-                            </span>
-                          )}
-                          {hasPred && (
-                            <span className="text-accent-blue">
-                              Pred: {m.predHome}-{m.predAway}
-                            </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-xs mb-0.5">
+                            <span className="text-text-muted font-mono w-10 text-[10px]">{m.id}</span>
+                            <span className="text-text-muted text-[10px]">{getRoundLabel(m.round)}</span>
+                            <span className="text-white truncate">{m.homeTeam}</span>
+                            <span className="text-text-muted">vs</span>
+                            <span className="text-white truncate text-right">{m.awayTeam}</span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px]">
+                            {hasReal && (
+                              <span className="font-bold text-accent-emerald">
+                                Real: {m.realHome}-{m.realAway}
+                              </span>
+                            )}
+                            {hasPred && (
+                              <span className="text-accent-blue">
+                                Pred: {m.predHome}-{m.predAway}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Groq analysis snippet */}
+                          {m.analysis && (
+                            <p className="text-[11px] text-text-muted mt-1.5 line-clamp-2 leading-relaxed">{m.analysis}</p>
                           )}
                         </div>
-                      </div>
 
-                      <div className="flex gap-1 shrink-0">
-                        <span className="text-base">{getFlag(m.homeTeam)}</span>
-                        <span className="text-base">{getFlag(m.awayTeam)}</span>
+                        <div className="flex gap-1 shrink-0">
+                          <span className="text-base">{getFlag(m.homeTeam)}</span>
+                          <span className="text-base">{getFlag(m.awayTeam)}</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -464,7 +477,7 @@ export default function LivePage() {
             <span className="text-text-secondary">Predicción incorrecta</span>
           </div>
           <div className="flex items-center gap-2">
-            <MatchSeal status="played" compact />
+            <MatchSeal status="pending" compact />
             <span className="text-text-secondary">Por jugar / Sin predicción</span>
           </div>
         </div>
@@ -484,7 +497,7 @@ function BracketRound({ title, matches, getFlag }: { title: string; matches: any
               <span className="text-[10px] text-text-muted">{m.roundLabel || 'Eliminatoria'}</span>
               {m.isPlayed && (
                 <MatchSeal
-                  status={m.winner ? 'correct' : 'played'}
+                  status={m.winner ? 'correct' : 'pending'}
                   compact
                 />
               )}

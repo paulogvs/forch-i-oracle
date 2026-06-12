@@ -243,6 +243,39 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ═══════════════════════════════════════════════════
+    // PHASE 3: Enrich with stored Groq analysis
+    // ═══════════════════════════════════════════════════
+    const matchIds = fixture.map((m: any) => m.id);
+    let storedPredictions: any[] = [];
+    try {
+      storedPredictions = await db.getPredictionsForMatches(matchIds);
+    } catch {
+      // Non-critical — analysis just won't show
+    }
+
+    // Build a map of matchId → stored Groq data
+    const analysisMap = new Map<string, { analysis: string; homeKeyPlayers: string[]; awayKeyPlayers: string[] }>();
+    for (const sp of storedPredictions) {
+      if (sp.analysis || sp.homeKeyPlayers?.length || sp.awayKeyPlayers?.length) {
+        analysisMap.set(sp.matchId, {
+          analysis: sp.analysis || '',
+          homeKeyPlayers: sp.homeKeyPlayers || [],
+          awayKeyPlayers: sp.awayKeyPlayers || [],
+        });
+      }
+    }
+
+    // Enrich fixture with stored Groq analysis
+    for (const m of fixture) {
+      const stored = analysisMap.get(m.id);
+      if (stored) {
+        m.analysis = stored.analysis;
+        m.homeKeyPlayers = stored.homeKeyPlayers;
+        m.awayKeyPlayers = stored.awayKeyPlayers;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       fixture,

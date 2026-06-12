@@ -2,14 +2,14 @@
 
 /**
  * MatchSeal — Visual stamp for match status
- * - YA JUGADO: played match, neutral
+ * - POR JUGAR: match not yet played
  * - ACERTADO: correct prediction, green glow
- * - NO ACERTADO: incorrect prediction, red glow
+ * - EQUIVOCADO: incorrect prediction, red glow
  */
 
 interface MatchSealProps {
-  /** 'played' = YA JUGADO, 'correct' = ACERTADO, 'incorrect' = NO ACERTADO */
-  status: 'played' | 'correct' | 'incorrect';
+  /** 'pending' = POR JUGAR, 'correct' = ACERTADO, 'incorrect' = EQUIVOCADO */
+  status: 'pending' | 'correct' | 'incorrect';
   /** Optional: hide the text, show only the dot */
   compact?: boolean;
   /** Optional: animation delay in ms */
@@ -17,8 +17,8 @@ interface MatchSealProps {
 }
 
 const sealConfig = {
-  played: {
-    text: 'YA JUGADO',
+  pending: {
+    text: 'POR JUGAR',
     className: 'seal seal-played',
   },
   correct: {
@@ -26,7 +26,7 @@ const sealConfig = {
     className: 'seal seal-correct',
   },
   incorrect: {
-    text: 'NO ACERTADO',
+    text: 'EQUIVOCADO',
     className: 'seal seal-incorrect',
   },
 };

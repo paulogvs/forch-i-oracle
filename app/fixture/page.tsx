@@ -15,6 +15,7 @@ interface FixtureMatch {
   homeWin: number | null; draw: number | null; awayWin: number | null; confidence: string | null;
   topScores: { home: number; away: number; probability: number }[] | null;
   isPredicted: boolean; extraTime?: boolean; penalties?: boolean;
+  analysis?: string; homeKeyPlayers?: string[]; awayKeyPlayers?: string[];
 }
 
 export default function FixturePage() {
@@ -55,6 +56,7 @@ export default function FixturePage() {
             homeWin: m.homeWinPct ?? null, draw: m.drawPct ?? null, awayWin: m.awayWinPct ?? null,
             confidence: m.confidence ?? null, topScores: m.topScores ?? null,
             isPredicted: m.predictedScore !== null, extraTime: isTight, penalties: isTight,
+            analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
           };
         });
         setFixtures(mapped);
@@ -458,6 +460,44 @@ function MatchDetailModal({ match, getFlag, getRoundLabel, onClose }: { match: F
           <div className="p-5 border-b border-white/[0.06]"><h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-3">Comparación</h4><div className="mb-3"><div className="flex justify-between text-xs mb-1"><span className="text-white">{match.homeTeam}</span><span className="text-text-muted">Elo</span><span className="text-white">{match.awayTeam}</span></div><div className="flex items-center gap-2"><span className="text-sm font-bold font-mono text-accent-blue w-10 text-right">{homeElo}</span><div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden"><div className="h-full bg-accent-blue" style={{ width: `${Math.max(20, Math.min(80, 50 + eloDiff * 0.1))}%` }} /></div><span className="text-sm font-bold font-mono text-accent-crimson w-10">{awayElo}</span></div><div className="text-[10px] text-text-muted text-center mt-0.5">Diferencia: {eloDiff > 0 ? '+' : ''}{eloDiff}</div></div>{['attack', 'midfield', 'defense'].map((stat) => { const h = homePower[stat as keyof typeof homePower]; const a = awayPower[stat as keyof typeof awayPower]; const l: Record<string, string> = { attack: 'Ataque', midfield: 'Medio', defense: 'Defensa' }; return (<div key={stat} className="mb-2.5"><div className="flex justify-between text-[11px] mb-1"><span className="text-white">{h}</span><span className="text-text-muted">{l[stat]}</span><span className="text-white">{a}</span></div><div className="flex h-1.5 rounded-full overflow-hidden"><div className="bg-accent-blue/60" style={{ width: `${(h / (h + a)) * 100}%` }} /><div className="bg-accent-crimson/60" style={{ width: `${(a / (h + a)) * 100}%` }} /></div></div>); })}</div>
           {match.topScores && match.topScores.length > 0 && (<div className="p-5 border-b border-white/[0.06]"><h4 className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mb-3">Marcadores Probables</h4><div className="space-y-1.5">{match.topScores.slice(0, 5).map((s, i) => (<div key={i} className="flex items-center gap-3 text-xs"><span className="text-text-muted w-4 text-right">{i + 1}</span><span className="font-mono font-bold text-white w-8">{s.home}-{s.away}</span><div className="flex-1 h-1.5 bg-white/[0.06] rounded-full overflow-hidden"><div className="h-full bg-accent-gold/50" style={{ width: `${Math.min(100, s.probability * 3)}%` }} /></div><span className="text-text-muted w-10 text-right">{s.probability}%</span></div>))}</div></div>)}
           {match.confidence && (<div className="p-4 border-t border-white/[0.06] flex items-center justify-center"><span className={`text-xs font-semibold px-4 py-1.5 rounded-full ${match.confidence === 'alta' ? 'bg-accent-emerald/15 text-accent-emerald' : match.confidence === 'media' ? 'bg-accent-amber/15 text-accent-amber' : 'bg-white/[0.06] text-text-muted'}`}>Confianza: {match.confidence.charAt(0).toUpperCase() + match.confidence.slice(1)}</span></div>)}
+          {/* ═══ GROQ ANALYSIS ═══ */}
+          {(match.analysis || match.homeKeyPlayers?.length || match.awayKeyPlayers?.length) && (
+            <div className="p-5 border-t border-white/[0.06]">
+              <h4 className="text-[10px] text-accent-gold font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                </svg>
+                Análisis IA — FORCH.i Oracle
+              </h4>
+              {match.analysis && (
+                <p className="text-sm text-text-secondary leading-relaxed mb-4">{match.analysis}</p>
+              )}
+              {(match.homeKeyPlayers?.length || match.awayKeyPlayers?.length) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {match.homeKeyPlayers?.length ? (
+                    <div>
+                      <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5">Jugadores Clave — {match.homeTeam}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {match.homeKeyPlayers!.map((p, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full bg-accent-blue/10 border border-accent-blue/20 text-[11px] text-accent-blue">{p}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : <div />}
+                  {match.awayKeyPlayers?.length ? (
+                    <div>
+                      <div className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5">Jugadores Clave — {match.awayTeam}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {match.awayKeyPlayers!.map((p, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full bg-accent-crimson/10 border border-accent-crimson/20 text-[11px] text-accent-crimson">{p}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : <div />}
+                </div>
+              )}
+            </div>
+          )}
         </>)}
       </div>
     </div>
