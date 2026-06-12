@@ -137,13 +137,31 @@ export interface SimulationBatch {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ACCURACY METRICS
+// ═══════════════════════════════════════════════════════════════
+
+export interface DBAccuracyMetric {
+  id: string;
+  matchId: string;
+  predictedHomeWin: number;
+  predictedDraw: number;
+  predictedAwayWin: number;
+  actualResult: 'home' | 'draw' | 'away';
+  predictedCorrect: boolean;
+  brierScore: number;
+  logLoss: number;
+  modelVersion: string;
+  evaluatedAt: string;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CRON JOB STATUS
 // ═══════════════════════════════════════════════════════════════
 
 export interface CronJobStatus {
   jobName: string;
   lastRun: string;
-  status: 'success' | 'failed' | 'running';
+  status: 'success' | 'failed' | 'running' | 'never_run';
   durationMs?: number;
   recordsProcessed?: number;
   error?: string;

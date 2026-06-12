@@ -8,6 +8,7 @@ import type {
   DBMatchPrediction,
   DBTeamForm,
   DBTournamentProbs,
+  DBAccuracyMetric,
   RealMatchResultInput,
   CronJobStatus,
   MatchStatus,
@@ -57,6 +58,12 @@ export interface IDataLayer {
   // ─── CRON STATUS ────────────────────────────────────────
   updateCronStatus(status: CronJobStatus): Promise<void>;
   getCronStatus(jobName: string): Promise<CronJobStatus | null>;
+
+  // ─── ACCURACY METRICS ───────────────────────────────────
+  getAccuracyMetrics(matchId: string): Promise<DBAccuracyMetric | null>;
+  getAllAccuracyMetrics(): Promise<DBAccuracyMetric[]>;
+  saveAccuracyMetric(metric: Omit<DBAccuracyMetric, 'id' | 'evaluatedAt'>): Promise<DBAccuracyMetric>;
+  getOverallAccuracy(): Promise<{ total: number; correct: number; accuracy: number; avgBrier: number }>;
 
   // ─── BULK OPERATIONS (for cron jobs) ────────────────────
   seedTeams(teams: Omit<DBTeam, 'createdAt' | 'updatedAt'>[]): Promise<void>;

@@ -1,12 +1,11 @@
-// FORCH.i ORACLE — Cron Job: Recalculate Predictions
-// Vercel Cron job that recalculates predictions for all upcoming matches.
+// FORCH.i ORACLE — Cron Job: Recalculate Predictions (v3 Ensemble)
+// Recalculates predictions using the 4-model ensemble for maximum accuracy.
 // Schedule: Every 12 hours (or after each match day)
 // Trigger: GET /api/cron/recalculate
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
-import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
-import { getKeyFactors } from '@/lib/predictor-engine';
+import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getPrediction as getGroqPrediction } from '@/lib/groq';
 import { validateCronAuth } from '@/lib/cron-auth';
 
@@ -33,60 +32,11 @@ export async function GET(request: Request) {
       try {
         console.log(`[cron:recalculate] Predicting: ${match.homeTeamId} vs ${match.awayTeamId}`);
 
-        // Get team form data
-        const homeForm = await db.getTeamForm(match.homeTeamId);
-        const awayForm = await db.getTeamForm(match.awayTeamId);
-
-        // Build enhanced context
-        const homeContext: EnhancedPredictionContext = {
-          teamName: match.homeTeamId,
-          venue: match.venue,
-          recentMatches: homeForm?.last5?.map(f => ({
-            opponent: f.opponent,
-            goalsFor: f.goalsFor,
-            goalsAgainst: f.goalsAgainst,
-            result: f.result,
-            date: f.date,
-          })),
-          daysSinceLastMatch: homeForm?.updatedAt
-            ? Math.floor((Date.now() - new Date(homeForm.updatedAt).getTime()) / 86400000)
-            : undefined,
-        };
-
-        const awayContext: EnhancedPredictionContext = {
-          teamName: match.awayTeamId,
-          venue: match.venue,
-          recentMatches: awayForm?.last5?.map(f => ({
-            opponent: f.opponent,
-            goalsFor: f.goalsFor,
-            goalsAgainst: f.goalsAgainst,
-            result: f.result,
-            date: f.date,
-          })),
-          daysSinceLastMatch: awayForm?.updatedAt
-            ? Math.floor((Date.now() - new Date(awayForm.updatedAt).getTime()) / 86400000)
-            : undefined,
-        };
-
-        // Calculate enhanced prediction
-        const enhanced = await calculateEnhancedPrediction(
-          match.homeTeamId,
-          match.awayTeamId,
-          homeContext,
-          awayContext
-        );
+        // Use ensemble engine (4-model blend for maximum accuracy)
+        const ensemble = await calculateEnsemblePrediction(match.homeTeamId, match.awayTeamId);
 
         // Build key factors
-        const homeFormArray = homeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
-        const awayFormArray = awayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
-
-        const factors = getKeyFactors(
-          enhanced,
-          match.homeTeamId,
-          match.awayTeamId,
-          homeFormArray,
-          awayFormArray
-        );
+        const factors = ensemble.keyFactors;
 
         // Get Groq analysis (non-blocking, with fallback)
         let analysis: string | undefined;
@@ -97,7 +47,7 @@ export async function GET(request: Request) {
           const groqResult = await getGroqPrediction(
             match.homeTeamId,
             match.awayTeamId,
-            `Forma: ${match.homeTeamId} ${homeFormArray?.join('') || 'N/A'} | ${match.awayTeamId} ${awayFormArray?.join('') || 'N/A'}`,
+            `Ensemble: DC=${ensemble.weights.dixonColes.toFixed(2)} Bay=${ensemble.weights.bayesianDynamic.toFixed(2)} Elo=${ensemble.weights.eloPoisson.toFixed(2)} | Agreement=${ensemble.agreement.agreementScore.toFixed(2)} | Entropy=${ensemble.uncertainty.entropy.toFixed(2)}`,
             match.venue ? {
               id: match.id,
               group: match.groupChar || '',
@@ -107,44 +57,44 @@ export async function GET(request: Request) {
               venue: match.venue,
               city: match.city || '',
             } : null,
-            enhanced
+            ensemble.models.eloPoisson  // Pass the StatisticalPrediction from the ensemble's Elo model
           );
           analysis = groqResult.analysis;
           homeKeyPlayers = groqResult.homeKeyPlayers;
           awayKeyPlayers = groqResult.awayKeyPlayers;
         } catch (groqError) {
           console.warn(`[cron:recalculate] Groq fallback for ${match.homeTeamId} vs ${match.awayTeamId}`);
-          analysis = `${match.homeTeamId} (${enhanced.homeWin}%) vs ${match.awayTeamId} (${enhanced.awayWin}%) — Marcador: ${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`;
+          analysis = `${match.homeTeamId} (${ensemble.homeWin}%) vs ${match.awayTeamId} (${ensemble.awayWin}%) — Marcador: ${ensemble.predictedScoreHome}-${ensemble.predictedScoreAway} — Confianza: ${ensemble.confidence} (${ensemble.confidenceScore}/100)`;
         }
 
         // Save prediction
         await db.savePrediction({
           matchId: match.id,
-          homeWin: enhanced.homeWin,
-          draw: enhanced.draw,
-          awayWin: enhanced.awayWin,
-          mostLikelyScore: `${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`,
-          expectedGoalsHome: enhanced.homeExpectedGoals,
-          expectedGoalsAway: enhanced.awayExpectedGoals,
-          over25Probability: enhanced.over25Probability,
-          bttsProbability: enhanced.bttsProbability,
+          homeWin: ensemble.homeWin,
+          draw: ensemble.draw,
+          awayWin: ensemble.awayWin,
+          mostLikelyScore: `${ensemble.predictedScoreHome}-${ensemble.predictedScoreAway}`,
+          expectedGoalsHome: ensemble.homeExpectedGoals,
+          expectedGoalsAway: ensemble.awayExpectedGoals,
+          over25Probability: ensemble.over25Probability,
+          bttsProbability: ensemble.bttsProbability,
           keyFactors: factors,
-          confidence: enhanced.confidence,
-          dataQualityScore: enhanced.dataQualityScore,
-          modelVersion: '2.0',
-          momentum: enhanced.momentum,
-          fatigueImpact: enhanced.fatigueImpact,
-          homeAdvantageBonus: enhanced.homeAdvantageBonus,
-          injuryPenalty: enhanced.injuryPenalty,
-          homeAttack: enhanced.homeAttack,
-          homeDefense: enhanced.homeDefense,
-          homeMidfield: enhanced.homeMidfield,
-          awayAttack: enhanced.awayAttack,
-          awayDefense: enhanced.awayDefense,
-          awayMidfield: enhanced.awayMidfield,
-          homeElo: enhanced.homeElo,
-          awayElo: enhanced.awayElo,
-          topScores: enhanced.topScores,
+          confidence: ensemble.confidence,
+          dataQualityScore: Math.round(ensemble.agreement.agreementScore * 100),
+          modelVersion: '3.0-ensemble',
+          momentum: ensemble.models.dynamic.hasRealData ? 0 : 0,
+          fatigueImpact: 0,
+          homeAdvantageBonus: 0,
+          injuryPenalty: 0,
+          homeAttack: ensemble.models.eloPoisson.homeAttack,
+          homeDefense: ensemble.models.eloPoisson.homeDefense,
+          homeMidfield: ensemble.models.eloPoisson.homeMidfield,
+          awayAttack: ensemble.models.eloPoisson.awayAttack,
+          awayDefense: ensemble.models.eloPoisson.awayDefense,
+          awayMidfield: ensemble.models.eloPoisson.awayMidfield,
+          homeElo: ensemble.models.eloPoisson.homeElo,
+          awayElo: ensemble.models.eloPoisson.awayElo,
+          topScores: ensemble.topScores,
           analysis,
           homeKeyPlayers,
           awayKeyPlayers,
@@ -163,7 +113,7 @@ export async function GET(request: Request) {
 
     // Update cron status
     await db.updateCronStatus({
-      jobName: 'recalculate-predictions',
+      jobName: 'recalculate',
       lastRun: new Date().toISOString(),
       status: 'success',
       durationMs: duration,
@@ -184,7 +134,7 @@ export async function GET(request: Request) {
     console.error('[cron:recalculate] Fatal error:', msg);
 
     await db.updateCronStatus({
-      jobName: 'recalculate-predictions',
+      jobName: 'recalculate',
       lastRun: new Date().toISOString(),
       status: 'failed',
       error: msg,

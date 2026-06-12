@@ -1,88 +1,14 @@
-// FORCH.i ORACLE — API Route: Simulate entire tournament (v2 with Data Layer)
-// Uses the data layer for persisting real results and champion probabilities.
+// FORCH.i ORACLE — API Route: Tournament Simulation Results
+// GET /api/simulate-tournament — Read stored results
+// PUT /api/simulate-tournament — Submit a real match result
+// DELETE /api/simulate-tournament — Clear all results
+//
+// NOTE: Simulation is now triggered ONLY by cron jobs (/api/cron/simulate)
+// Manual "Simular" button has been removed.
+
 import { NextRequest, NextResponse } from 'next/server';
-import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { getLiveStandings, getLiveBracket } from '@/lib/prediction-history';
-
-export async function POST(request: NextRequest) {
-  try {
-    const db = await getDataLayerAsync();
-    const body = await request.json().catch(() => ({}));
-    const submittedResults: RealMatchResult[] = body.results || [];
-
-    // Store any submitted real results in the data layer
-    for (const r of submittedResults) {
-      await db.submitMatchResult({
-        matchId: r.matchId,
-        homeScore: r.homeScore,
-        awayScore: r.awayScore,
-        winner: r.winner,
-      });
-    }
-
-    // Get all real results from data layer
-    const storedResults = await db.getMatchResults();
-    const simResults: RealMatchResult[] = storedResults.map(r => ({
-      matchId: r.matchId,
-      homeScore: r.homeScore,
-      awayScore: r.awayScore,
-      winner: r.winner,
-    }));
-
-    console.log(`[tournament:v2] Multi-simulating with ${simResults.length} real results...`);
-
-    const result = await simulateTournamentMulti(
-      100,
-      simResults,
-      (msg) => console.log(`[tournament:v2] ${msg}`)
-    );
-
-    // Save champion probabilities to data layer
-    if (result.top8.length > 0) {
-      const probs = result.top8.map(entry => ({
-        teamId: entry.team,
-        championProb: entry.pct,
-        simulationsCount: entry.wins,
-        totalSimulations: result.totalSims,
-      }));
-
-      try {
-        await db.saveTournamentProbs(probs);
-        console.log(`[tournament:v2] Saved ${probs.length} champion probabilities`);
-      } catch {
-        console.warn('[tournament:v2] Could not save champion probabilities');
-      }
-    }
-
-    // Get live standings and bracket from real results
-    const liveStandings = await getLiveStandings();
-    const liveBracket = await getLiveBracket();
-
-    return NextResponse.json({
-      success: true,
-      bracket: result.bracket,
-      top8: result.top8,
-      totalSims: result.totalSims,
-      fromCache: false,
-      realResultsCount: simResults.length,
-      results: simResults,
-      liveStandings,
-      liveBracket,
-    });
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error('[tournament:v2] Simulation failed:', errorMsg);
-
-    return NextResponse.json(
-      {
-        error: 'Error simulando el torneo. Intenta de nuevo.',
-        details: process.env.NODE_ENV === 'development' ? errorMsg : undefined,
-      },
-      { status: 500 }
-    );
-  }
-}
 
 /** Submit a real match result */
 export async function PUT(request: NextRequest) {

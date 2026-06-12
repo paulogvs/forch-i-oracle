@@ -27,14 +27,18 @@ export default function FixturePage() {
   const [bracket, setBracket] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [generating, setGenerating] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null);
-  const [simulating, setSimulating] = useState(false);
   const [tzOffset, setTzOffset] = useState<number>(-4);
   const [groupViewMode, setGroupViewMode] = useState<'partidos' | 'tablas'>('partidos');
   const [liveStandings, setLiveStandings] = useState<Record<string, any[]>>({});
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => { setTzOffset(getUserTimezoneOffset()); loadAll(); }, []);
+
+  useEffect(() => {
+    const interval = setInterval(loadAll, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadAll = async () => {
     setLoading(true); setError('');
@@ -60,20 +64,11 @@ export default function FixturePage() {
           };
         });
         setFixtures(mapped);
+        setLastUpdated(new Date());
       }
       if (simData.success) { setTop8(simData.top8 || []); setBracket(simData.bracket); setLiveStandings(simData.liveStandings || {}); }
     } catch (err) { console.error('[fixture] Error:', err); setError('Error cargando datos'); }
     finally { setLoading(false); }
-  };
-
-  const runSimulation = async () => {
-    setSimulating(true);
-    try {
-      const res = await fetch('/api/simulate-tournament', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) { setTop8(data.top8 || []); setBracket(data.bracket); setLiveStandings(data.liveStandings || {}); setMainTab('top8'); }
-    } catch (err) { console.error('[fixture] Sim error:', err); setError('Error en simulación'); }
-    finally { setSimulating(false); }
   };
 
   const MAIN_TABS = [
@@ -143,19 +138,13 @@ export default function FixturePage() {
             </h1>
             <p className="text-xs sm:text-sm text-text-secondary truncate">{predictedCount} / {fixtures.length || 128} predichos · Poisson + Elo + xG</p>
           </div>
-          <button onClick={runSimulation} disabled={simulating} className="btn-premium text-xs px-4 py-2 disabled:opacity-50 shrink-0 flex items-center gap-1.5">
-            {simulating ? (
-              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
+          <div className="text-[10px] text-text-muted shrink-0 text-right">
+            {lastUpdated ? (
+              <span>Actualizado: {lastUpdated.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}</span>
             ) : (
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172" />
-              </svg>
+              <span className="animate-pulse">Cargando...</span>
             )}
-            {simulating ? 'Simulando...' : 'Simular'}
-          </button>
+          </div>
         </div>
         <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mt-3">
           <div className="h-full bg-gradient-to-r from-accent-blue to-accent-emerald rounded-full transition-all duration-500" style={{ width: `${fixtures.length > 0 ? (predictedCount / fixtures.length) * 100 : 0}%` }} />
@@ -290,14 +279,8 @@ export default function FixturePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52" />
                 </svg>
               </div>
-              <p className="text-sm text-white font-semibold mb-1">Sin simulación</p>
-              <p className="text-xs text-text-muted mb-4">Presiona "Simular" para probabilidades de campeón</p>
-              <button onClick={runSimulation} disabled={simulating} className="btn-premium text-sm px-6 py-2 disabled:opacity-50 flex items-center gap-2 mx-auto">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                </svg>
-                {simulating ? 'Simulando...' : 'Simular (100 runs)'}
-              </button>
+              <p className="text-sm text-white font-semibold mb-1">Esperando datos</p>
+              <p className="text-xs text-text-muted">Las simulaciones se ejecutan automáticamente vía cron jobs</p>
             </div>
           )}
         </div>
@@ -332,19 +315,13 @@ export default function FixturePage() {
             </>
           ) : (
             <div className="glass-card p-10 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-accent-blue/10 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-accent-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L12 12.75 6.429 9.75m11.142 0l4.179 2.25-9.75 5.25-9.75-5.25 4.179-2.25" />
+              <div className="w-16 h-16 mx-auto rounded-full bg-accent-gold/10 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-accent-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0116.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-2.27.52m0 0c-.26 0-.515.02-.77.054m0 0a6.003 6.003 0 01-2.27-.52" />
                 </svg>
               </div>
-              <p className="text-sm text-white font-semibold mb-1">Bracket en espera</p>
-              <p className="text-xs text-text-muted mb-4">Simula el torneo para ver el bracket</p>
-              <button onClick={runSimulation} disabled={simulating} className="btn-premium text-sm px-6 py-2 disabled:opacity-50 flex items-center gap-2 mx-auto">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                </svg>
-                {simulating ? 'Simulando...' : 'Simular'}
-              </button>
+              <p className="text-sm text-white font-semibold mb-1">Esperando datos</p>
+              <p className="text-xs text-text-muted">Las simulaciones se ejecutan automáticamente vía cron jobs</p>
             </div>
           )}
         </div>

@@ -29,10 +29,10 @@ interface AccuracyData {
 export default function HomePage() {
   const [accuracyData, setAccuracyData] = useState<AccuracyData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [topTeams, setTopTeams] = useState<{ name: string; elo: number; flag: string }[]>([]);
   const [dashError, setDashError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     loadDashboard();
@@ -54,8 +54,18 @@ export default function HomePage() {
       });
     };
     updateCountdown();
-    const interval = setInterval(updateCountdown, 60000);
-    return () => clearInterval(interval);
+    const countdownInterval = setInterval(updateCountdown, 60000);
+
+    // Auto-refresh every 30 minutes
+    const refreshInterval = setInterval(() => {
+      console.log('[dashboard] Auto-refreshing...');
+      loadDashboard();
+    }, 30 * 60 * 1000);
+
+    return () => {
+      clearInterval(countdownInterval);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   const loadDashboard = async () => {
@@ -63,27 +73,15 @@ export default function HomePage() {
     try {
       const res = await fetch('/api/accuracy');
       const data = await res.json();
-      if (data.success) setAccuracyData(data);
+      if (data.success) {
+        setAccuracyData(data);
+        setLastUpdated(new Date());
+      }
     } catch (err) {
       console.error('[dashboard] Error loading:', err);
       setDashError('No se pudieron cargar las métricas');
     }
     finally { setLoading(false); }
-  };
-
-  const generatePredictions = async () => {
-    setGenerating(true);
-    setDashError(null);
-    try {
-      const res = await fetch('/api/accuracy', { method: 'POST' });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      await loadDashboard();
-    } catch (err) {
-      console.error('[dashboard] Error generating:', err);
-      setDashError('Error generando predicciones');
-    }
-    finally { setGenerating(false); }
   };
 
   const acc = accuracyData?.accuracy;
@@ -160,33 +158,15 @@ export default function HomePage() {
             <div className="text-[11px] text-text-muted mt-0.5 truncate">
               {acc && acc.totalMatched > 0
                 ? `${acc.exactScoreHits} marcadores exactos · ${acc.withinOneGoal} dentro de 1 gol`
-                : 'Genera predicciones para ver la precisión'}
+                : 'Esperando resultados de partidos para calcular precisión'}
             </div>
           </div>
-          <div className="flex gap-2 shrink-0">
-            <button
-              onClick={generatePredictions}
-              disabled={generating}
-              className="btn-premium text-xs px-4 py-2 disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5"
-            >
-              {generating ? (
-                <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-              ) : (
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                </svg>
-              )}
-              {generating ? 'Generando...' : 'Generar'}
-            </button>
-            <button
-              onClick={loadDashboard}
-              className="px-3 py-2 text-xs font-semibold text-text-secondary border border-white/[0.08] rounded-lg hover:text-white hover:border-white/[0.15] transition-all"
-            >
-              🔄
-            </button>
+          <div className="text-[10px] text-text-muted shrink-0 text-right">
+            {lastUpdated ? (
+              <span>Actualizado: {lastUpdated.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}</span>
+            ) : (
+              <span className="animate-pulse">Cargando...</span>
+            )}
           </div>
         </div>
       </section>

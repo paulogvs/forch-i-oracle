@@ -77,7 +77,7 @@ export async function GET(request: Request) {
 
     // Update cron status
     await db.updateCronStatus({
-      jobName: 'simulate-tournament',
+      jobName: 'simulate',
       lastRun: new Date().toISOString(),
       status: 'success',
       durationMs: duration,
@@ -100,7 +100,7 @@ export async function GET(request: Request) {
     console.error('[cron:simulate] Fatal error:', msg);
 
     await db.updateCronStatus({
-      jobName: 'simulate-tournament',
+      jobName: 'simulate',
       lastRun: new Date().toISOString(),
       status: 'failed',
       error: msg,

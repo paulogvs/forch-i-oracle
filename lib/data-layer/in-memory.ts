@@ -9,6 +9,7 @@ import type {
   DBMatchPrediction,
   DBTeamForm,
   DBTournamentProbs,
+  DBAccuracyMetric,
   RealMatchResultInput,
   CronJobStatus,
   MatchStatus,
@@ -35,6 +36,7 @@ const matchesStore = new Map<string, DBMatch>();
 const predictionsStore = new Map<string, DBMatchPrediction>();
 const teamFormsStore = new Map<string, DBTeamForm>();
 const tournamentProbsStore = new Map<string, DBTournamentProbs>();
+const accuracyMetricsStore = new Map<string, DBAccuracyMetric>();
 const matchResultsStore: RealMatchResultInput[] = [];
 const cronStatusStore = new Map<string, CronJobStatus>();
 
@@ -416,6 +418,42 @@ async function getCronStatus(jobName: string): Promise<CronJobStatus | null> {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ACCURACY METRICS
+// ═══════════════════════════════════════════════════════════════
+
+async function getAccuracyMetrics(matchId: string): Promise<DBAccuracyMetric | null> {
+  ensureInitialized();
+  return accuracyMetricsStore.get(matchId) ?? null;
+}
+
+async function getAllAccuracyMetrics(): Promise<DBAccuracyMetric[]> {
+  ensureInitialized();
+  return Array.from(accuracyMetricsStore.values());
+}
+
+async function saveAccuracyMetric(metric: Omit<DBAccuracyMetric, 'id' | 'evaluatedAt'>): Promise<DBAccuracyMetric> {
+  ensureInitialized();
+  const now = new Date().toISOString();
+  const saved: DBAccuracyMetric = {
+    ...metric,
+    id: metric.matchId,
+    evaluatedAt: now,
+  };
+  accuracyMetricsStore.set(metric.matchId, saved);
+  return saved;
+}
+
+async function getOverallAccuracy(): Promise<{ total: number; correct: number; accuracy: number; avgBrier: number }> {
+  ensureInitialized();
+  const metrics = Array.from(accuracyMetricsStore.values());
+  if (metrics.length === 0) return { total: 0, correct: 0, accuracy: 0, avgBrier: 0 };
+  const total = metrics.length;
+  const correct = metrics.filter(m => m.predictedCorrect).length;
+  const avgBrier = metrics.reduce((sum, m) => sum + m.brierScore, 0) / total;
+  return { total, correct, accuracy: Math.round((correct / total) * 100), avgBrier: Math.round(avgBrier * 1000) / 1000 };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BULK OPERATIONS
 // ═══════════════════════════════════════════════════════════════
 
@@ -463,6 +501,10 @@ export const inMemoryDataLayer: IDataLayer = {
   getTournamentProbs,
   getTournamentProb,
   saveTournamentProbs,
+  getAccuracyMetrics,
+  getAllAccuracyMetrics,
+  saveAccuracyMetric,
+  getOverallAccuracy,
   submitMatchResult,
   getMatchResults,
   clearMatchResults,

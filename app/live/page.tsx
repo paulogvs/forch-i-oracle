@@ -105,9 +105,9 @@ export default function LivePage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Auto-refresh every 60s
+  // Auto-refresh every 30 minutes
   useEffect(() => {
-    const interval = setInterval(loadData, 60000);
+    const interval = setInterval(loadData, 30 * 60 * 1000);
     return () => clearInterval(interval);
   }, [loadData]);
 
@@ -194,17 +194,11 @@ export default function LivePage() {
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {lastUpdate && (
-              <div className="text-[10px] text-text-muted hidden sm:flex items-center gap-1.5">
+              <div className="text-[10px] text-text-muted flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent-emerald animate-pulse" />
-                {lastUpdate}
+                Última actualización: {lastUpdate}
               </div>
             )}
-            <button onClick={loadData} className="btn-premium text-xs px-4 py-2 flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-              </svg>
-              Actualizar
-            </button>
           </div>
         </div>
 

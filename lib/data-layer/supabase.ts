@@ -10,6 +10,7 @@ import type {
   DBMatchPrediction,
   DBTeamForm,
   DBTournamentProbs,
+  DBAccuracyMetric,
   RealMatchResultInput,
   CronJobStatus,
   MatchStatus,
@@ -333,6 +334,55 @@ async function getCronStatus(jobName: string): Promise<CronJobStatus | null> {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ACCURACY METRICS
+// ═══════════════════════════════════════════════════════════════
+
+async function getAccuracyMetrics(matchId: string): Promise<DBAccuracyMetric | null> {
+  const client = getClient();
+  if (!client) return null;
+  const { data, error } = await client.from('accuracy_metrics').select('*').eq('match_id', matchId).single();
+  if (error || !data) return null;
+  return mapAccuracyRow(data);
+}
+
+async function getAllAccuracyMetrics(): Promise<DBAccuracyMetric[]> {
+  const client = getClient();
+  if (!client) return [];
+  const { data, error } = await client.from('accuracy_metrics').select('*').order('evaluated_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map(mapAccuracyRow);
+}
+
+async function saveAccuracyMetric(metric: Omit<DBAccuracyMetric, 'id' | 'evaluatedAt'>): Promise<DBAccuracyMetric> {
+  const client = getClient();
+  if (!client) throw new Error('Supabase not configured');
+  const { data, error } = await client.from('accuracy_metrics').upsert({
+    match_id: metric.matchId,
+    predicted_home_win: metric.predictedHomeWin,
+    predicted_draw: metric.predictedDraw,
+    predicted_away_win: metric.predictedAwayWin,
+    actual_result: metric.actualResult,
+    predicted_correct: metric.predictedCorrect,
+    brier_score: metric.brierScore,
+    log_loss: metric.logLoss,
+    model_version: metric.modelVersion,
+  }, { onConflict: 'match_id' }).select().single();
+  if (error || !data) throw new Error(`Failed to save accuracy metric: ${error?.message}`);
+  return mapAccuracyRow(data);
+}
+
+async function getOverallAccuracy(): Promise<{ total: number; correct: number; accuracy: number; avgBrier: number }> {
+  const client = getClient();
+  if (!client) return { total: 0, correct: 0, accuracy: 0, avgBrier: 0 };
+  const { data, error } = await client.from('accuracy_metrics').select('predicted_correct, brier_score');
+  if (error || !data || data.length === 0) return { total: 0, correct: 0, accuracy: 0, avgBrier: 0 };
+  const total = data.length;
+  const correct = data.filter((r: Record<string, unknown>) => r.predicted_correct).length;
+  const avgBrier = data.reduce((sum: number, r: Record<string, unknown>) => sum + (Number(r.brier_score) || 0), 0) / total;
+  return { total, correct, accuracy: Math.round((correct / total) * 100), avgBrier: Math.round(avgBrier * 1000) / 1000 };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BULK
 // ═══════════════════════════════════════════════════════════════
 
@@ -418,6 +468,19 @@ function mapProbRow(row: Record<string, unknown>): DBTournamentProbs {
   };
 }
 
+function mapAccuracyRow(row: Record<string, unknown>): DBAccuracyMetric {
+  return {
+    id: row.id as string, matchId: row.match_id as string,
+    predictedHomeWin: Number(row.predicted_home_win ?? 0), predictedDraw: Number(row.predicted_draw ?? 0),
+    predictedAwayWin: Number(row.predicted_away_win ?? 0),
+    actualResult: (row.actual_result as 'home' | 'draw' | 'away') ?? 'home',
+    predictedCorrect: Boolean(row.predicted_correct),
+    brierScore: Number(row.brier_score ?? 0), logLoss: Number(row.log_loss ?? 0),
+    modelVersion: (row.model_version as string) ?? '2.0',
+    evaluatedAt: row.evaluated_at as string,
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════════════════════════
@@ -428,6 +491,7 @@ export const supabaseDataLayer: IDataLayer = {
   getPrediction, getPredictionsForMatches, savePrediction, savePredictions, deletePrediction,
   getTeamForm, saveTeamForm, getAllTeamForms,
   getTournamentProbs, getTournamentProb, saveTournamentProbs,
+  getAccuracyMetrics, getAllAccuracyMetrics, saveAccuracyMetric, getOverallAccuracy,
   submitMatchResult, getMatchResults, clearMatchResults,
   updateCronStatus, getCronStatus,
   seedTeams, seedMatches,

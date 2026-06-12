@@ -1,10 +1,11 @@
-// FORCH.i ORACLE — API Route: Full Tournament Fixture Prediction (v2 with Data Layer)
-// Predicts ALL 128 matches with scores using enhanced engine + data layer caching.
+// FORCH.i ORACLE — API Route: Full Tournament Fixture Prediction (v3 Ensemble Engine)
+// Predicts ALL 128 matches using the 4-model ensemble for maximum accuracy.
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
 import { predictMatchDynamic, addMatchResult, getResultsCount } from '@/lib/prediction-store';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
+import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
 
 export async function POST(request: NextRequest) {
@@ -59,72 +60,51 @@ export async function POST(request: NextRequest) {
         let prediction;
 
         if (useEnhancedFlag) {
-          // Use enhanced engine with data layer context
-          const homeForm = await getTeamFormCached(match.homeTeam);
-          const awayForm = await getTeamFormCached(match.awayTeam);
-
-          const homeContext: EnhancedPredictionContext = {
-            teamName: match.homeTeam,
-            venue: match.venue,
-            recentMatches: homeForm?.last5?.map(f => ({
-              opponent: f.opponent,
-              goalsFor: f.goalsFor,
-              goalsAgainst: f.goalsAgainst,
-              result: f.result,
-              date: f.date,
-            })),
-          };
-
-          const awayContext: EnhancedPredictionContext = {
-            teamName: match.awayTeam,
-            venue: match.venue,
-            recentMatches: awayForm?.last5?.map(f => ({
-              opponent: f.opponent,
-              goalsFor: f.goalsFor,
-              goalsAgainst: f.goalsAgainst,
-              result: f.result,
-              date: f.date,
-            })),
-          };
-
-          const enhanced = await calculateEnhancedPrediction(match.homeTeam, match.awayTeam, homeContext, awayContext);
+          // Use ensemble engine (4-model blend for maximum accuracy)
+          const ensemble = await calculateEnsemblePrediction(match.homeTeam, match.awayTeam);
           prediction = {
-            homeWin: enhanced.homeWin,
-            draw: enhanced.draw,
-            awayWin: enhanced.awayWin,
-            homeGoals: enhanced.predictedScoreHome,
-            awayGoals: enhanced.predictedScoreAway,
-            confidence: enhanced.confidence,
-            homeXG: enhanced.homeExpectedGoals,
-            awayXG: enhanced.awayExpectedGoals,
-            dataQuality: enhanced.dataQualityScore,
+            homeWin: ensemble.homeWin,
+            draw: ensemble.draw,
+            awayWin: ensemble.awayWin,
+            homeGoals: ensemble.predictedScoreHome,
+            awayGoals: ensemble.predictedScoreAway,
+            confidence: ensemble.confidence,
+            homeXG: ensemble.homeExpectedGoals,
+            awayXG: ensemble.awayExpectedGoals,
+            dataQuality: Math.round(ensemble.agreement.agreementScore * 100),
+            // Ensemble-specific fields
+            agreement: ensemble.agreement,
+            uncertainty: ensemble.uncertainty,
+            confidenceScore: ensemble.confidenceScore,
+            keyFactors: ensemble.keyFactors,
+            weights: ensemble.weights,
           };
 
-          // Also save prediction to data layer
+          // Save prediction to data layer
           try {
             await db.savePrediction({
               matchId: match.id,
-              homeWin: enhanced.homeWin,
-              draw: enhanced.draw,
-              awayWin: enhanced.awayWin,
-              mostLikelyScore: `${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}`,
-              expectedGoalsHome: enhanced.homeExpectedGoals,
-              expectedGoalsAway: enhanced.awayExpectedGoals,
-              over25Probability: enhanced.over25Probability,
-              bttsProbability: enhanced.bttsProbability,
-              keyFactors: [],
-              confidence: enhanced.confidence,
-              dataQualityScore: enhanced.dataQualityScore,
-              modelVersion: '2.0',
-              homeAttack: enhanced.homeAttack,
-              homeDefense: enhanced.homeDefense,
-              homeMidfield: enhanced.homeMidfield,
-              awayAttack: enhanced.awayAttack,
-              awayDefense: enhanced.awayDefense,
-              awayMidfield: enhanced.awayMidfield,
-              homeElo: enhanced.homeElo,
-              awayElo: enhanced.awayElo,
-              topScores: enhanced.topScores,
+              homeWin: ensemble.homeWin,
+              draw: ensemble.draw,
+              awayWin: ensemble.awayWin,
+              mostLikelyScore: `${ensemble.predictedScoreHome}-${ensemble.predictedScoreAway}`,
+              expectedGoalsHome: ensemble.homeExpectedGoals,
+              expectedGoalsAway: ensemble.awayExpectedGoals,
+              over25Probability: ensemble.over25Probability,
+              bttsProbability: ensemble.bttsProbability,
+              keyFactors: ensemble.keyFactors,
+              confidence: ensemble.confidence,
+              dataQualityScore: Math.round(ensemble.agreement.agreementScore * 100),
+              modelVersion: '3.0-ensemble',
+              homeAttack: ensemble.models.eloPoisson.homeAttack,
+              homeDefense: ensemble.models.eloPoisson.homeDefense,
+              homeMidfield: ensemble.models.eloPoisson.homeMidfield,
+              awayAttack: ensemble.models.eloPoisson.awayAttack,
+              awayDefense: ensemble.models.eloPoisson.awayDefense,
+              awayMidfield: ensemble.models.eloPoisson.awayMidfield,
+              homeElo: ensemble.models.eloPoisson.homeElo,
+              awayElo: ensemble.models.eloPoisson.awayElo,
+              topScores: ensemble.topScores,
             });
           } catch {
             // Non-critical if save fails
@@ -408,7 +388,7 @@ async function predictSingleMatch(
   homeTeam: string,
   awayTeam: string,
   matchId: string,
-  getTeamFormCached: (name: string) => Promise<any>,
+  _getTeamFormCached: (name: string) => Promise<any>,
   useEnhanced: boolean
 ): Promise<any> {
   if (homeTeam === 'TBD' || awayTeam === 'TBD') {
@@ -428,41 +408,20 @@ async function predictSingleMatch(
   let prediction;
 
   if (useEnhanced) {
-    const homeForm = await getTeamFormCached(homeTeam);
-    const awayForm = await getTeamFormCached(awayTeam);
-
-    const homeContext: EnhancedPredictionContext = {
-      teamName: homeTeam,
-      recentMatches: homeForm?.last5?.map((f: any) => ({
-        opponent: f.opponent,
-        goalsFor: f.goalsFor,
-        goalsAgainst: f.goalsAgainst,
-        result: f.result,
-        date: f.date,
-      })),
-    };
-
-    const awayContext: EnhancedPredictionContext = {
-      teamName: awayTeam,
-      recentMatches: awayForm?.last5?.map((f: any) => ({
-        opponent: f.opponent,
-        goalsFor: f.goalsFor,
-        goalsAgainst: f.goalsAgainst,
-        result: f.result,
-        date: f.date,
-      })),
-    };
-
-    const enhanced = await calculateEnhancedPrediction(homeTeam, awayTeam, homeContext, awayContext);
+    // Use ensemble engine for knockout matches too
+    const ensemble = await calculateEnsemblePrediction(homeTeam, awayTeam);
     prediction = {
-      homeWin: enhanced.homeWin,
-      draw: enhanced.draw,
-      awayWin: enhanced.awayWin,
-      homeGoals: enhanced.predictedScoreHome,
-      awayGoals: enhanced.predictedScoreAway,
-      confidence: enhanced.confidence,
-      homeXG: enhanced.homeExpectedGoals,
-      awayXG: enhanced.awayExpectedGoals,
+      homeWin: ensemble.homeWin,
+      draw: ensemble.draw,
+      awayWin: ensemble.awayWin,
+      homeGoals: ensemble.predictedScoreHome,
+      awayGoals: ensemble.predictedScoreAway,
+      confidence: ensemble.confidence,
+      homeXG: ensemble.homeExpectedGoals,
+      awayXG: ensemble.awayExpectedGoals,
+      agreement: ensemble.agreement,
+      uncertainty: ensemble.uncertainty,
+      confidenceScore: ensemble.confidenceScore,
     };
   } else {
     const stat = await calculateStatisticalPrediction(homeTeam, awayTeam);

@@ -91,7 +91,7 @@ export async function GET(request: Request) {
     const duration = Date.now() - startTime;
 
     await db.updateCronStatus({
-      jobName: 'ingest-data',
+      jobName: 'ingest',
       lastRun: new Date().toISOString(),
       status: 'success',
       durationMs: duration,
@@ -113,7 +113,7 @@ export async function GET(request: Request) {
     console.error('[cron:ingest] Fatal error:', msg);
 
     await db.updateCronStatus({
-      jobName: 'ingest-data',
+      jobName: 'ingest',
       lastRun: new Date().toISOString(),
       status: 'failed',
       error: msg,
