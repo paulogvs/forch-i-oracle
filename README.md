@@ -11,30 +11,37 @@ AI-powered sports predictions for FIFA World Cup 2026 — a **closed-loop predic
 ### Core Engine
 | Component | Description |
 |---|---|
-| **Poisson + Dixon-Coles** | Statistical model calculating goal probability matrices |
-| **Elo Ratings** | 48 teams with attack/defense ratings from real data |
+| **Poisson + Dixon-Coles** | Statistical model calculating goal probability matrices (0-6 goals per side) |
+| **Elo Ratings** | 48 teams with attack/defense/midfield ratings from real data |
 | **xG (Expected Goals)** | Competition-adjusted scoring expectations |
 | **Enhanced Engine v2** | Momentum, fatigue, altitude, travel distance, injury impact, H2H |
 
-### Auto-Recalculation Pipeline
+### Closed-Loop Circuit
 ```
-Real Result → Update Team Form → Delete Stale Predictions → Recalculate Affected → Re-simulate Bracket
+API-Football (cada 6h) → Cron Ingest → Supabase/Store → Re-simulate → Panel En Vivo
 ```
 
 ---
 
-## 📱 Pages
+## 📱 Pages (4 Panels)
 
 | Route | Purpose |
 |---|---|
-| `/` | **Dashboard** — Accuracy metrics, prediction vs reality, trend graph, Top 8 Elo |
-| `/fixture` | **Pronósticos** — All 128 matches pre-filled with predicted scores |
-| `/live` | **En Vivo** — Progressive real results with predicted vs real comparison (✅/❌) |
-| `/veredicto` | **Veredicto** — Champion probability Top 8 from 100 simulations |
-| `/torneo` | **Simulador** — Full tournament bracket simulation |
-| `/pronostico` | **Predecir** — Individual match prediction |
-| `/admin` | **Admin** — Enter real results, manage cron jobs |
-| `/benchmark` | **Benchmark** — Model comparison testing |
+| `/` | **📊 Dashboard** — Accuracy metrics, trend graph, Top 8 Elo, quick nav |
+| `/fixture` | **⚡ Predicción** — 3 tabs: Predicciones (128 partidos), Top 8 Campeón, Bracket |
+| `/live` | **📈 En Vivo** — Real results vs predictions, live standings, live bracket |
+| `/benchmark` | **🤖 Benchmark** — 10 AI models comparison, champion consensus |
+
+### Panel Predicción — 3 Tabs
+- **🔮 Predicciones**: All 128 matches with predicted scores. Toggle: Partidos ↔ Tablas de Posiciones, Por Fecha ↔ Por Grupo. Tap any match → Detail Modal (probabilities, xG, Elo, top 5 scores, confidence)
+- **🏆 Top 8**: Champion probability ranking with progress bars. "Simular" runs 100 Monte Carlo simulations
+- **📐 Bracket**: Full knockout bracket from 1/16 to Final with predicted scores
+
+### Panel En Vivo — 2 Tabs
+- **📋 Tabla de Grupos**: Live standings recalculated from real results (PJ PG PE PP GF GC DG Pts)
+- **🏆 Eliminatorias**: Live knockout bracket advancing with real winners
+
+**"🔄 Actualizar" button**: Refreshes all data from the persistent store.
 
 ---
 
@@ -46,7 +53,8 @@ Real Result → Update Team Form → Delete Stale Predictions → Recalculate Af
 | `/api/fixture` | POST | All 128 match predictions with knockout resolution |
 | `/api/accuracy` | GET/POST | Accuracy metrics, match comparisons, trend data |
 | `/api/match-result` | POST | Submit real result → auto-recalculate affected predictions |
-| `/api/simulate-tournament` | POST | 100 tournament simulations → champion probabilities |
+| `/api/simulate-tournament` | POST/GET | 100 simulations → champion probs, live standings, live bracket |
+| `/api/live-update` | POST/GET | Real result → re-simulate → return drift data |
 | `/api/cron/ingest` | GET | Data ingestion from API-Football (World Cup fixtures) |
 | `/api/cron/recalculate` | GET | Recalculate all upcoming match predictions |
 | `/api/cron/simulate` | GET | Daily tournament re-simulation |
@@ -58,9 +66,9 @@ Real Result → Update Team Form → Delete Stale Predictions → Recalculate Af
 
 | Job | Schedule | Purpose |
 |---|---|---|
-| `ingest-data` | Every 6h | Fetch World Cup results, update team forms |
+| `ingest-data` | Every 6h | Fetch World Cup results from API-Football, update team forms |
 | `recalculate-predictions` | Every 12h | Recalculate predictions for upcoming matches |
-| `simulate-tournament` | Daily 00:00 UTC | 100 tournament simulations |
+| `simulate-tournament` | Daily 00:00 UTC | 100 tournament simulations, update champion probabilities |
 
 ---
 
@@ -72,39 +80,91 @@ Real Result → Update Team Form → Delete Stale Predictions → Recalculate Af
 3. **Score matrix**: 7×7 grid (0-6 goals per side)
 4. **1X2 derivation**: Sum probabilities for home/draw/away
 
-### Enhanced Factors
-- **Momentum**: Exponential decay of last 5 matches
-- **Fatigue**: Days between matches penalty
-- **Home Advantage**: WC2026 realistic (host +8%, continent +3-5%)
-- **Altitude**: FIFA research-based (Mexico City 2200m = -15% non-acclimated)
-- **Travel Distance**: Haversine venue-to-venue fatigue
-- **Injury Impact**: Player role-weighted penalty
-- **Competition xG**: World Cup goals weighted higher than friendlies
+### Enhanced Factors (v2)
+| Factor | Impact |
+|---|---|
+| **Momentum** | Exponential decay of last 5 matches (-1.0 to +1.0) |
+| **Fatigue** | Days between matches penalty (-0.15 to +0.05) |
+| **Home Advantage** | WC2026 realistic (host +8%, continent +3-5%) |
+| **Altitude** | FIFA research-based (Mexico City 2200m = -15% non-acclimated) |
+| **Travel Distance** | Haversine venue-to-venue fatigue (-0.10 for >3000km) |
+| **Injury Impact** | Player role-weighted penalty (GK -8%, FWD -6%) |
+| **Competition xG** | World Cup goals weighted higher than friendlies |
+
+### Knockout Tie Resolution
+When predicted score is a draw in knockout stages:
+- Shows "Empate 90 min → Penales/Alargue"
+- Home team wins by default (advances to next round)
+- Third place match uses SF losers
+
+---
+
+## 💾 Data Persistence
+
+### Production (Supabase)
+When `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are set:
+- Results, forms, and predictions persist **across Vercel deploys**
+- 5 tables: `match_results`, `team_forms`, `predictions`, `tournament_probs`, `cron_status`
+- Full setup guide: [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)
+
+### Development (File Store)
+Without Supabase env vars:
+- Falls back to `lib/file-store.ts` — JSON files in `.forchi-data/`
+- Survives between requests within same deploy
+- Wiped on new Vercel deploy
+
+### Fallback (In-Memory)
+If neither is available:
+- In-memory Maps auto-seeded from `lib/teams.ts` and `lib/matches.ts`
 
 ---
 
 ## 🚀 Setup
 
+### 1. Install Dependencies
 ```bash
 npm install
-
-# .env.local
-GROQ_API_KEY=your_key
-FOOTBALL_API_KEY=your_key
-CRON_SECRET=your_secret
-
-npm run dev       # Development
-npm run build     # Production build
 ```
+
+### 2. Environment Variables (`.env.local`)
+```env
+# Required
+GROQ_API_KEY=gsk_your_key_here
+
+# For real data ingestion (optional)
+FOOTBALL_API_KEY=your_api_football_key
+
+# For persistent data across deploys (optional, see SUPABASE_SETUP.md)
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbG...
+
+# For cron job protection (optional)
+CRON_SECRET=your-secret-here
+```
+
+### 3. Run
+```bash
+npm run dev       # Development server
+npm run build     # Production build
+npm start         # Production server
+npm run test:run  # Run tests
+```
+
+### 4. Deploy to Vercel
+```bash
+vercel --prod
+```
+Add environment variables in Vercel dashboard before deploying.
 
 ---
 
 ## 📈 Accuracy Tracking
 
-The home dashboard shows real-time prediction accuracy:
+The Dashboard (`/`) shows real-time prediction accuracy:
 - **Winner Accuracy**: % of correct match winner predictions
 - **Goal Error (MAE)**: Average absolute difference predicted vs real scores
 - **Over 2.5 / BTTS**: Market prediction accuracy
+- **Exact Score Hits**: Perfect score predictions
 - **Trend Graph**: Accuracy progression over tournament days
 
 ---
@@ -113,14 +173,75 @@ The home dashboard shows real-time prediction accuracy:
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript (strict mode) |
-| Styling | Tailwind CSS 3.4 |
-| AI Analysis | Groq Llama 3.3 70B (narrative only — numbers from math) |
-| Data API | API-Football (free tier) |
-| Database | Supabase (PostgreSQL, optional) |
-| CI/CD | GitHub Actions + Vercel |
+| **Framework** | Next.js 14 (App Router) |
+| **Language** | TypeScript (strict mode) |
+| **Styling** | Tailwind CSS 3.4 |
+| **AI Analysis** | Groq Llama 3.3 70B (narrative only — numbers from math) |
+| **Data API** | API-Football (free tier) |
+| **Database** | Supabase PostgreSQL (optional, primary in production) |
+| **Fallback** | File-based JSON store (`lib/file-store.ts`) |
+| **CI/CD** | GitHub Actions + Vercel |
+| **Scheduling** | GitHub Actions cron (Vercel Hobby limitation) |
 
 ---
 
-*FORCH.i © 2026 · Datos oficiales FIFA · WC2026*
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── page.tsx              # 📊 Dashboard
+│   ├── fixture/page.tsx      # ⚡ Predicción (3 tabs)
+│   ├── live/page.tsx         # 📈 En Vivo (2 tabs)
+│   ├── benchmark/page.tsx    # 🤖 Benchmark (3 tabs)
+│   └── api/                  # API routes
+├── components/
+│   ├── MainNav.tsx           # Sidebar navigation (4 panels)
+│   ├── BracketPhase.tsx      # Knockout bracket display
+│   └── ...                   # 17 total components
+├── lib/
+│   ├── predictor-engine.ts   # Poisson + Dixon-Coles + Elo
+│   ├── enhanced-engine.ts   # v2 with momentum, fatigue, altitude
+│   ├── tournament-sim.ts     # 100 Monte Carlo simulations
+│   ├── prediction-history.ts # Drift tracking, live standings
+│   ├── accuracy-engine.ts    # Accuracy metrics calculation
+│   ├── file-store.ts         # JSON file persistence
+│   ├── timezone.ts           # UTC to local time conversion
+│   ├── data-layer/           # Abstraction (in-memory ↔ Supabase)
+│   ├── matches.ts            # 128 WC2026 matches
+│   ├── teams.ts              # 48 teams with Elo, power ratings
+│   └── venues.ts             # 16 venues with altitude data
+├── supabase/
+│   └── migrations/
+│       └── 001_initial_schema.sql  # Database schema
+├── scripts/
+│   ├── debug-knockout.ts     # Test knockout predictions
+│   └── test-full-system.ts   # Integration test
+└── .github/workflows/
+    └── cron-jobs.yml         # Scheduled cron jobs
+```
+
+---
+
+## 🔑 Key Features
+
+- **Zero hardcoded data** — everything computed from statistics
+- **Timezone aware** — all times converted to user's local timezone
+- **Responsive** — mobile, tablet, desktop with sidebar navigation
+- **Dark theme** — FORCH.i gold (#C9A227) accent color
+- **All UI in Spanish**
+- **Third-place uniqueness** — each third-place team appears exactly once in R32
+- **Prediction drift tracking** — shows how much predictions changed after each result
+- **Auto-recalculate** — after each real result, entire bracket re-simulates
+
+---
+
+## 📄 Documentation
+
+- [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) — Step-by-step Supabase setup guide
+- [`USER_GUIDE.md`](USER_GUIDE.md) — User guide for all panels
+- [`AGENTS.md`](AGENTS.md) — Developer/agent instructions
+- [`CONTEXT.md`](CONTEXT.md) — Project context and domain language
+
+---
+
+*FORCH.i © 2026 · Built with FORCH.i by Paulo Velasco · Datos oficiales FIFA · WC2026*
