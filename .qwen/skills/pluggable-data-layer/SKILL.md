@@ -138,74 +138,66 @@ async function getTeam(id: string): Promise<DBTeam | null> {
 ```ts
 // lib/data-layer/index.ts
 import type { IDataLayer } from './interface';
-import { inMemoryDataLayer } from './in-memory';
 
 let dataLayerInstance: IDataLayer | null = null;
 
 export function getDataLayer(): IDataLayer {
-  if (dataLayerInstance) return dataLayerInstance;
-  // Sync version always returns in-memory (safe at build time)
-  dataLayerInstance = inMemoryDataLayer;
-  return dataLayerInstance;
+  if (!dataLayerInstance) {
+    initSync();
+  }
+  return dataLayerInstance!;
 }
 
 export async function getDataLayerAsync(): Promise<IDataLayer> {
   if (dataLayerInstance) return dataLayerInstance;
+  await initAsync();
+  return dataLayerInstance!;
+}
+
+function initSync(): void {
+  if (dataLayerInstance) return;
+  const hasEnv = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
+  if (!hasEnv) {
+    const { inMemoryDataLayer } = require('./in-memory');
+    dataLayerInstance = inMemoryDataLayer;
+    return;
+  }
+  // Supabase env vars present — use in-memory as temp until async loads Supabase
+  const { inMemoryDataLayer } = require('./in-memory');
+  dataLayerInstance = inMemoryDataLayer;
+}
+
+async function initAsync(): Promise<void> {
+  if (dataLayerInstance) return;
 
   const hasEnv = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
 
   if (hasEnv) {
     try {
-      // Runtime-only SDK check — webpack cannot statically analyze eval('require')
-      let sdkAvailable = false;
-      try {
-        // eslint-disable-next-line no-eval
-        const _require = eval('require');
-        if (_require) {
-          _require.resolve('@supabase/supabase-js');
-          sdkAvailable = true;
-        }
-      } catch { sdkAvailable = false; }
-
-      if (sdkAvailable) {
-        // eslint-disable-next-line no-eval
-        const _require = eval('require');
-        const { supabaseDataLayer } = _require('./supabase');
-        dataLayerInstance = supabaseDataLayer as IDataLayer;
-      } else {
-        dataLayerInstance = inMemoryDataLayer;
-      }
-    } catch {
-      dataLayerInstance = inMemoryDataLayer;
+      // Try to load Supabase data layer directly.
+      // DO NOT use eval('require') or await import('@supabase/supabase-js').
+      // - eval('require') triggers TS1252 errors with ES5 target (function declarations in blocks).
+      // - await import('@supabase/supabase-js') fails tsc --noEmit when SDK is a transitive dependency.
+      // Instead, just import ./supabase — it has require() internally and will fail gracefully.
+      const { supabaseDataLayer } = await import('./supabase');
+      dataLayerInstance = supabaseDataLayer as IDataLayer;
+      return;
+    } catch (err) {
+      console.warn('[data-layer] Failed to load Supabase:', err);
     }
-  } else {
-    dataLayerInstance = inMemoryDataLayer;
   }
 
-  return dataLayerInstance;
+  // Fallback: in-memory (always works)
+  const { inMemoryDataLayer } = await import('./in-memory');
+  dataLayerInstance = inMemoryDataLayer;
 }
 ```
 
-## Why eval('require')?
+## Why NOT eval('require')?
 
-Webpack performs **static analysis** on `require()` and `import()` calls. Even inside a conditional, it tries to resolve the module at build time:
+`eval('require')` causes TypeScript errors with ES5 target (`TS1252: Function declarations are not allowed inside blocks`). And `await import('@supabase/supabase-js')` fails `tsc --noEmit` because TypeScript tries to resolve the module at compile time even in a try/catch.
 
-```ts
-// ❌ FAILS — webpack sees this at build time
-if (hasEnv) { const { x } = require('@supabase/supabase-js'); }
-
-// ✅ WORKS — eval prevents static analysis
-if (hasEnv) { const _require = eval('require'); const { x } = _require('@supabase/supabase-js'); }
-```
-
-## Alternative: Dynamic import with webpackIgnore
-
-```ts
-// Also works, creates a separate chunk
-const mod = await import(/* webpackIgnore: true */ './supabase');
-```
-
-But this still requires the file to exist and be parseable. `eval('require')` is the most flexible for truly optional dependencies.
+The correct approach: **just `await import('./supabase')`** — the supabase.ts file uses `require()` internally (which webpack handles fine at runtime), and if it fails, the catch block falls back to in-memory. No eval, no direct SDK import.
 
 ## Usage in API Routes
 
@@ -281,6 +273,8 @@ async function seed() {
 | `for...of Map.values()` with ES5 | Use `Array.from(map.values())` with index loop |
 | `import` in data-layer/types.ts | Use relative paths (`../groq` not `./groq`) |
 | Function declarations in blocks (ES5) | Use arrow functions: `const fn = async () => {}` |
-| Build analyzes supabase.ts | Use `eval('require')` in factory, never import directly |
+| Build analyzes supabase.ts | Use `require()` inside supabase.ts functions, dynamic import('./supabase') in factory |
+| eval('require') + ES5 target | Causes TS1252 — use dynamic import('./supabase') instead, no eval needed |
+| await import('@supabase/...') | Fails tsc --noEmit — never import SDK directly in factory, import the wrapper module |
 | Missing type MatchRound | Import from types.ts, not from local module |
 | Unused imports in types.ts | Remove them — they cause build errors even if types exist |
