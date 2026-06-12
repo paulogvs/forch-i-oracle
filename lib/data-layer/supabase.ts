@@ -28,6 +28,7 @@ function getClient() {
   if (!url || !key) return null;
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // @ts-ignore — @supabase/supabase-js is in package.json, tsc may not resolve require()
   const { createClient } = require('@supabase/supabase-js');
   supabase = createClient(url, key);
   return supabase;

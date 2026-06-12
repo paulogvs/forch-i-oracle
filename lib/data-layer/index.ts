@@ -54,6 +54,7 @@ async function initAsync(): Promise<void> {
   if (hasEnv) {
     try {
       // Try to load Supabase data layer (will fail if SDK not installed)
+      // @ts-ignore — supabase.ts uses require('@supabase/supabase-js') which tsc may not resolve in bundler mode
       const { supabaseDataLayer } = await import('./supabase');
       console.log('[data-layer] ✅ Using Supabase data layer');
       supabaseActive = true;
