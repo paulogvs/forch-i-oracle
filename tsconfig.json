@@ -19,5 +19,5 @@
     }
   },
   "include": ["next-env.d.ts", "lib/**/*.ts", "lib/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "app/**/*.ts", "app/**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts", "lib/data-layer/supabase.ts"],
+  "exclude": ["node_modules", "scripts", "lib/data-layer/supabase.ts", "lib/__tests__"],
 }
