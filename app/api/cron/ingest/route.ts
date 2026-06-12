@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — Cron Job: Data Ingestion
-// GitHub Actions cron job that ingests data from API-Football and updates data layer.
+// GitHub Actions cron job that ingests data from worldcup26.ir (primary) and updates data layer.
 // Schedule: Every 6 hours
 // Trigger: GET /api/cron/ingest
 //
@@ -7,14 +7,16 @@
 // of remaining bracket with updated predictions and drift tracking.
 //
 // DATA SOURCES (in order of priority):
-// 1. API-Football (v3) — requires paid plan for 2026 season
-// 2. football-data.org (v4) — free tier includes World Cup (10 req/min)
-// 3. Manual submission via /api/match-result
+// 1. worldcup26.ir — Free, open-source, no API key (PRIMARY)
+// 2. API-Football (v3) — requires paid plan for 2026 season (fallback)
+// 3. football-data.org (v4) — free tier includes World Cup (secondary fallback)
+// 4. Manual submission via /api/match-result
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
 import { validateCronAuth } from '@/lib/cron-auth';
+import { fetchWC26Games, teamIdToSpanish, teamEnglishToSpanish, type WC26Game } from '@/lib/worldcup26-api';
 
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
@@ -22,6 +24,32 @@ const BASE_URL = 'https://v3.football.api-sports.io';
 // football-data.org configuration
 const FD_BASE_URL = 'https://api.football-data.org/v4';
 const FD_WC_COMPETITION = 'WC'; // World Cup competition code
+
+// worldcup26.ir round_of → our round format
+function mapWC26Round(roundOf: string): string {
+  switch (roundOf) {
+    case 'group': return 'group';
+    case '16': return 'round-32';
+    case '8': return 'round-16';
+    case '4': return 'quarter';
+    case '2': return 'semi';
+    case '3': return 'third';
+    default: return 'final';
+  }
+}
+
+// Parse scorers string from worldcup26.ir
+function parseWC26Scorers(scorersStr: string): string[] {
+  if (!scorersStr || scorersStr === '{}' || scorersStr === '[]') return [];
+  try {
+    const cleaned = scorersStr.replace(/^{/, '[').replace(/}$/, ']');
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) return parsed;
+    return [];
+  } catch {
+    return scorersStr.split(',').map(s => s.trim()).filter(Boolean);
+  }
+}
 
 interface DiagnosticLog {
   step: string;
@@ -257,48 +285,71 @@ export async function GET(request: Request) {
       });
     }
 
-    // Step 3: Fetch World Cup 2026 fixtures from API-Football
-    // League ID 9 = World Cup, Season 2026
-    const wcData = await apiFetch('/fixtures?league=9&season=2026', diagnostics);
+    // Step 3: Fetch World Cup 2026 fixtures — try worldcup26.ir FIRST (primary, free, no API key)
+    diagnostics.push({
+      step: 'source_selection',
+      status: 'ok',
+      message: 'Data source priority: 1) worldcup26.ir (free) → 2) API-Football → 3) football-data.org',
+    });
 
-    if (wcData?.response && Array.isArray(wcData.response) && wcData.response.length > 0) {
-      // API-Football worked — process fixtures
-      results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results, diagnostics);
-    } else {
-      // API-Football failed or returned no data — try football-data.org
+    const wc26Games = await fetchWC26Games();
+
+    if (wc26Games && wc26Games.length > 0) {
+      // worldcup26.ir worked — process its games
       diagnostics.push({
-        step: 'fallback_fd',
-        status: 'warn',
-        message: 'API-Football unavailable. Trying football-data.org...',
+        step: 'wc26_success',
+        status: 'ok',
+        message: `Received ${wc26Games.length} games from worldcup26.ir`,
       });
 
-      const fdMatches = await fetchFootballDataOrg(diagnostics);
+      results.fixturesProcessed = await processWC26Games(wc26Games, db, results, diagnostics);
+    } else {
+      // worldcup26.ir failed — try API-Football
+      diagnostics.push({
+        step: 'fallback_apifootball',
+        status: 'warn',
+        message: 'worldcup26.ir unavailable. Trying API-Football...',
+      });
 
-      if (fdMatches && fdMatches.length > 0) {
-        // Convert football-data.org format to our format and process
-        results.fixturesProcessed = await processFDFixtures(fdMatches, db, results, diagnostics);
+      const wcData = await apiFetch('/fixtures?league=9&season=2026', diagnostics);
+
+      if (wcData?.response && Array.isArray(wcData.response) && wcData.response.length > 0) {
+        results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results, diagnostics);
       } else {
-        // Both APIs failed — try baseline form data
+        // API-Football failed — try football-data.org
         diagnostics.push({
-          step: 'all_apis_failed',
+          step: 'fallback_fd',
           status: 'warn',
-          message: 'All APIs unavailable. Using baseline data.',
+          message: 'API-Football unavailable. Trying football-data.org...',
         });
 
-        const teams = await db.getAllTeams();
-        for (const team of teams) {
-          const existingForm = await db.getTeamForm(team.name);
-          if (!existingForm) {
-            await db.saveTeamForm({
-              teamId: team.name,
-              last5: [],
-              xgFor: 1.2,
-              xgAgainst: 1.0,
-              momentum: 0,
-              matchesPlayed: 0,
-              eloDynamic: team.eloRating,
-            });
-            results.formsUpdated++;
+        const fdMatches = await fetchFootballDataOrg(diagnostics);
+
+        if (fdMatches && fdMatches.length > 0) {
+          results.fixturesProcessed = await processFDFixtures(fdMatches, db, results, diagnostics);
+        } else {
+          // All APIs failed — baseline form data
+          diagnostics.push({
+            step: 'all_apis_failed',
+            status: 'warn',
+            message: 'All APIs unavailable. Using baseline data.',
+          });
+
+          const teams = await db.getAllTeams();
+          for (const team of teams) {
+            const existingForm = await db.getTeamForm(team.name);
+            if (!existingForm) {
+              await db.saveTeamForm({
+                teamId: team.name,
+                last5: [],
+                xgFor: 1.2,
+                xgAgainst: 1.0,
+                momentum: 0,
+                matchesPlayed: 0,
+                eloDynamic: team.eloRating,
+              });
+              results.formsUpdated++;
+            }
           }
         }
       }
@@ -359,6 +410,139 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: msg, diagnostics }, { status: 500 });
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROCESS WORLDCUP26.IR GAMES (PRIMARY DATA SOURCE)
+// Free, open-source, no API key required
+// ═══════════════════════════════════════════════════════════════
+
+async function processWC26Games(
+  games: WC26Game[],
+  db: IDataLayer,
+  results: { resultsIngested: number; formsUpdated: number; nameMappingFailures: string[]; errors: string[] },
+  diagnostics: DiagnosticLog[]
+): Promise<number> {
+  let processed = 0;
+  let skippedNotFinished = 0;
+  let skippedNoMapping = 0;
+  let skippedNoMatch = 0;
+  let skippedAlreadyIngested = 0;
+
+  // Get existing results to avoid duplicates
+  const existingResults = await db.getMatchResults();
+  const existingResultIds = new Set(existingResults.map(r => r.matchId));
+
+  for (const game of games) {
+    try {
+      // Only process finished matches
+      if (game.finished !== 'TRUE') {
+        skippedNotFinished++;
+        continue;
+      }
+
+      const homeGoals = parseInt(game.home_score) || 0;
+      const awayGoals = parseInt(game.away_score) || 0;
+
+      // Map team IDs to Spanish names
+      const homeTeam = teamIdToSpanish(game.home_team_id);
+      const awayTeam = teamIdToSpanish(game.away_team_id);
+
+      if (!homeTeam || !awayTeam) {
+        skippedNoMapping++;
+        const unmapped = !homeTeam ? `ID:${game.home_team_id} (${game.home_team_name_en})` : `ID:${game.away_team_id} (${game.away_team_name_en})`;
+        results.nameMappingFailures.push(unmapped);
+        diagnostics.push({
+          step: 'wc26_name_mapping',
+          status: 'warn',
+          message: `WC26 name mapping failed: ${game.home_team_name_en} vs ${game.away_team_name_en} (IDs: ${game.home_team_id}/${game.away_team_id})`,
+        });
+        continue;
+      }
+
+      // Find matching match in our database
+      let match = await db.getMatchByTeams(homeTeam, awayTeam);
+
+      // Fallback: try reversed order
+      if (!match) {
+        match = await db.getMatchByTeams(awayTeam, homeTeam);
+      }
+
+      // Fallback: try with English names
+      if (!match) {
+        const homeEnglish = teamEnglishToSpanish(game.home_team_name_en);
+        const awayEnglish = teamEnglishToSpanish(game.away_team_name_en);
+        if (homeEnglish && awayEnglish) {
+          match = await db.getMatchByTeams(homeEnglish, awayEnglish);
+          if (!match) {
+            match = await db.getMatchByTeams(awayEnglish, homeEnglish);
+          }
+        }
+      }
+
+      if (!match) {
+        skippedNoMatch++;
+        diagnostics.push({
+          step: 'wc26_match_lookup',
+          status: 'warn',
+          message: `No match found for: ${homeTeam} vs ${awayTeam} (WC26: ${game.home_team_name_en} vs ${game.away_team_name_en}, group ${game.group})`,
+        });
+        continue;
+      }
+
+      // Check if already ingested
+      if (existingResultIds.has(match.id)) {
+        skippedAlreadyIngested++;
+        continue;
+      }
+
+      // Parse scorers
+      const homeScorers = parseWC26Scorers(game.home_scorers);
+      const awayScorers = parseWC26Scorers(game.away_scorers);
+
+      // Ingest the result
+      const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+
+      await db.submitMatchResult({
+        matchId: match.id,
+        homeScore: homeGoals,
+        awayScore: awayGoals,
+        winner,
+      });
+
+      // Update team form
+      await updateTeamForm(db, homeTeam, awayTeam, homeGoals, awayGoals);
+      results.formsUpdated += 2;
+      results.resultsIngested++;
+      processed++;
+      existingResultIds.add(match.id);
+
+      const scorersInfo = homeScorers.length > 0 || awayScorers.length > 0
+        ? ` (scorers: ${[...homeScorers, ...awayScorers].join(', ')})`
+        : '';
+
+      console.log(`[cron:ingest] WC26 Ingested: ${homeTeam} ${homeGoals}-${awayGoals} ${awayTeam}${scorersInfo}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      results.errors.push(`WC26 game error: ${msg}`);
+    }
+  }
+
+  diagnostics.push({
+    step: 'wc26_fixture_processing',
+    status: 'ok',
+    message: `Processed ${games.length} WC26 games: ${processed} ingested, ${skippedAlreadyIngested} already existed, ${skippedNoMatch} no match found, ${skippedNoMapping} name mapping failed, ${skippedNotFinished} not yet finished`,
+    details: {
+      total: games.length,
+      ingested: processed,
+      alreadyExisted: skippedAlreadyIngested,
+      noMatchFound: skippedNoMatch,
+      nameMappingFailed: skippedNoMapping,
+      notFinished: skippedNotFinished,
+    },
+  });
+
+  return processed;
 }
 
 async function processFixtures(

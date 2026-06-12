@@ -2,6 +2,11 @@
 # Reemplaza los Vercel Cron Jobs (plan Hobby limitado a 1/día)
 # La app sigue en Vercel; GitHub solo dispara HTTP requests a las APIs.
 #
+# Data Source Priority (en ingest):
+#   1. worldcup26.ir — Free, open-source, no API key (PRIMARY)
+#   2. API-Football (v3) — requires paid plan for 2026 season (fallback)
+#   3. football-data.org (v4) — free tier includes World Cup (secondary fallback)
+#
 # Configuración requerida en GitHub Secrets:
 #   VERCEL_URL   — https://forch-i-oracle.vercel.app (o tu dominio personalizado)
 #   CRON_SECRET  — Mismo valor que en Vercel Environment Variables

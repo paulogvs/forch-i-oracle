@@ -23,6 +23,10 @@ interface LiveMatch {
   analysis?: string;
   homeKeyPlayers?: string[];
   awayKeyPlayers?: string[];
+  homeScorers?: string[];
+  awayScorers?: string[];
+  isLive?: boolean;
+  timeElapsed?: string;
 }
 
 export default function LivePage() {
@@ -39,24 +43,52 @@ export default function LivePage() {
     setLoading(true);
     setError(null);
     try {
-      const [fixtureRes, simRes] = await Promise.all([
+      // Fetch predictions, tournament sim, AND live scores from worldcup26.ir
+      const [fixtureRes, simRes, liveScoresRes] = await Promise.all([
         fetch('/api/fixture', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ useEnhanced: true }),
         }),
         fetch('/api/simulate-tournament'),
+        fetch('/api/live-scores'),
       ]);
 
-      const [fixtureData, simData] = await Promise.all([
+      const [fixtureData, simData, liveScoresData] = await Promise.all([
         fixtureRes.json(),
         simRes.json(),
+        liveScoresRes.json(),
       ]);
 
+      // Build real results map from tournament sim (Supabase data)
       const realResultsMap = new Map<string, { home: number; away: number }>();
       if (simData.success && simData.results) {
         for (const r of simData.results) {
           realResultsMap.set(r.matchId, { home: r.homeScore, away: r.awayScore });
+        }
+      }
+
+      // Build live scores map from worldcup26.ir (instant, no ingest needed)
+      const wc26ResultsMap = new Map<string, { home: number; away: number; homeScorers: string[]; awayScorers: string[] }>();
+      if (liveScoresData.success && liveScoresData.finished) {
+        for (const m of liveScoresData.finished) {
+          const entry = { home: m.homeScore, away: m.awayScore, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] };
+          // Match by team names (both sources use Spanish names)
+          const key = `${m.homeTeam}|${m.awayTeam}`;
+          wc26ResultsMap.set(key, entry);
+          // Also try reversed
+          const keyRev = `${m.awayTeam}|${m.homeTeam}`;
+          wc26ResultsMap.set(keyRev, { home: m.awayScore, away: m.homeScore, homeScorers: m.awayScorers || [], awayScorers: m.homeScorers || [] });
+        }
+      }
+
+      // Build live matches map (currently playing)
+      const wc26LiveMap = new Map<string, { home: number; away: number; timeElapsed: string; homeScorers: string[]; awayScorers: string[] }>();
+      if (liveScoresData.success && liveScoresData.live) {
+        for (const m of liveScoresData.live) {
+          const entry = { home: m.homeScore, away: m.awayScore, timeElapsed: m.timeElapsed, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] };
+          const key = `${m.homeTeam}|${m.awayTeam}`;
+          wc26LiveMap.set(key, entry);
         }
       }
 
@@ -72,7 +104,34 @@ export default function LivePage() {
 
       const allMatches: LiveMatch[] = ALL_MATCHES.map(m => {
         const pred = predMap.get(m.id);
-        const real = realResultsMap.get(m.id);
+        // Try Supabase results first, then worldcup26.ir
+        let real = realResultsMap.get(m.id);
+        let homeScorers: string[] = [];
+        let awayScorers: string[] = [];
+        let isLive = false;
+        let timeElapsed = '';
+
+        if (!real) {
+          // Try worldcup26.ir finished by team name matching
+          const wc26Key = `${m.homeTeam}|${m.awayTeam}`;
+          const wc26 = wc26ResultsMap.get(wc26Key);
+          if (wc26) {
+            real = { home: wc26.home, away: wc26.away };
+            homeScorers = wc26.homeScorers;
+            awayScorers = wc26.awayScorers;
+          }
+        }
+
+        // Check if match is currently live
+        const liveKey = `${m.homeTeam}|${m.awayTeam}`;
+        const liveMatch = wc26LiveMap.get(liveKey);
+        if (liveMatch) {
+          isLive = true;
+          timeElapsed = liveMatch.timeElapsed;
+          homeScorers = liveMatch.homeScorers;
+          awayScorers = liveMatch.awayScorers;
+        }
+
         return {
           id: m.id,
           homeTeam: m.homeTeam,
@@ -88,6 +147,10 @@ export default function LivePage() {
           analysis: pred?.analysis || '',
           homeKeyPlayers: pred?.homeKeyPlayers || [],
           awayKeyPlayers: pred?.awayKeyPlayers || [],
+          homeScorers,
+          awayScorers,
+          isLive,
+          timeElapsed,
         };
       });
 
@@ -316,7 +379,7 @@ export default function LivePage() {
               </div>
               <p className="text-sm text-white font-semibold mb-1">Esperando primeros resultados</p>
               <p className="text-xs text-text-muted max-w-sm mx-auto">
-                Los resultados se actualizan automáticamente cada 6 horas desde API-Football.
+                Los resultados se actualizan automáticamente desde worldcup26.ir (datos en tiempo real).
                 Cuando comience el Mundial, esta tabla se llenará sola con datos reales.
               </p>
             </div>
@@ -436,7 +499,28 @@ export default function LivePage() {
                                 Pred: {m.predHome}-{m.predAway}
                               </span>
                             )}
+                            {m.isLive && m.timeElapsed && (
+                              <span className="font-bold text-accent-crimson animate-pulse">
+                                🔴 {m.timeElapsed}
+                              </span>
+                            )}
                           </div>
+
+                          {/* Goleadores — worldcup26.ir */}
+                          {((m.homeScorers && m.homeScorers.length > 0) || (m.awayScorers && m.awayScorers.length > 0)) && (
+                            <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[10px]">
+                              {m.homeScorers && m.homeScorers.length > 0 && (
+                                <span className="text-accent-gold">
+                                  ⚽ {m.homeScorers.join(', ')}
+                                </span>
+                              )}
+                              {m.awayScorers && m.awayScorers.length > 0 && (
+                                <span className="text-accent-gold">
+                                  ⚽ {m.awayScorers.join(', ')}
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                           {/* Groq analysis snippet */}
                           {m.analysis && (
