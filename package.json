@@ -7,9 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "test": "vitest",
-    "test:run": "vitest run"
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -33,7 +31,6 @@
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
-    "typescript": "^5.5.0",
-    "vitest": "^2.1.9"
+    "typescript": "^5.5.0"
   }
 }
