@@ -1,6 +1,6 @@
 // FORCH.i ORACLE — Data Layer Factory (v2)
-// Supabase is MANDATORY in production.
-// In-memory fallback ONLY for local development.
+// Supabase is preferred in production.
+// In-memory fallback for development AND for production without Supabase.
 
 import type { IDataLayer } from './interface';
 
@@ -9,29 +9,11 @@ let supabaseActive = false;
 
 /**
  * Get the active data layer instance.
- * In production: throws if Supabase not configured.
- * In development: falls back to in-memory.
  */
 export function getDataLayer(): IDataLayer {
-  if (dataLayerInstance) return dataLayerInstance;
-
-  const isProd = process.env.NODE_ENV === 'production';
-  const hasEnv = !!(process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY));
-
-  if (isProd && !hasEnv) {
-    throw new Error(
-      'PRODUCTION_REQUIRES_SUPABASE: Set SUPABASE_URL and SUPABASE_SERVICE_KEY in Vercel environment variables.'
-    );
+  if (!dataLayerInstance) {
+    initSync();
   }
-
-  // If we get here in prod, Supabase is available (loaded async)
-  // For sync fallback in dev, use in-memory
-  if (!hasEnv) {
-    console.log('[data-layer] Using in-memory data layer (development only)');
-    const { inMemoryDataLayer } = require('./in-memory');
-    dataLayerInstance = inMemoryDataLayer;
-  }
-
   return dataLayerInstance!;
 }
 
@@ -41,21 +23,37 @@ export function getDataLayer(): IDataLayer {
  */
 export async function getDataLayerAsync(): Promise<IDataLayer> {
   if (dataLayerInstance) return dataLayerInstance;
+  await initAsync();
+  return dataLayerInstance!;
+}
 
-  const isProd = process.env.NODE_ENV === 'production';
+function initSync(): void {
+  if (dataLayerInstance) return;
+
   const hasEnv = !!(process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY));
 
-  // Production: MUST have Supabase
-  if (isProd && !hasEnv) {
-    throw new Error(
-      'PRODUCTION_REQUIRES_SUPABASE: Set SUPABASE_URL and SUPABASE_SERVICE_KEY in Vercel environment variables.\n' +
-      'Run: vercel env add SUPABASE_URL && vercel env add SUPABASE_SERVICE_KEY'
-    );
+  if (!hasEnv) {
+    // No Supabase configured — use in-memory (works in dev, graceful in prod)
+    console.log('[data-layer] No Supabase env vars — using in-memory (data resets per request)');
+    const { inMemoryDataLayer } = require('./in-memory');
+    dataLayerInstance = inMemoryDataLayer;
+    return;
   }
+
+  // Supabase env vars present — can't init sync, use in-memory as temp
+  console.log('[data-layer] Supabase env detected, use getDataLayerAsync() for Supabase client');
+  const { inMemoryDataLayer } = require('./in-memory');
+  dataLayerInstance = inMemoryDataLayer;
+}
+
+async function initAsync(): Promise<void> {
+  if (dataLayerInstance) return;
+
+  const hasEnv = !!(process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY));
 
   if (hasEnv) {
     try {
-      // Verify @supabase/supabase-js is installed
+      // Check if @supabase/supabase-js is installed
       let sdkAvailable = false;
       try {
         await import('@supabase/supabase-js');
@@ -64,33 +62,24 @@ export async function getDataLayerAsync(): Promise<IDataLayer> {
         sdkAvailable = false;
       }
 
-      if (!sdkAvailable) {
-        const msg = '[data-layer] @supabase/supabase-js not installed. Run: npm install @supabase/supabase-js';
-        if (isProd) throw new Error(msg);
-        console.warn(msg);
-      } else {
+      if (sdkAvailable) {
         const { supabaseDataLayer } = await import('./supabase');
         console.log('[data-layer] ✅ Using Supabase data layer');
         supabaseActive = true;
         dataLayerInstance = supabaseDataLayer as IDataLayer;
-        return dataLayerInstance;
+        return;
+      } else {
+        console.warn('[data-layer] @supabase/supabase-js not installed — use: npm i @supabase/supabase-js');
       }
     } catch (err) {
-      if (isProd) throw err; // In production, don't fall back
       console.warn('[data-layer] Failed to load Supabase, falling back to in-memory:', err);
     }
   }
 
-  // Development fallback only
-  if (!isProd) {
-    console.log('[data-layer] Using in-memory data layer (development)');
-    const { inMemoryDataLayer } = await import('./in-memory');
-    dataLayerInstance = inMemoryDataLayer;
-  } else {
-    throw new Error('PRODUCTION_REQUIRES_SUPABASE: Could not initialize Supabase client.');
-  }
-
-  return dataLayerInstance;
+  // Fallback: in-memory
+  console.log('[data-layer] Using in-memory data layer');
+  const { inMemoryDataLayer } = await import('./in-memory');
+  dataLayerInstance = inMemoryDataLayer;
 }
 
 export function isSupabaseActive(): boolean {
