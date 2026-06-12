@@ -1,5 +1,6 @@
 // FORCH.i ORACLE — Admin: Seed Team Forms
 // POST /api/admin/seed-team-forms — Seed team forms for all 48 teams
+// GET /api/admin/seed-team-forms — Also works (for easy browser testing)
 // Requires CRON_SECRET as query param or Authorization header
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -8,6 +9,14 @@ import { getDataLayerAsync } from '@/lib/data-layer';
 import { WORLD_CUP_TEAMS, ELO_RATINGS } from '@/lib/teams';
 
 export async function POST(request: NextRequest) {
+  return handleSeed(request);
+}
+
+export async function GET(request: NextRequest) {
+  return handleSeed(request);
+}
+
+async function handleSeed(request: NextRequest) {
   const unauthorized = validateCronAuth(request);
   if (unauthorized) return unauthorized;
 

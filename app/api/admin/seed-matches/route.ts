@@ -1,5 +1,6 @@
 // FORCH.i ORACLE — Admin: Seed Missing Matches
 // POST /api/admin/seed-matches — Seed any missing matches from ALL_MATCHES
+// GET /api/admin/seed-matches — Also works (for easy browser testing)
 // Requires CRON_SECRET as query param or Authorization header
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -8,6 +9,14 @@ import { getDataLayerAsync } from '@/lib/data-layer';
 import { ALL_MATCHES } from '@/lib/matches';
 
 export async function POST(request: NextRequest) {
+  return handleSeed(request);
+}
+
+export async function GET(request: NextRequest) {
+  return handleSeed(request);
+}
+
+async function handleSeed(request: NextRequest) {
   const unauthorized = validateCronAuth(request);
   if (unauthorized) return unauthorized;
 
