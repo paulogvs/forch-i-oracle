@@ -5,14 +5,14 @@ import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
 import { predictMatchDynamic, addMatchResult, getResultsCount } from '@/lib/prediction-store';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const { useDynamic = true, useEnhanced: useEnhancedFlag = true, realResults = [] } = body;
 
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
 
     // Ingest any real results
     for (const r of realResults) {

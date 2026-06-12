@@ -4,7 +4,7 @@
 // Trigger: GET /api/cron/recalculate
 
 import { NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
 import { getKeyFactors } from '@/lib/predictor-engine';
 import { getPrediction as getGroqPrediction } from '@/lib/groq';
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   if (unauthorized) return unauthorized;
 
   const startTime = Date.now();
-  const db = getDataLayer();
+  const db = await getDataLayerAsync();
   const results = {
     matchesProcessed: 0,
     predictionsSaved: 0,

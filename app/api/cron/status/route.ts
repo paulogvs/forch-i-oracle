@@ -3,14 +3,14 @@
 // GET /api/cron/status
 
 import { NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 import { validateCronAuth } from '@/lib/cron-auth';
 
 export async function GET(request: Request) {
   const unauthorized = validateCronAuth(request);
   if (unauthorized) return unauthorized;
 
-  const db = getDataLayer();
+  const db = await getDataLayerAsync();
 
   const jobs = ['ingest-data', 'recalculate-predictions', 'simulate-tournament'];
   const statuses: Record<string, unknown> = {};

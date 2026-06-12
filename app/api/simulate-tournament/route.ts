@@ -2,12 +2,12 @@
 // Uses the data layer for persisting real results and champion probabilities.
 import { NextRequest, NextResponse } from 'next/server';
 import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 import { getLiveStandings, getLiveBracket } from '@/lib/prediction-history';
 
 export async function POST(request: NextRequest) {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const body = await request.json().catch(() => ({}));
     const submittedResults: RealMatchResult[] = body.results || [];
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 /** Submit a real match result */
 export async function PUT(request: NextRequest) {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const body = await request.json();
     const { matchId, homeScore, awayScore } = body as {
       matchId: string;
@@ -135,7 +135,7 @@ export async function PUT(request: NextRequest) {
 /** Get all stored real results */
 export async function GET() {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const results = await db.getMatchResults();
     const probs = await db.getTournamentProbs();
     const liveStandings = await getLiveStandings();
@@ -164,7 +164,7 @@ export async function GET() {
 /** Clear all stored results */
 export async function DELETE() {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     await db.clearMatchResults();
     return NextResponse.json({ success: true, message: 'Resultados eliminados' });
   } catch {

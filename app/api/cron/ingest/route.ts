@@ -7,7 +7,7 @@
 // of remaining bracket with updated predictions and drift tracking.
 
 import { NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
 import { validateCronAuth } from '@/lib/cron-auth';
 
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   if (unauthorized) return unauthorized;
 
   const startTime = Date.now();
-  const db = getDataLayer();
+  const db = await getDataLayerAsync();
   const results = {
     fixturesProcessed: 0,
     resultsIngested: 0,
@@ -125,7 +125,7 @@ export async function GET(request: Request) {
 
 async function processFixtures(
   fixtures: any[],
-  db: ReturnType<typeof getDataLayer>,
+  db: IDataLayer,
   results: { resultsIngested: number; formsUpdated: number; errors: string[] }
 ): Promise<number> {
   let processed = 0;
@@ -182,7 +182,7 @@ async function processFixtures(
 }
 
 async function updateTeamForm(
-  db: ReturnType<typeof getDataLayer>,
+  db: IDataLayer,
   homeTeam: string,
   awayTeam: string,
   homeGoals: number,

@@ -9,7 +9,7 @@
 // Trigger: POST /api/match-result
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 import {
   calculateMomentum,
   calculateAdjustedXG,
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const winner = homeScore > awayScore ? homeTeam : awayScore > homeScore ? awayTeam : 'draw';
 
     console.log(`[match-result] Recording: ${homeTeam} ${homeScore}-${awayScore} ${awayTeam}`);

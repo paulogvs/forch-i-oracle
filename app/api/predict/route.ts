@@ -8,7 +8,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
 import { getKeyFactors } from '@/lib/predictor-engine';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 import { DEFAULT_FORM } from '@/lib/teams';
 import type { Prediction } from '@/lib/groq';
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
 
     // Check data layer cache first (Supabase or in-memory)
     const matchInDb = await db.getMatchByTeams(homeTeam, awayTeam);

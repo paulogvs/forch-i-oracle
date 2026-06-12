@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { calculateAccuracy, getMatchComparisons, calculateAccuracyTrend } from '@/lib/accuracy-engine';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
 import { ALL_MATCHES } from '@/lib/matches';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 
 export async function GET() {
   try {
@@ -17,7 +17,7 @@ export async function GET() {
     ]);
 
     // Check if we have pre-calculated fixture predictions
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const allMatches = await db.getAllMatches();
     const predictions = await db.getPredictionsForMatches(allMatches.map(m => m.id));
 
@@ -42,7 +42,7 @@ export async function GET() {
 // POST — Generate all predictions for the tournament (if not already done)
 export async function POST() {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const allMatches = await db.getAllMatches();
     const predictions = await db.getPredictionsForMatches(allMatches.map(m => m.id));
 

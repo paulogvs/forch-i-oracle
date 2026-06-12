@@ -3,11 +3,11 @@
 // GET /api/predictions/all
 
 import { NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 
 export async function GET() {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
 
     // Get all matches
     const allMatches = await db.getAllMatches();

@@ -4,7 +4,7 @@
 // Trigger: GET /api/cron/simulate
 
 import { NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
 import { validateCronAuth } from '@/lib/cron-auth';
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   if (unauthorized) return unauthorized;
 
   const startTime = Date.now();
-  const db = getDataLayer();
+  const db = await getDataLayerAsync();
   const results = {
     simulationsCompleted: 0,
     teamsRanked: 0,

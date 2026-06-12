@@ -3,14 +3,14 @@
 // GET /api/prediction/[matchId]
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getDataLayer } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { matchId: string } }
 ) {
   try {
-    const db = getDataLayer();
+    const db = await getDataLayerAsync();
     const matchId = params.matchId;
 
     // Get prediction from data layer
