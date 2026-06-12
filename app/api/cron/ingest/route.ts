@@ -5,6 +5,11 @@
 //
 // AUTO-RECALCULATE: After ingesting real results, triggers full re-simulation
 // of remaining bracket with updated predictions and drift tracking.
+//
+// DATA SOURCES (in order of priority):
+// 1. API-Football (v3) — requires paid plan for 2026 season
+// 2. football-data.org (v4) — free tier includes World Cup (10 req/min)
+// 3. Manual submission via /api/match-result
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
@@ -13,6 +18,10 @@ import { validateCronAuth } from '@/lib/cron-auth';
 
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
+
+// football-data.org configuration
+const FD_BASE_URL = 'https://api.football-data.org/v4';
+const FD_WC_COMPETITION = 'WC'; // World Cup competition code
 
 interface DiagnosticLog {
   step: string;
@@ -88,6 +97,124 @@ async function apiFetch(endpoint: string, diagnostics: DiagnosticLog[]): Promise
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// FOOTBALL-DATA.ORG API (fallback when API-Football fails)
+// Free tier: 10 requests/minute, includes World Cup
+// ═══════════════════════════════════════════════════════════════
+
+interface FDMatch {
+  id: number;
+  utcDate: string;
+  status: string; // 'SCHEDULED', 'TIMED', 'IN_PLAY', 'PAUSED', 'FINISHED', etc.
+  matchday: number | null;
+  stage: string;
+  group: string | null;
+  homeTeam: { id: number; name: string; tla: string | null };
+  awayTeam: { id: number; name: string; tla: string | null };
+  score: {
+    winner: string | null;
+    duration: string;
+    fullTime: { homeTeam: number | null; awayTeam: number | null };
+    halfTime: { homeTeam: number | null; awayTeam: number | null };
+  };
+}
+
+async function fetchFootballDataOrg(diagnostics: DiagnosticLog[]): Promise<FDMatch[] | null> {
+  try {
+    // football-data.org free tier doesn't require auth for basic endpoints
+    // But auth gives higher rate limits
+    const headers: Record<string, string> = {};
+    const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
+    if (fdToken) {
+      headers['X-Auth-Token'] = fdToken;
+    }
+
+    const url = `${FD_BASE_URL}/competitions/${FD_WC_COMPETITION}/matches?status=FINISHED`;
+    diagnostics.push({
+      step: 'fd_request',
+      status: 'ok',
+      message: `Fetching finished WC matches from football-data.org: ${url}`,
+    });
+
+    const response = await fetch(url, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => 'unable to read');
+      diagnostics.push({
+        step: 'fd_response',
+        status: 'error',
+        message: `football-data.org returned HTTP ${response.status}`,
+        details: { status: response.status, body: body.slice(0, 500) },
+      });
+      return null;
+    }
+
+    const data = await response.json();
+    const matches = data.matches || [];
+
+    diagnostics.push({
+      step: 'fd_success',
+      status: 'ok',
+      message: `Received ${matches.length} finished WC matches from football-data.org`,
+    });
+
+    return matches;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    diagnostics.push({
+      step: 'fd_exception',
+      status: 'error',
+      message: `football-data.org request failed: ${msg}`,
+    });
+    return null;
+  }
+}
+
+// Map football-data.org team names to our Spanish names
+function mapFDTeamName(fdName: string): string | null {
+  // Direct lookup in our team data
+  const team = WORLD_CUP_TEAMS.find(
+    t => t.englishName.toLowerCase() === fdName.toLowerCase() ||
+         t.name.toLowerCase() === fdName.toLowerCase() ||
+         t.code.toLowerCase() === fdName.toLowerCase()
+  );
+  if (team) return team.name;
+
+  // Common football-data.org name variations
+  const FD_NAME_MAP: Record<string, string> = {
+    'Mexico': 'México',
+    'South Africa': 'Sudáfrica',
+    'South Korea': 'Corea del Sur',
+    'Czech Republic': 'Chequia',
+    'Czechia': 'Chequia',
+    'United States': 'Estados Unidos',
+    'USA': 'Estados Unidos',
+    'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
+    'Ivory Coast': 'Costa de Marfil',
+    "Côte d'Ivoire": 'Costa de Marfil',
+    'DR Congo': 'RD Congo',
+    'Congo DR': 'RD Congo',
+    'Saudi Arabia': 'Arabia Saudita',
+    'Iran': 'Irán',
+    'Iraq': 'Irak',
+    'New Zealand': 'Nueva Zelanda',
+    'Netherlands': 'Países Bajos',
+    'Tunisia': 'Túnez',
+    'Algeria': 'Argelia',
+    'Morocco': 'Marruecos',
+    'Egypt': 'Egipto',
+    'Cape Verde': 'Cabo Verde',
+    'Uzbekistan': 'Uzbekistán',
+    'Korea Republic': 'Corea del Sur',
+    'Korea DR': 'Corea del Sur',
+  };
+
+  return FD_NAME_MAP[fdName] || null;
+}
+
 export async function GET(request: Request) {
   const unauthorized = validateCronAuth(request);
   if (unauthorized) return unauthorized;
@@ -134,21 +261,30 @@ export async function GET(request: Request) {
     // League ID 9 = World Cup, Season 2026
     const wcData = await apiFetch('/fixtures?league=9&season=2026', diagnostics);
 
-    if (!wcData?.response) {
+    if (wcData?.response && Array.isArray(wcData.response) && wcData.response.length > 0) {
+      // API-Football worked — process fixtures
+      results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results, diagnostics);
+    } else {
+      // API-Football failed or returned no data — try football-data.org
       diagnostics.push({
-        step: 'wc2026_fallback',
+        step: 'fallback_fd',
         status: 'warn',
-        message: 'No WC 2026 fixtures found. Trying qualifiers (2025)...',
+        message: 'API-Football unavailable. Trying football-data.org...',
       });
-      // Try 2025 (qualifiers) as fallback
-      const wcQualData = await apiFetch('/fixtures?league=9&season=2025', diagnostics);
-      if (!wcQualData?.response) {
+
+      const fdMatches = await fetchFootballDataOrg(diagnostics);
+
+      if (fdMatches && fdMatches.length > 0) {
+        // Convert football-data.org format to our format and process
+        results.fixturesProcessed = await processFDFixtures(fdMatches, db, results, diagnostics);
+      } else {
+        // Both APIs failed — try baseline form data
         diagnostics.push({
-          step: 'qualifiers_fallback',
+          step: 'all_apis_failed',
           status: 'warn',
-          message: 'No WC qualifiers found either. Using baseline data.',
+          message: 'All APIs unavailable. Using baseline data.',
         });
-        // Fall back to baseline: ensure all teams have basic form data
+
         const teams = await db.getAllTeams();
         for (const team of teams) {
           const existingForm = await db.getTeamForm(team.name);
@@ -165,11 +301,7 @@ export async function GET(request: Request) {
             results.formsUpdated++;
           }
         }
-      } else {
-        results.fixturesProcessed = await processFixtures(wcQualData.response as any[], db, results, diagnostics);
       }
-    } else {
-      results.fixturesProcessed = await processFixtures(wcData.response as any[], db, results, diagnostics);
     }
 
     // AUTO-RECALCULATE: If new results were ingested, trigger recalculate cron
@@ -389,6 +521,136 @@ async function updateTeamForm(
       eloDynamic: existingElo + (momentum * 20),
     });
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROCESS FOOTBALL-DATA.ORG FIXTURES
+// Converts FD format to our internal format and processes
+// ═══════════════════════════════════════════════════════════════
+
+async function processFDFixtures(
+  fdMatches: FDMatch[],
+  db: IDataLayer,
+  results: { resultsIngested: number; formsUpdated: number; nameMappingFailures: string[]; errors: string[] },
+  diagnostics: DiagnosticLog[]
+): Promise<number> {
+  let processed = 0;
+  let skippedNotFinished = 0;
+  let skippedNoMapping = 0;
+  let skippedNoMatch = 0;
+  let skippedAlreadyIngested = 0;
+
+  // Get existing results to avoid duplicates
+  const existingResults = await db.getMatchResults();
+  const existingResultIds = new Set(existingResults.map(r => r.matchId));
+
+  for (const fdMatch of fdMatches) {
+    try {
+      // Only process finished matches
+      if (fdMatch.status !== 'FINISHED') {
+        skippedNotFinished++;
+        continue;
+      }
+
+      const homeGoals = fdMatch.score.fullTime.homeTeam;
+      const awayGoals = fdMatch.score.fullTime.awayTeam;
+
+      if (homeGoals === null || awayGoals === null) {
+        skippedNotFinished++;
+        continue;
+      }
+
+      // Map team names
+      const homeTeam = mapFDTeamName(fdMatch.homeTeam.name);
+      const awayTeam = mapFDTeamName(fdMatch.awayTeam.name);
+
+      if (!homeTeam || !awayTeam) {
+        skippedNoMapping++;
+        const unmapped = !homeTeam ? fdMatch.homeTeam.name : fdMatch.awayTeam.name;
+        if (unmapped) results.nameMappingFailures.push(unmapped);
+        diagnostics.push({
+          step: 'fd_name_mapping',
+          status: 'warn',
+          message: `FD name mapping failed: ${fdMatch.homeTeam.name} vs ${fdMatch.awayTeam.name}`,
+        });
+        continue;
+      }
+
+      // Find matching match in our database
+      let match = await db.getMatchByTeams(homeTeam, awayTeam);
+
+      // Fallback: try reversed order
+      if (!match) {
+        match = await db.getMatchByTeams(awayTeam, homeTeam);
+      }
+
+      // Fallback: try with English names
+      if (!match) {
+        const homeEnglish = mapApiNameToEnglish(fdMatch.homeTeam.name);
+        const awayEnglish = mapApiNameToEnglish(fdMatch.awayTeam.name);
+        if (homeEnglish && awayEnglish) {
+          match = await db.getMatchByTeams(homeEnglish, awayEnglish);
+          if (!match) {
+            match = await db.getMatchByTeams(awayEnglish, homeEnglish);
+          }
+        }
+      }
+
+      if (!match) {
+        skippedNoMatch++;
+        diagnostics.push({
+          step: 'fd_match_lookup',
+          status: 'warn',
+          message: `No match found for: ${homeTeam} vs ${awayTeam} (FD: ${fdMatch.homeTeam.name} vs ${fdMatch.awayTeam.name})`,
+        });
+        continue;
+      }
+
+      // Check if already ingested
+      if (existingResultIds.has(match.id)) {
+        skippedAlreadyIngested++;
+        continue;
+      }
+
+      // Ingest the result
+      const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+
+      await db.submitMatchResult({
+        matchId: match.id,
+        homeScore: homeGoals,
+        awayScore: awayGoals,
+        winner,
+      });
+
+      // Update team form
+      await updateTeamForm(db, homeTeam, awayTeam, homeGoals, awayGoals);
+      results.formsUpdated += 2;
+      results.resultsIngested++;
+      processed++;
+      existingResultIds.add(match.id);
+
+      console.log(`[cron:ingest] FD Ingested: ${homeTeam} ${homeGoals}-${awayGoals} ${awayTeam}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      results.errors.push(`FD Fixture error: ${msg}`);
+    }
+  }
+
+  diagnostics.push({
+    step: 'fd_fixture_processing',
+    status: 'ok',
+    message: `Processed ${fdMatches.length} FD fixtures: ${processed} ingested, ${skippedAlreadyIngested} already existed, ${skippedNoMatch} no match found, ${skippedNoMapping} name mapping failed, ${skippedNotFinished} not yet finished`,
+    details: {
+      total: fdMatches.length,
+      ingested: processed,
+      alreadyExisted: skippedAlreadyIngested,
+      noMatchFound: skippedNoMatch,
+      nameMappingFailed: skippedNoMapping,
+      notFinished: skippedNotFinished,
+    },
+  });
+
+  return processed;
 }
 
 // Aliases for common API name variations
