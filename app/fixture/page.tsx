@@ -334,30 +334,36 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
 // SUB-TABS (compact)
 // ═══════════════════════════════════════════════════════════════
 function TablasTab({ liveStandings, getFlag }: { liveStandings: Record<string, any[]>; getFlag: (n: string) => string }) {
-  const hasData = Object.keys(liveStandings).length > 0 && Object.values(liveStandings).some((g: any) => g.some((t: any) => t.played > 0));
-  if (!hasData) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">🏆 Las tablas de posiciones se actualizarán con los primeros resultados</p></div>;
+  const hasGroups = Object.keys(liveStandings).length > 0;
+  if (!hasGroups) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">🏆 Las tablas de posiciones se cargarán pronto</p></div>;
+
+  // Check if any match has been played
+  const hasResults = Object.values(liveStandings).some((g: any) => g.some((t: any) => t.played > 0));
+
   return (
     <div className="space-y-3">
-      {Object.entries(liveStandings).map(([group, teams]) => {
-        if (!(teams as any[]).some((t: any) => t.played > 0)) return null;
-        return (
-          <div key={group} className="p-4 rounded-[var(--r-lg)] bg-[#0C1017] border border-[#2A2D35]">
-            <h4 className="text-xs font-bold text-accent-premium uppercase mb-2">Grupo {group}</h4>
-            <table className="w-full text-xs">
-              <thead><tr className="text-[#6B7280] text-[10px]"><th className="text-left pb-1.5 w-5">#</th><th className="text-left pb-1.5">Equipo</th><th className="text-center pb-1.5">PJ</th><th className="text-center pb-1.5">DG</th><th className="text-center pb-1.5">Pts</th></tr></thead>
-              <tbody>{(teams as any[]).map((t: any, i: number) => (
-                <tr key={t.name} className={cn(i < 2 ? 'bg-[#052E16]/40' : '', 'border-t border-[#2A2D35]')}>
-                  <td className="py-1.5 text-[#6B7280]">{i + 1}</td>
-                  <td className="py-1.5"><div className="flex items-center gap-1.5"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[70px]", i < 2 ? "font-semibold text-[#BBF7D0]" : "text-[#9CA3AF]")}>{t.name}</span></div></td>
-                  <td className="py-1.5 text-center text-[#6B7280]">{t.played}</td>
-                  <td className={cn("py-1.5 text-center font-mono text-[11px]", t.gd > 0 ? "text-[#4ADE80]" : t.gd < 0 ? "text-[#FCA5A5]" : "text-[#6B7280]")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
-                  <td className="py-1.5 text-center font-bold text-fg-primary">{t.points}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
-        );
-      })}
+      {!hasResults && (
+        <div className="p-3 text-center rounded-[var(--r-lg)] bg-[#1A1705] border border-[#854D0E]/30">
+          <p className="text-[11px] text-[#E2B340]">⚽ Fase de grupos — Los resultados actualizarán estas tablas</p>
+        </div>
+      )}
+      {Object.entries(liveStandings).map(([group, teams]) => (
+        <div key={group} className="p-4 rounded-[var(--r-lg)] bg-[#0C1017] border border-[#2A2D35]">
+          <h4 className="text-xs font-bold text-accent-premium uppercase mb-2">Grupo {group}</h4>
+          <table className="w-full text-xs">
+            <thead><tr className="text-[#6B7280] text-[10px]"><th className="text-left pb-1.5 w-5">#</th><th className="text-left pb-1.5">Equipo</th><th className="text-center pb-1.5">PJ</th><th className="text-center pb-1.5">DG</th><th className="text-center pb-1.5">Pts</th></tr></thead>
+            <tbody>{(teams as any[]).map((t: any, i: number) => (
+              <tr key={t.name} className={cn(i < 2 && t.played > 0 ? 'bg-[#052E16]/40' : '', 'border-t border-[#2A2D35]')}>
+                <td className="py-1.5 text-[#6B7280]">{i + 1}</td>
+                <td className="py-1.5"><div className="flex items-center gap-1.5"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[70px]", i < 2 && t.played > 0 ? "font-semibold text-[#BBF7D0]" : "text-[#9CA3AF]")}>{t.name}</span></div></td>
+                <td className="py-1.5 text-center text-[#6B7280]">{t.played}</td>
+                <td className={cn("py-1.5 text-center font-mono text-[11px]", t.gd > 0 ? "text-[#4ADE80]" : t.gd < 0 ? "text-[#FCA5A5]" : "text-[#6B7280]")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
+                <td className="py-1.5 text-center font-bold text-fg-primary">{t.points}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      ))}
     </div>
   );
 }

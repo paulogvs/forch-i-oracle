@@ -262,29 +262,26 @@ export default function LivePage() {
       )}
 
       {/* Group Standings */}
-      {finished.length > 0 && Object.keys(liveStandings).length > 0 && (
+      {Object.keys(liveStandings).length > 0 && (
         <div className="space-y-3 mt-4 pt-4 border-t border-border-subtle">
-          <h3 className="text-xs font-bold text-fg-primary">📊 Tablas en Vivo</h3>
-          {Object.entries(liveStandings).map(([group, teams]) => {
-            if (!(teams as any[]).some((t: any) => t.played > 0)) return null;
-            return (
-              <div key={group} className="surface p-3 rounded-[var(--r-lg)]">
-                <h4 className="text-[11px] font-bold text-accent-premium uppercase mb-1.5">Grupo {group}</h4>
-                <table className="w-full text-[11px]">
-                  <thead><tr className="text-fg-tertiary text-[9px]"><th className="text-left pb-1 w-5">#</th><th className="text-left pb-1">Equipo</th><th className="text-center pb-1">PJ</th><th className="text-center pb-1">DG</th><th className="text-center pb-1">Pts</th></tr></thead>
-                  <tbody>{(teams as any[]).map((t: any, i: number) => (
-                    <tr key={t.name} className={cn(i < 2 ? 'bg-tint-green/20' : '', 'border-t border-border-subtle')}>
-                      <td className="py-1 text-fg-tertiary">{i + 1}</td>
-                      <td className="py-1"><div className="flex items-center gap-1"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[60px]", i < 2 ? "font-semibold text-fg-primary" : "text-fg-secondary")}>{t.name}</span></div></td>
-                      <td className="py-1 text-center text-fg-tertiary">{t.played}</td>
-                      <td className={cn("py-1 text-center font-mono", t.gd > 0 ? "text-state-success" : t.gd < 0 ? "text-state-danger" : "text-fg-tertiary")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
-                      <td className="py-1 text-center font-bold text-fg-primary">{t.points}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
-              </div>
-            );
-          })}
+          <h3 className="text-xs font-bold text-fg-primary">📊 Tablas de Grupos</h3>
+          {Object.entries(liveStandings).map(([group, teams]) => (
+            <div key={group} className="surface p-3 rounded-[var(--r-lg)]">
+              <h4 className="text-[11px] font-bold text-accent-premium uppercase mb-1.5">Grupo {group}</h4>
+              <table className="w-full text-[11px]">
+                <thead><tr className="text-fg-tertiary text-[9px]"><th className="text-left pb-1 w-5">#</th><th className="text-left pb-1">Equipo</th><th className="text-center pb-1">PJ</th><th className="text-center pb-1">DG</th><th className="text-center pb-1">Pts</th></tr></thead>
+                <tbody>{(teams as any[]).map((t: any, i: number) => (
+                  <tr key={t.name} className={cn(i < 2 && t.played > 0 ? 'bg-tint-green/20' : '', 'border-t border-border-subtle')}>
+                    <td className="py-1 text-fg-tertiary">{i + 1}</td>
+                    <td className="py-1"><div className="flex items-center gap-1"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[60px]", i < 2 && t.played > 0 ? "font-semibold text-fg-primary" : "text-fg-secondary")}>{t.name}</span></div></td>
+                    <td className="py-1 text-center text-fg-tertiary">{t.played}</td>
+                    <td className={cn("py-1 text-center font-mono", t.gd > 0 ? "text-state-success" : t.gd < 0 ? "text-state-danger" : "text-fg-tertiary")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
+                    <td className="py-1 text-center font-bold text-fg-primary">{t.points}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+          ))}
         </div>
       )}
     </div>
