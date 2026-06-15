@@ -119,6 +119,26 @@ If neither is available:
 
 ---
 
+## 🔄 Caching & Performance
+
+All data fetching uses **SWR** (stale-while-revalidate) for optimal user experience:
+
+- **Instant panel switching** — SWR caches data and shows it immediately, no loading spinners
+- **Smart refresh intervals** — During match windows (10-22 CDT), polls every 2 minutes; otherwise every 30 minutes
+- **Deduplication** — Multiple components requesting the same data share a single request
+- **Revalidate on focus** — Data refreshes when the user returns to the tab
+- **Error retry** — Automatic retry with exponential backoff
+
+### SWR Hooks
+| Hook | Endpoint | Refresh |
+|---|---|---|
+| `useFixture()` | POST `/api/fixture` | Smart (2min/30min) |
+| `useSimulation()` | GET `/api/simulate-tournament` | Smart (2min/30min) |
+| `useLiveScores()` | GET `/api/live-scores` | 30 seconds |
+| `useAccuracy()` | GET `/api/accuracy` | Smart (2min/30min) |
+
+---
+
 ## 🚀 Setup
 
 ### 1. Install Dependencies
@@ -176,6 +196,7 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 | **Framework** | Next.js 14 (App Router) |
 | **Language** | TypeScript (strict mode) |
 | **Styling** | Tailwind CSS 3.4 |
+| **Data Fetching** | SWR (stale-while-revalidate) with smart refresh intervals |
 | **AI Analysis** | Groq Llama 3.3 70B (narrative only — numbers from math) |
 | **Data API** | API-Football (free tier) |
 | **Database** | Supabase PostgreSQL (optional, primary in production) |
@@ -235,7 +256,8 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 - **Evolución de Precisión** — accuracy trend chart showing improvement over tournament days
 - **ORACLE vs Modelos** — compare ORACLE predictions against 10 benchmark AI models
 - **Predicción Drift** — visual comparison of predicted vs real scores with MAE color coding
-- **Auto-refresh inteligente** — 2min during match windows, 30min otherwise
+- **Auto-refresh inteligente** — 2min during match windows, 30min otherwise (via SWR)
+- **Instant panel switching** — SWR cache shows data instantly when switching tabs
 - **Partido del Día** — highlighted upcoming match with most balanced prediction
 - **Predicciones en Pendientes** — predicted scores shown for upcoming matches
 - **Skeleton loading** — smooth skeleton screens instead of spinners

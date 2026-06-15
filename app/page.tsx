@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useMemo } from 'react';
 import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
-import { createSmartInterval } from '@/lib/smart-refresh';
+import { useFixture } from '@/lib/swr/hooks';
+import { useLiveScores } from '@/lib/swr/hooks';
+import { useSimulation } from '@/lib/swr/hooks';
 
 interface FixtureMatch {
   id: string; homeTeam: string; awayTeam: string; round: string; group: string;
@@ -23,60 +25,49 @@ interface SimResult {
   matchId: string; homeScore: number; awayScore: number; winner: string;
 }
 
+interface FixtureResponse { success: boolean; fixture: FixtureMatch[]; }
+interface LiveResponse { success: boolean; finished: LiveMatch[]; live: LiveMatch[]; }
+interface SimResponse { success: boolean; results: SimResult[]; }
+
 export default function DashboardPage() {
-  const [predictions, setPredictions] = useState<Map<string, FixtureMatch>>(new Map());
-  const [finishedMatches, setFinishedMatches] = useState<LiveMatch[]>([]);
-  const [liveNow, setLiveNow] = useState<LiveMatch[]>([]);
-  const [simResults, setSimResults] = useState<Map<string, SimResult>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<string>('');
+  const { data: fixtureData, isLoading: fixtureLoading } = useFixture<FixtureResponse>();
+  const { data: liveData, isLoading: liveLoading } = useLiveScores<LiveResponse>();
+  const { data: simData, isLoading: simLoading } = useSimulation<SimResponse>();
 
-  const loadData = useCallback(async () => {
-    try {
-      const [fixtureRes, liveRes, simRes] = await Promise.all([
-        fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ useEnhanced: true }) }),
-        fetch('/api/live-scores'),
-        fetch('/api/simulate-tournament'),
-      ]);
-      const [fixtureData, liveData, simData] = await Promise.all([fixtureRes.json(), liveRes.json(), simRes.json()]);
+  const loading = fixtureLoading || liveLoading || simLoading;
 
-      const predMap = new Map<string, FixtureMatch>();
-      if (fixtureData.success && fixtureData.fixture) {
-        for (const m of fixtureData.fixture) {
-          predMap.set(m.id, {
-            id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, round: m.round, group: m.group || '',
-            predictedScore: m.predictedScore ?? null,
-            homeWinPct: m.homeWinPct ?? 0, drawPct: m.drawPct ?? 0, awayWinPct: m.awayWinPct ?? 0,
-            confidence: m.confidence ?? null,
-          });
-        }
+  const predictions = useMemo(() => {
+    const predMap = new Map<string, FixtureMatch>();
+    if (fixtureData?.success && fixtureData.fixture) {
+      for (const m of fixtureData.fixture) {
+        predMap.set(m.id, {
+          id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, round: m.round, group: m.group || '',
+          predictedScore: m.predictedScore ?? null,
+          homeWinPct: m.homeWinPct ?? 0, drawPct: m.drawPct ?? 0, awayWinPct: m.awayWinPct ?? 0,
+          confidence: m.confidence ?? null,
+        });
       }
-      setPredictions(predMap);
-
-      const finished: LiveMatch[] = [];
-      const live: LiveMatch[] = [];
-      if (liveData.success) {
-        for (const m of (liveData.finished || [])) finished.push(m);
-        for (const m of (liveData.live || [])) live.push(m);
-      }
-      setFinishedMatches(finished);
-      setLiveNow(live);
-
-      const resultMap = new Map<string, SimResult>();
-      if (simData.success && simData.results) {
-        for (const r of simData.results) resultMap.set(r.matchId, r);
-      }
-      setSimResults(resultMap);
-      setLastUpdated(new Date().toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }));
-    } catch (err) {
-      console.error('[dashboard] Error:', err);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+    return predMap;
+  }, [fixtureData]);
 
-  useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => { return createSmartInterval(loadData); }, [loadData]);
+  const finishedMatches = useMemo(() => {
+    if (!liveData?.success) return [];
+    return liveData.finished || [];
+  }, [liveData]);
+
+  const liveNow = useMemo(() => {
+    if (!liveData?.success) return [];
+    return liveData.live || [];
+  }, [liveData]);
+
+  const simResults = useMemo(() => {
+    const resultMap = new Map<string, SimResult>();
+    if (simData?.success && simData.results) {
+      for (const r of simData.results) resultMap.set(r.matchId, r);
+    }
+    return resultMap;
+  }, [simData]);
 
   // Compute real stats
   const stats = (() => {
@@ -126,7 +117,7 @@ export default function DashboardPage() {
       <header>
         <div className="flex items-center gap-2 mb-1">
           <Badge variant="premium">Panel de Control · WC2026</Badge>
-          <span className="text-[10px] text-fg-tertiary">{lastUpdated && `↻ ${lastUpdated}`}</span>
+          <span className="text-[10px] text-fg-tertiary">↻ Auto</span>
         </div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
           Predicciones IA <span className="text-gold">Mundial 2026</span>

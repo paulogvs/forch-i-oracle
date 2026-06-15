@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import { cn } from '@/lib/utils';
-import { LiveSkeleton, PendingSkeleton } from '@/components/LoadingSkeleton';
-import { createSmartInterval } from '@/lib/smart-refresh';
+import { useFixture } from '@/lib/swr/hooks';
+import { useLiveScores } from '@/lib/swr/hooks';
+import { useSimulation } from '@/lib/swr/hooks';
 
 type SubPanel = 'ahora' | 'resultados' | 'pendientes';
 
@@ -18,82 +19,68 @@ interface LiveMatch {
   isLive?: boolean; timeElapsed?: string;
 }
 
+interface FixtureResponse { success: boolean; fixture: { id: string; predictedScore: [number, number] | null }[]; }
+interface LiveResponse { success: boolean; finished: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; homeScorers?: string[]; awayScorers?: string[] }[]; live: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; timeElapsed?: string }[]; }
+interface SimResponse { success: boolean; results: { matchId: string; homeScore: number; awayScore: number }[]; liveStandings: Record<string, any[]>; bracket: any; }
+
 export default function LivePage() {
   const [subPanel, setSubPanel] = useState<SubPanel>('resultados');
-  const [matches, setMatches] = useState<LiveMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [liveStandings, setLiveStandings] = useState<Record<string, any[]>>({});
-  const [liveBracket, setLiveBracket] = useState<any>(null);
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const [fixtureRes, simRes, liveScoresRes] = await Promise.all([
-        fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ useEnhanced: true }) }),
-        fetch('/api/simulate-tournament'),
-        fetch('/api/live-scores'),
-      ]);
-      const [fixtureData, simData, liveScoresData] = await Promise.all([fixtureRes.json(), simRes.json(), liveScoresRes.json()]);
+  const { data: fixtureData, isLoading: fixtureLoading, error: fixtureError } = useFixture<FixtureResponse>();
+  const { data: liveScoresData, isLoading: liveLoading, error: liveError } = useLiveScores<LiveResponse>();
+  const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
 
-      const realResultsMap = new Map<string, { home: number; away: number }>();
-      if (simData.success && simData.results) {
-        for (const r of simData.results) realResultsMap.set(r.matchId, { home: r.homeScore, away: r.awayScore });
+  const loading = fixtureLoading || liveLoading || simLoading;
+  const error = fixtureError ? 'No se pudieron cargar los datos' : liveError ? 'No se pudieron cargar los datos' : simError ? 'No se pudieron cargar los datos' : null;
+
+  const matches = useMemo(() => {
+    const realResultsMap = new Map<string, { home: number; away: number }>();
+    if (simData?.success && simData.results) {
+      for (const r of simData.results) realResultsMap.set(r.matchId, { home: r.homeScore, away: r.awayScore });
+    }
+
+    const wc26ResultsMap = new Map<string, { home: number; away: number; homeScorers: string[]; awayScorers: string[] }>();
+    if (liveScoresData?.success && liveScoresData.finished) {
+      for (const m of liveScoresData.finished) {
+        wc26ResultsMap.set(`${m.homeTeam}|${m.awayTeam}`, { home: m.homeScore, away: m.awayScore, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] });
+        wc26ResultsMap.set(`${m.awayTeam}|${m.homeTeam}`, { home: m.awayScore, away: m.homeScore, homeScorers: m.awayScorers || [], awayScorers: m.homeScorers || [] });
       }
+    }
 
-      const wc26ResultsMap = new Map<string, { home: number; away: number; homeScorers: string[]; awayScorers: string[] }>();
-      if (liveScoresData.success && liveScoresData.finished) {
-        for (const m of liveScoresData.finished) {
-          wc26ResultsMap.set(`${m.homeTeam}|${m.awayTeam}`, { home: m.homeScore, away: m.awayScore, homeScorers: m.homeScorers || [], awayScorers: m.awayScorers || [] });
-          wc26ResultsMap.set(`${m.awayTeam}|${m.homeTeam}`, { home: m.awayScore, away: m.homeScore, homeScorers: m.awayScorers || [], awayScorers: m.homeScorers || [] });
+    const wc26LiveMap = new Map<string, { home: number; away: number; timeElapsed: string }>();
+    if (liveScoresData?.success && liveScoresData.live) {
+      for (const m of liveScoresData.live) {
+        if (m.timeElapsed && m.timeElapsed !== 'not started' && m.timeElapsed !== 'notstarted') {
+          wc26LiveMap.set(`${m.homeTeam}|${m.awayTeam}`, { home: m.homeScore, away: m.awayScore, timeElapsed: m.timeElapsed });
         }
       }
+    }
 
-      // Only truly live (not "notstarted")
-      const wc26LiveMap = new Map<string, { home: number; away: number; timeElapsed: string }>();
-      if (liveScoresData.success && liveScoresData.live) {
-        for (const m of liveScoresData.live) {
-          if (m.timeElapsed && m.timeElapsed !== 'not started' && m.timeElapsed !== 'notstarted') {
-            wc26LiveMap.set(`${m.homeTeam}|${m.awayTeam}`, { home: m.homeScore, away: m.awayScore, timeElapsed: m.timeElapsed });
-          }
-        }
+    const predMap = new Map();
+    if (fixtureData?.success && fixtureData.fixture) {
+      for (const m of fixtureData.fixture) predMap.set(m.id, { homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null });
+    }
+
+    return ALL_MATCHES.map(m => {
+      const pred = predMap.get(m.id);
+      let real = realResultsMap.get(m.id);
+      let isLive = false; let timeElapsed = '';
+      if (!real) {
+        const wc26 = wc26ResultsMap.get(`${m.homeTeam}|${m.awayTeam}`);
+        if (wc26) real = { home: wc26.home, away: wc26.away };
       }
+      const liveMatch = wc26LiveMap.get(`${m.homeTeam}|${m.awayTeam}`);
+      if (liveMatch) { isLive = true; timeElapsed = liveMatch.timeElapsed; }
+      return {
+        id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, date: m.date, round: m.round, group: m.group,
+        realHome: real?.home ?? null, realAway: real?.away ?? null, isPlayed: real !== undefined,
+        predHome: pred?.homeGoals ?? null, predAway: pred?.awayGoals ?? null,
+        isLive, timeElapsed,
+      };
+    });
+  }, [fixtureData, liveScoresData, simData]);
 
-      const predMap = new Map();
-      if (fixtureData.success && fixtureData.fixture) {
-        for (const m of fixtureData.fixture) predMap.set(m.id, { homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null });
-      }
-
-      const allMatches: LiveMatch[] = ALL_MATCHES.map(m => {
-        const pred = predMap.get(m.id);
-        let real = realResultsMap.get(m.id);
-        let isLive = false; let timeElapsed = '';
-        if (!real) {
-          const wc26 = wc26ResultsMap.get(`${m.homeTeam}|${m.awayTeam}`);
-          if (wc26) real = { home: wc26.home, away: wc26.away };
-        }
-        const liveMatch = wc26LiveMap.get(`${m.homeTeam}|${m.awayTeam}`);
-        if (liveMatch) { isLive = true; timeElapsed = liveMatch.timeElapsed; }
-        return {
-          id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, date: m.date, round: m.round, group: m.group,
-          realHome: real?.home ?? null, realAway: real?.away ?? null, isPlayed: real !== undefined,
-          predHome: pred?.homeGoals ?? null, predAway: pred?.awayGoals ?? null,
-          isLive, timeElapsed,
-        };
-      });
-
-      setMatches(allMatches);
-      setLiveStandings(simData.success ? simData.liveStandings || {} : {});
-      setLiveBracket(simData.success ? simData.bracket : null);
-      setLastUpdate(new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
-    } catch (err) {
-      console.error('[live] Error:', err); setError('No se pudieron cargar los datos');
-    } finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => { return createSmartInterval(loadData); }, [loadData]);
+  const liveStandings = useMemo(() => simData?.success ? simData.liveStandings || {} : {}, [simData]);
 
   const liveNow = matches.filter(m => m.isLive);
   const finished = matches.filter(m => m.isPlayed && !m.isLive);
@@ -153,11 +140,7 @@ export default function LivePage() {
       </div>
 
       {loading && (
-        <div>
-          {subPanel === 'ahora' && <LiveSkeleton />}
-          {subPanel === 'pendientes' && <PendingSkeleton />}
-          {subPanel === 'resultados' && <LiveSkeleton />}
-        </div>
+        <div className="text-xs text-fg-tertiary text-center py-4">Cargando...</div>
       )}
       {error && <div className="surface-danger p-4 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
 

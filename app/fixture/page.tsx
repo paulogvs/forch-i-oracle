@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName, ELO_RATINGS, POWER_RATINGS } from '@/lib/teams';
 import { utcToLocal, getUserTimezoneOffset, getTimezoneLabel, TIMEZONE_PRESETS } from '@/lib/timezone';
@@ -8,8 +8,9 @@ import { cn } from '@/lib/utils';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot } from '@/components/icons/animated-icons';
 import { motion, AnimatePresence } from 'motion/react';
-import { FixtureSkeleton } from '@/components/LoadingSkeleton';
-import { createSmartInterval } from '@/lib/smart-refresh';
+import { useFixture } from '@/lib/swr/hooks';
+import { useLiveScores } from '@/lib/swr/hooks';
+import { useSimulation } from '@/lib/swr/hooks';
 
 type MainTab = 'partidos' | 'tablas' | 'top8' | 'bracket';
 type PhaseFilter = string;
@@ -26,61 +27,56 @@ interface FixtureMatch {
 
 interface RealResult { matchId: string; homeScore: number; awayScore: number; winner: string; }
 
+interface FixtureResponse { success: boolean; fixture: FixtureMatch[]; }
+interface LiveResponse { success: boolean; finished: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number }[]; }
+interface SimResponse { success: boolean; results: { matchId: string; homeScore: number; awayScore: number; winner: string }[]; top8: any[]; bracket: any; liveStandings: Record<string, any[]>; }
+
 export default function FixturePage() {
   const [mainTab, setMainTab] = useState<MainTab>('partidos');
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>('all');
-  const [fixtures, setFixtures] = useState<FixtureMatch[]>([]);
-  const [realResults, setRealResults] = useState<Map<string, RealResult>>(new Map());
-  const [top8, setTop8] = useState<any[]>([]);
-  const [bracket, setBracket] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null);
   const [tzOffset, setTzOffset] = useState<number>(-4);
-  const [liveStandings, setLiveStandings] = useState<Record<string, any[]>>({});
+
+  const { data: fixtureData, isLoading: fixtureLoading, error: fixtureError } = useFixture<FixtureResponse>();
+  const { data: liveData } = useLiveScores<LiveResponse>();
+  const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
+
+  const loading = fixtureLoading || simLoading;
+  const error = fixtureError ? 'Error cargando datos' : simError ? 'Error cargando datos' : '';
+
+  useEffect(() => { setTzOffset(getUserTimezoneOffset()); }, []);
+
+  const fixtures = useMemo(() => {
+    if (!fixtureData?.success) return [];
+    return (fixtureData.fixture || []).map((m: any) => ({
+      id: m.id, group: m.group || 'KO', date: m.date, time: m.time || '',
+      homeTeam: m.homeTeam, awayTeam: m.awayTeam, venue: m.venue || '', city: m.city || '',
+      round: m.round, homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null,
+      homeWin: m.homeWinPct ?? null, draw: m.drawPct ?? null, awayWin: m.awayWinPct ?? null,
+      confidence: m.confidence ?? null, topScores: m.topScores ?? null,
+      isPredicted: m.predictedScore !== null, extraTime: false, penalties: false,
+      analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
+    }));
+  }, [fixtureData]);
+
+  const realResults = useMemo(() => {
+    const resultsMap = new Map<string, RealResult>();
+    if (simData?.success && simData.results) for (const r of simData.results) resultsMap.set(r.matchId, r);
+    if (liveData?.success && liveData.finished) {
+      for (const m of liveData.finished) {
+        const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
+        if (match) resultsMap.set(match.id, { matchId: match.id, homeScore: m.homeScore, awayScore: m.awayScore, winner: m.homeScore > m.awayScore ? m.homeTeam : m.awayScore > m.homeScore ? m.awayTeam : 'draw' });
+      }
+    }
+    return resultsMap;
+  }, [simData, liveData]);
+
+  const top8 = useMemo(() => simData?.success ? simData.top8 || [] : [], [simData]);
+  const bracket = useMemo(() => simData?.success ? simData.bracket : null, [simData]);
+  const liveStandings = useMemo(() => simData?.success ? simData.liveStandings || {} : {}, [simData]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  useEffect(() => { setTzOffset(getUserTimezoneOffset()); loadAll(); }, []);
-  useEffect(() => { return createSmartInterval(loadAll); }, []);
-
-  const loadAll = async () => {
-    setLoading(true); setError('');
-    try {
-      const [fixtureRes, simRes, liveRes] = await Promise.all([
-        fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ useEnhanced: true }) }),
-        fetch('/api/simulate-tournament'),
-        fetch('/api/live-scores'),
-      ]);
-      const fixtureData = await fixtureRes.json();
-      const simData = await simRes.json();
-      const liveData = await liveRes.json().catch(() => ({ success: false }));
-
-      if (fixtureData.success) {
-        setFixtures((fixtureData.fixture || []).map((m: any) => ({
-          id: m.id, group: m.group || 'KO', date: m.date, time: m.time || '',
-          homeTeam: m.homeTeam, awayTeam: m.awayTeam, venue: m.venue || '', city: m.city || '',
-          round: m.round, homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null,
-          homeWin: m.homeWinPct ?? null, draw: m.drawPct ?? null, awayWin: m.awayWinPct ?? null,
-          confidence: m.confidence ?? null, topScores: m.topScores ?? null,
-          isPredicted: m.predictedScore !== null, extraTime: false, penalties: false,
-          analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
-        })));
-        setLastUpdated(new Date());
-      }
-
-      const resultsMap = new Map<string, RealResult>();
-      if (simData.success && simData.results) for (const r of simData.results) resultsMap.set(r.matchId, r);
-      if (liveData.success && liveData.finished) {
-        for (const m of liveData.finished) {
-          const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
-          if (match) resultsMap.set(match.id, { matchId: match.id, homeScore: m.homeScore, awayScore: m.awayScore, winner: m.homeScore > m.awayScore ? m.homeTeam : m.awayScore > m.homeScore ? m.awayTeam : 'draw' });
-        }
-      }
-      setRealResults(resultsMap);
-      if (simData.success) { setTop8(simData.top8 || []); setBracket(simData.bracket); setLiveStandings(simData.liveStandings || {}); }
-    } catch (err) { setError('Error cargando datos'); }
-    finally { setLoading(false); }
-  };
+  useEffect(() => { if (fixtureData || simData) setLastUpdated(new Date()); }, [fixtureData, simData]);
 
   const MAIN_TABS = [
     { id: 'partidos' as const, label: 'Partidos', emoji: '⚽' },
@@ -173,7 +169,7 @@ export default function FixturePage() {
         </div>
       )}
 
-      {loading && <FixtureSkeleton />}
+      {loading && <div className="space-y-5"><div className="text-xs text-fg-tertiary text-center py-4">Cargando...</div></div>}
       {error && <div className="surface-danger p-5 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
 
       {/* PARTIDOS */}
