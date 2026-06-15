@@ -8,9 +8,8 @@ import { cn } from '@/lib/utils';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot } from '@/components/icons/animated-icons';
 import { motion, AnimatePresence } from 'motion/react';
-import { useFixture } from '@/lib/swr/hooks';
-import { useLiveScores } from '@/lib/swr/hooks';
-import { useSimulation } from '@/lib/swr/hooks';
+import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
+import { WORLD_CUP_TEAMS } from '@/lib/teams';
 
 type MainTab = 'partidos' | 'tablas' | 'top8' | 'bracket';
 type PhaseFilter = string;
@@ -73,7 +72,44 @@ export default function FixturePage() {
 
   const top8 = useMemo(() => simData?.success ? simData.top8 || [] : [], [simData]);
   const bracket = useMemo(() => simData?.success ? simData.bracket : null, [simData]);
-  const liveStandings = useMemo(() => simData?.success ? simData.liveStandings || {} : {}, [simData]);
+
+  // Compute standings from live-scores data (real-time, no cron dependency)
+  const liveStandings = useMemo(() => {
+    const standings: Record<string, any[]> = {};
+    // Initialize all groups
+    for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
+      const teams = WORLD_CUP_TEAMS.filter(t => t.group === letter);
+      standings[letter] = teams.map(t => ({
+        name: t.name, flag: t.flag, played: 0, won: 0, drawn: 0,
+        lost: 0, gf: 0, ga: 0, gd: 0, points: 0,
+      }));
+    }
+    // Process finished matches from live-scores (real-time)
+    if (liveData?.success && liveData.finished) {
+      for (const m of liveData.finished) {
+        const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
+        if (!match || match.round !== 'group' || !match.group) continue;
+        const group = match.group;
+        if (!standings[group]) continue;
+        const homeTeam = standings[group].find(t => t.name === m.homeTeam);
+        const awayTeam = standings[group].find(t => t.name === m.awayTeam);
+        if (!homeTeam || !awayTeam) continue;
+        homeTeam.played++; awayTeam.played++;
+        homeTeam.gf += m.homeScore; homeTeam.ga += m.awayScore;
+        awayTeam.gf += m.awayScore; awayTeam.ga += m.homeScore;
+        homeTeam.gd = homeTeam.gf - homeTeam.ga;
+        awayTeam.gd = awayTeam.gf - awayTeam.ga;
+        if (m.homeScore > m.awayScore) { homeTeam.won++; homeTeam.points += 3; awayTeam.lost++; }
+        else if (m.homeScore < m.awayScore) { awayTeam.won++; awayTeam.points += 3; homeTeam.lost++; }
+        else { homeTeam.drawn++; awayTeam.drawn++; homeTeam.points += 1; awayTeam.points += 1; }
+      }
+    }
+    // Sort each group by points, then GD, then GF
+    for (const group of Object.keys(standings)) {
+      standings[group].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
+    }
+    return standings;
+  }, [liveData]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => { if (fixtureData || simData) setLastUpdated(new Date()); }, [fixtureData, simData]);
