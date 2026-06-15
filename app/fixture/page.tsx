@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot } from '@/components/icons/animated-icons';
 import { motion, AnimatePresence } from 'motion/react';
+import { FixtureSkeleton } from '@/components/LoadingSkeleton';
+import { createSmartInterval } from '@/lib/smart-refresh';
 
 type MainTab = 'partidos' | 'tablas' | 'top8' | 'bracket';
 type PhaseFilter = string;
@@ -39,7 +41,7 @@ export default function FixturePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => { setTzOffset(getUserTimezoneOffset()); loadAll(); }, []);
-  useEffect(() => { const interval = setInterval(loadAll, 30 * 60 * 1000); return () => clearInterval(interval); }, []);
+  useEffect(() => { return createSmartInterval(loadAll); }, []);
 
   const loadAll = async () => {
     setLoading(true); setError('');
@@ -171,7 +173,7 @@ export default function FixturePage() {
         </div>
       )}
 
-      {loading && <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-2 border-accent-primary/30 border-t-accent-primary animate-spin" /></div>}
+      {loading && <FixtureSkeleton />}
       {error && <div className="surface-danger p-5 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
 
       {/* PARTIDOS */}
@@ -337,7 +339,7 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
 // ═══════════════════════════════════════════════════════════════
 function TablasTab({ liveStandings, getFlag }: { liveStandings: Record<string, any[]>; getFlag: (n: string) => string }) {
   const hasData = Object.keys(liveStandings).length > 0 && Object.values(liveStandings).some((g: any) => g.some((t: any) => t.played > 0));
-  if (!hasData) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">Sin datos de tablas aún</p></div>;
+  if (!hasData) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">🏆 Las tablas de posiciones se actualizarán con los primeros resultados</p></div>;
   return (
     <div className="space-y-3">
       {Object.entries(liveStandings).map(([group, teams]) => {
@@ -365,7 +367,7 @@ function TablasTab({ liveStandings, getFlag }: { liveStandings: Record<string, a
 }
 
 function Top8Tab({ top8, getFlag }: { top8: any[]; getFlag: (n: string) => string }) {
-  if (!top8?.length) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">Top 8 se calcula con simulaciones</p></div>;
+  if (!top8?.length) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">🏆 Top 8 se calculará con las simulaciones del torneo</p></div>;
   return (
     <div className="space-y-2">
       {top8.slice(0, 8).map((team: any, i: number) => (
@@ -381,7 +383,7 @@ function Top8Tab({ top8, getFlag }: { top8: any[]; getFlag: (n: string) => strin
 }
 
 function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) => string }) {
-  if (!bracket) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">Bracket se genera con simulaciones</p></div>;
+  if (!bracket) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">📐 El bracket se generará con las simulaciones del torneo</p></div>;
   return (
     <div className="space-y-4">
       {bracket.roundOf32?.length > 0 && <BracketRound title="1/16" matches={bracket.roundOf32} getFlag={getFlag} />}
@@ -510,6 +512,39 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
               </div>
             </div>
           )}
+
+          {/* ═══ DRIFT — Prediction vs Reality ═══ */}
+          {isPlayed && realResult && match.homeGoals !== null && match.awayGoals !== null && (() => {
+            const maeHome = Math.abs(match.homeGoals - realResult.homeScore);
+            const maeAway = Math.abs(match.awayGoals - realResult.awayScore);
+            const totalMae = (maeHome + maeAway) / 2;
+            const driftColor = totalMae < 0.5 ? 'bg-[#166534] text-[#4ADE80]' : totalMae <= 1 ? 'bg-[#854D0E] text-[#FACC15]' : 'bg-[#991B1B] text-[#FCA5A5]';
+            const driftLabel = totalMae < 0.5 ? 'Muy cercana' : totalMae <= 1 ? 'Cercana' : 'Lejana';
+            return (
+              <div className="pt-3 mt-3 border-t border-[#2A2D35]">
+                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-2">Drift de Predicción</div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 text-center">
+                    <div className="text-[10px] text-[#6B7280] mb-1">Predicción</div>
+                    <div className="px-3 py-1.5 bg-[#2A2D35] rounded-[var(--r-md)]">
+                      <span className="font-mono font-bold text-sm text-[#9CA3AF]">{match.homeGoals}-{match.awayGoals}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-lg">→</span>
+                    <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold", driftColor)}>{driftLabel}</span>
+                    <span className="text-[9px] text-[#6B7280] font-mono">MAE {totalMae.toFixed(1)}</span>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <div className="text-[10px] text-[#6B7280] mb-1">Real</div>
+                    <div className="px-3 py-1.5 bg-[#2A2D35] rounded-[var(--r-md)]">
+                      <span className={cn("font-mono font-bold text-sm", pal.scoreText)}>{realResult.homeScore}-{realResult.awayScore}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Stats */}
           <div className="pt-3 mt-3 border-t border-[#2A2D35]">

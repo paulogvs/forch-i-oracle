@@ -5,6 +5,8 @@ import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import { cn } from '@/lib/utils';
+import { LiveSkeleton, PendingSkeleton } from '@/components/LoadingSkeleton';
+import { createSmartInterval } from '@/lib/smart-refresh';
 
 type SubPanel = 'ahora' | 'resultados' | 'pendientes';
 
@@ -91,7 +93,7 @@ export default function LivePage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => { const interval = setInterval(loadData, 30 * 60 * 1000); return () => clearInterval(interval); }, [loadData]);
+  useEffect(() => { return createSmartInterval(loadData); }, [loadData]);
 
   const liveNow = matches.filter(m => m.isLive);
   const finished = matches.filter(m => m.isPlayed && !m.isLive);
@@ -150,7 +152,13 @@ export default function LivePage() {
         ))}
       </div>
 
-      {loading && <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-2 border-accent-primary/30 border-t-accent-primary animate-spin" /></div>}
+      {loading && (
+        <div>
+          {subPanel === 'ahora' && <LiveSkeleton />}
+          {subPanel === 'pendientes' && <PendingSkeleton />}
+          {subPanel === 'resultados' && <LiveSkeleton />}
+        </div>
+      )}
       {error && <div className="surface-danger p-4 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
 
       {/* ═══ EN JUEGO ═══ */}
@@ -169,7 +177,7 @@ export default function LivePage() {
             ))}
           </div>
         ) : (
-          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">Sin partidos en juego ahora</p></div>
+          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">⏳ Próximamente... Los partidos del Mundial 2026 comenzarán pronto</p></div>
         )
       )}
 
@@ -230,7 +238,7 @@ export default function LivePage() {
             })}
           </div>
         ) : (
-          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">Sin resultados aún</p></div>
+          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">📊 Los resultados aparecerán aquí cuando se jueguen los partidos</p></div>
         )
       )}
 
@@ -238,17 +246,35 @@ export default function LivePage() {
       {!loading && !error && subPanel === 'pendientes' && (
         upcoming.length > 0 ? (
           <div className="space-y-1">
-            {upcoming.slice(0, 30).map(m => (
-              <div key={m.id} className="flex items-center justify-between p-2.5 surface rounded-[var(--r-md)]">
-                <div className="flex items-center gap-1.5 flex-1"><span className="text-sm opacity-40">{getFlag(m.homeTeam)}</span><span className="text-[11px] text-fg-tertiary truncate">{m.homeTeam}</span></div>
-                <span className="text-[10px] text-fg-disabled font-mono px-2">vs</span>
-                <div className="flex items-center gap-1.5 flex-1 justify-end"><span className="text-[11px] text-fg-tertiary truncate text-right">{m.awayTeam}</span><span className="text-sm opacity-40">{getFlag(m.awayTeam)}</span></div>
-              </div>
-            ))}
+            {upcoming.slice(0, 30).map(m => {
+              const hasPred = m.predHome !== null && m.predAway !== null;
+              const mae = hasPred && m.realHome !== null && m.realAway !== null
+                ? (Math.abs(m.predHome! - m.realHome) + Math.abs(m.predAway! - m.realAway)) / 2
+                : null;
+              return (
+                <div key={m.id} className="flex items-center justify-between p-2.5 surface rounded-[var(--r-md)]">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <span className="text-sm opacity-40 shrink-0">{getFlag(m.homeTeam)}</span>
+                    <span className="text-[11px] text-fg-tertiary truncate">{m.homeTeam}</span>
+                  </div>
+                  {hasPred ? (
+                    <div className="flex flex-col items-center px-2 shrink-0">
+                      <span className="text-[11px] font-mono font-bold text-accent-primary tabular-nums">{m.predHome}-{m.predAway}</span>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-fg-disabled font-mono px-2">vs</span>
+                  )}
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                    <span className="text-[11px] text-fg-tertiary truncate text-right">{m.awayTeam}</span>
+                    <span className="text-sm opacity-40 shrink-0">{getFlag(m.awayTeam)}</span>
+                  </div>
+                </div>
+              );
+            })}
             {upcoming.length > 30 && <p className="text-[10px] text-fg-tertiary text-center">+{upcoming.length - 30} más</p>}
           </div>
         ) : (
-          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">Todos los partidos han sido jugados</p></div>
+          <div className="surface p-8 text-center rounded-[var(--r-lg)]"><p className="text-xs text-fg-secondary">🏆 Las tablas de posiciones se actualizarán con los primeros resultados</p></div>
         )
       )}
 

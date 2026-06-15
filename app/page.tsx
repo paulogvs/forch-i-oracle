@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3 } from 'lucide-react';
+import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
+import { createSmartInterval } from '@/lib/smart-refresh';
 
 interface FixtureMatch {
   id: string; homeTeam: string; awayTeam: string; round: string; group: string;
@@ -75,7 +76,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
-  useEffect(() => { const iv = setInterval(loadData, 5 * 60 * 1000); return () => clearInterval(iv); }, [loadData]);
+  useEffect(() => { return createSmartInterval(loadData); }, [loadData]);
 
   // Compute real stats
   const stats = (() => {
@@ -172,6 +173,95 @@ export default function DashboardPage() {
           color="gold"
         />
       </div>
+
+      {/* ═══ EVOLUCIÓN DE PRECISIÓN ═══ */}
+      {stats.matchDetails.length > 0 && (() => {
+        // Group matches by date and compute accuracy per day
+        const byDate: Record<string, { correct: number; total: number }> = {};
+        for (const m of stats.matchDetails) {
+          const lm = finishedMatches.find(f => f.homeTeam === m.home && f.awayTeam === m.away);
+          if (!lm) continue;
+          // Use a simple date grouping based on order (since we don't have exact dates in matchDetails)
+          const day = `Día ${Object.keys(byDate).length + 1}`;
+          if (!byDate[day]) byDate[day] = { correct: 0, total: 0 };
+          byDate[day].total++;
+          if (m.correct) byDate[day].correct++;
+        }
+        const days = Object.entries(byDate);
+        if (days.length < 2) return null;
+        const maxPct = Math.max(...days.map(([, v]) => v.total > 0 ? Math.round((v.correct / v.total) * 100) : 0));
+        return (
+          <section className="space-y-2">
+            <h2 className="text-xs font-bold text-fg-primary flex items-center gap-2">
+              <BarChart3 className="h-3.5 w-3.5 text-accent-premium" />
+              Evolución de Precisión
+            </h2>
+            <div className="surface p-3 rounded-[var(--r-lg)]">
+              <div className="space-y-2">
+                {days.map(([day, { correct, total }]) => {
+                  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+                  const barColor = pct >= 60 ? 'bg-accent-emerald/70' : pct >= 40 ? 'bg-accent-premium/70' : 'bg-state-danger/70';
+                  return (
+                    <div key={day} className="flex items-center gap-2">
+                      <span className="text-[10px] text-fg-tertiary w-10 text-right font-mono">{day}</span>
+                      <div className="flex-1 h-4 bg-raised/50 rounded overflow-hidden relative">
+                        <div className={cn("h-full rounded transition-all duration-500", barColor)} style={{ width: `${pct}%` }} />
+                        <span className="absolute inset-0 flex items-center justify-end pr-2 text-[9px] font-bold text-white drop-shadow">{correct}/{total}</span>
+                      </div>
+                      <span className="text-[10px] text-fg-tertiary w-8 text-right font-mono">{pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
+      {/* ═══ PARTIDO DEL DÍA ═══ */}
+      {(() => {
+        // Find upcoming matches with closest-to-50/50 combined probability
+        const upcomingWithPred = Array.from(predictions.values()).filter(p =>
+          p.predictedScore && !finishedMatches.some(f => f.homeTeam === p.homeTeam && f.awayTeam === p.awayTeam)
+        );
+        if (upcomingWithPred.length === 0) return null;
+        // Score: closest to 50/50 home+away probability
+        const scored = upcomingWithPred.map(p => {
+          const balance = Math.abs(p.homeWinPct - p.awayWinPct); // lower = more balanced
+          const scoreCloseness = Math.abs(p.predictedScore![0] - p.predictedScore![1]) <= 1 ? 0 : 2; // close scores preferred
+          return { ...p, interestScore: balance + scoreCloseness };
+        });
+        scored.sort((a, b) => a.interestScore - b.interestScore);
+        const best = scored[0];
+        const [h, a] = best.predictedScore!;
+        return (
+          <section className="space-y-2">
+            <h2 className="text-xs font-bold text-fg-primary flex items-center gap-2">
+              <Calendar className="h-3.5 w-3.5 text-accent-premium" />
+              Partido del Día
+            </h2>
+            <div className="surface-interactive p-4 rounded-[var(--r-lg)] border border-accent-premium/20">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 text-center">
+                  <span className="text-2xl">{getFlag(best.homeTeam)}</span>
+                  <div className="text-xs font-bold text-fg-primary mt-1">{best.homeTeam}</div>
+                </div>
+                <div className="text-center px-4">
+                  <div className="px-4 py-2 bg-accent-premium/15 rounded-[var(--r-md)] border border-accent-premium/20">
+                    <span className="font-mono font-bold text-lg text-accent-premium tabular-nums">{h}-{a}</span>
+                  </div>
+                  <div className="text-[10px] text-fg-tertiary mt-1">Predicción</div>
+                </div>
+                <div className="flex-1 text-center">
+                  <span className="text-2xl">{getFlag(best.awayTeam)}</span>
+                  <div className="text-xs font-bold text-fg-primary mt-1">{best.awayTeam}</div>
+                </div>
+              </div>
+              <p className="text-[10px] text-fg-tertiary text-center mt-2">⚡ Partido equilibrado — predicción ajustada</p>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* ═══ RESULTADOS REALES ═══ */}
       {stats.matchDetails.length > 0 && (

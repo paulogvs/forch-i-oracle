@@ -27,10 +27,10 @@ API-Football (cada 6h) → Cron Ingest → Supabase/Store → Re-simulate → Pa
 
 | Route | Purpose |
 |---|---|
-| `/` | **📊 Dashboard** — Accuracy metrics, trend graph, Top 8 Elo, quick nav |
+| `/` | **📊 Dashboard** — Accuracy metrics, trend graph, Top 8 Elo, quick nav, Partido del Día |
 | `/fixture` | **⚡ Predicción** — 3 tabs: Predicciones (128 partidos), Top 8 Campeón, Bracket |
 | `/live` | **📈 En Vivo** — Real results vs predictions, live standings, live bracket |
-| `/benchmark` | **🤖 Benchmark** — 10 AI models comparison, champion consensus |
+| `/benchmark` | **🤖 Benchmark** — 10 AI models comparison, champion consensus, ORACLE vs Modelos |
 
 ### Panel Predicción — 3 Tabs
 - **🔮 Predicciones**: All 128 matches with predicted scores. Toggle: Partidos ↔ Tablas de Posiciones, Por Fecha ↔ Por Grupo. Tap any match → Detail Modal (probabilities, xG, Elo, top 5 scores, confidence)
@@ -232,6 +232,14 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 - **Third-place uniqueness** — each third-place team appears exactly once in R32
 - **Prediction drift tracking** — shows how much predictions changed after each result
 - **Auto-recalculate** — after each real result, entire bracket re-simulates
+- **Evolución de Precisión** — accuracy trend chart showing improvement over tournament days
+- **ORACLE vs Modelos** — compare ORACLE predictions against 10 benchmark AI models
+- **Predicción Drift** — visual comparison of predicted vs real scores with MAE color coding
+- **Auto-refresh inteligente** — 2min during match windows, 30min otherwise
+- **Partido del Día** — highlighted upcoming match with most balanced prediction
+- **Predicciones en Pendientes** — predicted scores shown for upcoming matches
+- **Skeleton loading** — smooth skeleton screens instead of spinners
+- **Empty states amigables** — contextual messages with emojis when no data
 
 ---
 

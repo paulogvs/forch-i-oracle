@@ -7,11 +7,18 @@ import { ALL_MODELS, getModelInfo, validate, getTeamStageConsensus } from '@/lib
 import type { ModelInfo } from '@/lib/worldcup-bench-data';
 import { cn } from '@/lib/utils';
 
+interface OraclePrediction {
+  id: string; homeTeam: string; awayTeam: string;
+  predictedScore: [number, number] | null; homeWinPct: number; drawPct: number; awayWinPct: number;
+}
+
 export default function BenchmarkPage() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [validation, setValidation] = useState<{ ok: boolean; modelsLoaded: number; groupMatches: number; errors: string[] } | null>(null);
-  const [activeTab, setActiveTab] = useState<'consensus' | 'models' | 'about'>('consensus');
+  const [activeTab, setActiveTab] = useState<'consensus' | 'models' | 'about' | 'oracle'>('consensus');
   const [top4Data, setTop4Data] = useState<any[]>([]);
+  const [oraclePredictions, setOraclePredictions] = useState<OraclePrediction[]>([]);
+  const [oracleLoading, setOracleLoading] = useState(false);
 
   useEffect(() => {
     setModels(ALL_MODELS.map((name) => getModelInfo(name)));
@@ -19,7 +26,37 @@ export default function BenchmarkPage() {
     setTop4Data(getTeamStageConsensus().slice(0, 16));
   }, []);
 
+  // Fetch ORACLE predictions when oracle tab is selected
+  useEffect(() => {
+    if (activeTab === 'oracle' && oraclePredictions.length === 0) {
+      setOracleLoading(true);
+      fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ useEnhanced: true }) })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.fixture) {
+            setOraclePredictions(data.fixture.map((m: any) => ({
+              id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam,
+              predictedScore: m.predictedScore ?? null,
+              homeWinPct: m.homeWinPct ?? 0, drawPct: m.drawPct ?? 0, awayWinPct: m.awayWinPct ?? 0,
+            })));
+          }
+        })
+        .catch(() => {})
+        .finally(() => setOracleLoading(false));
+    }
+  }, [activeTab, oraclePredictions.length]);
+
   const championTeams = Array.from(new Set(models.map(m => m.champion)));
+
+  // Compute ORACLE agreement data
+  const oracleChampion = oraclePredictions.length > 0 ? (() => {
+    // Find highest champion probability from predictions
+    const championProbs: Record<string, number> = {};
+    for (const p of oraclePredictions) {
+      if (p.homeWinPct > 50) championProbs[p.homeTeam] = (championProbs[p.homeTeam] || 0) + 1;
+    }
+    return Object.entries(championProbs).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  })() : null;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 animate-fade">
@@ -36,6 +73,7 @@ export default function BenchmarkPage() {
       <div className="flex gap-1 p-1 bg-elevated rounded-[var(--r-xl)] border border-border-subtle">
         {[
           { id: 'consensus' as const, label: '🏆 Consenso' },
+          { id: 'oracle' as const, label: '🔮 ORACLE' },
           { id: 'models' as const, label: '📊 Modelos' },
           { id: 'about' as const, label: 'ℹ️ Info' },
         ].map(tab => (
@@ -133,6 +171,94 @@ export default function BenchmarkPage() {
                 </table>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ ORACLE vs MODELS ═══ */}
+      {activeTab === 'oracle' && (
+        <div className="space-y-4 animate-fade">
+          {oracleLoading ? (
+            <div className="flex justify-center py-16">
+              <div className="w-8 h-8 rounded-full border-2 border-accent-secondary/30 border-t-accent-secondary animate-spin" />
+            </div>
+          ) : oraclePredictions.length === 0 ? (
+            <div className="surface p-8 text-center rounded-[var(--r-lg)]">
+              <p className="text-xs text-fg-secondary">🔮 Cargando predicciones ORACLE...</p>
+            </div>
+          ) : (
+            <>
+              {/* Summary card */}
+              <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-premium/20">
+                <h3 className="text-xs font-bold text-fg-primary mb-2 flex items-center gap-2">
+                  <span>🔮</span> ORACLE vs WorldCupBench
+                </h3>
+                <p className="text-[11px] text-fg-secondary mb-3">
+                  Comparación entre las predicciones del motor ORACLE (Poisson + Dixon-Coles + Elo + xG) y los {ALL_MODELS.length} modelos del benchmark.
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center p-2 bg-tint-gold/10 rounded-[var(--r-md)]">
+                    <div className="text-lg font-bold font-mono text-accent-premium">{ALL_MODELS.length}</div>
+                    <div className="text-[9px] text-fg-tertiary uppercase">Modelos</div>
+                  </div>
+                  <div className="text-center p-2 bg-tint-blue rounded-[var(--r-md)]">
+                    <div className="text-lg font-bold font-mono text-accent-primary">128</div>
+                    <div className="text-[9px] text-fg-tertiary uppercase">Predicciones</div>
+                  </div>
+                  <div className="text-center p-2 bg-tint-green rounded-[var(--r-md)]">
+                    <div className="text-lg font-bold font-mono text-accent-emerald">v2</div>
+                    <div className="text-[9px] text-fg-tertiary uppercase">Motor ORACLE</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Champion comparison */}
+              <div>
+                <h3 className="text-[11px] font-bold text-fg-tertiary uppercase tracking-wider mb-2">Comparación Campeón</h3>
+                <div className="space-y-1.5">
+                  {models.map((m, i) => {
+                    const agrees = oracleChampion && m.champion === oracleChampion;
+                    return (
+                      <div key={m.name} className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-[var(--r-md)] border",
+                        agrees ? "bg-[#052E16] border-[#166534]" : "surface border-border-subtle"
+                      )}>
+                        <span className="text-[10px] text-fg-tertiary w-20 truncate">{m.name}</span>
+                        <span className="text-[10px] font-semibold text-fg-primary flex-1">🏆 {m.champion}</span>
+                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", agrees ? "bg-[#166534] text-[#4ADE80]" : "bg-[#2A2D35] text-[#6B7280]")}>
+                          {agrees ? '✓ Coincide' : '✗ Diferente'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ORACLE predictions summary */}
+              <div>
+                <h3 className="text-[11px] font-bold text-fg-tertiary uppercase tracking-wider mb-2">Predicciones ORACLE (Primeros 10)</h3>
+                <div className="surface rounded-[var(--r-lg)] overflow-hidden border border-border-subtle">
+                  <table className="w-full text-[11px]">
+                    <thead><tr className="text-fg-tertiary text-[9px] uppercase tracking-wider border-b border-border-subtle bg-elevated/50">
+                      <th className="text-left p-2">Local</th>
+                      <th className="text-center p-2">Pred</th>
+                      <th className="text-center p-2">Prob</th>
+                      <th className="text-right p-2">Visitante</th>
+                    </tr></thead>
+                    <tbody>
+                      {oraclePredictions.slice(0, 10).map(p => (
+                        <tr key={p.id} className="border-t border-border-subtle">
+                          <td className="p-2 text-fg-primary truncate max-w-[80px]">{p.homeTeam}</td>
+                          <td className="p-2 text-center font-mono font-bold text-accent-premium">{p.predictedScore ? `${p.predictedScore[0]}-${p.predictedScore[1]}` : '—'}</td>
+                          <td className="p-2 text-center text-[10px] text-fg-secondary">{p.homeWinPct}%</td>
+                          <td className="p-2 text-right text-fg-primary truncate max-w-[80px]">{p.awayTeam}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
