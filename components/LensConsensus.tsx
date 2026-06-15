@@ -86,7 +86,7 @@ export default function LensConsensus({ prediction, homeTeam, awayTeam }: LensCo
     icon: '🏟️',
     name: 'Local',
     verdict: homeTeam,
-    confidence: homeAdvantage ? Math.abs(homeAdvantage.homeAdvantage) * 10 : 20,
+    confidence: homeAdvantage ? Math.min(80, Math.abs(homeAdvantage.homeAdvantage) * 1000) : 20,
     color: 'text-state-warning',
     insight: homeAdvantage ? homeAdvantage.description : `Factor local para ${homeTeam}`,
   };

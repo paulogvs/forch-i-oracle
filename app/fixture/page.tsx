@@ -108,11 +108,22 @@ export default function FixturePage() {
     if (fix.homeGoals !== null && fix.awayGoals !== null && fix.homeGoals === result.homeScore && fix.awayGoals === result.awayScore) exactCount++;
   });
 
-  const groupedByDate = filtered.reduce<Record<string, FixtureMatch[]>>((acc, m) => {
-    const local = utcToLocal(m.date, m.time || '00:00');
-    if (!acc[local.date]) acc[local.date] = [];
-    acc[local.date].push({ ...m, time: local.time }); return acc;
-  }, {});
+  const groupedByDate = (() => {
+    const groups = filtered.reduce<Record<string, FixtureMatch[]>>((acc, m) => {
+      const local = utcToLocal(m.date, m.time || '00:00');
+      if (!acc[local.date]) acc[local.date] = [];
+      acc[local.date].push({ ...m, time: local.time }); return acc;
+    }, {});
+    // Sort each date group by time (chronological within each day)
+    for (const date of Object.keys(groups)) {
+      groups[date].sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+    }
+    // Sort date groups chronologically
+    const sortedKeys = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+    const sorted: Record<string, FixtureMatch[]> = {};
+    for (const key of sortedKeys) sorted[key] = groups[key];
+    return sorted;
+  })();
   const formatDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
 
   // Compute match status

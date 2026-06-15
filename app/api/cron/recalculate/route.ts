@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
+import { addMatchResult } from '@/lib/prediction-store';
 import { getPrediction as getGroqPrediction } from '@/lib/groq';
 import { validateCronAuth } from '@/lib/cron-auth';
 
@@ -23,6 +24,23 @@ export async function GET(request: Request) {
 
   try {
     console.log('[cron:recalculate] Starting prediction recalculation...');
+
+    // Feed all real results into prediction-store so the Bayesian Dynamic model
+    // has fresh team form data before we compute ensemble predictions.
+    const allResults = await db.getMatchResults();
+    for (const r of allResults) {
+      const match = await db.getMatch(r.matchId);
+      if (match) {
+        addMatchResult({
+          homeTeam: match.homeTeamId,
+          awayTeam: match.awayTeamId,
+          homeGoals: r.homeScore,
+          awayGoals: r.awayScore,
+          date: match.matchDate || new Date().toISOString().split('T')[0],
+        });
+      }
+    }
+    console.log(`[cron:recalculate] Fed ${allResults.length} real results into dynamic model`);
 
     // Get all upcoming/scheduled matches
     const matches = await db.getUpcomingMatches();

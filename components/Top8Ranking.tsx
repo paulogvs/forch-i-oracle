@@ -47,12 +47,14 @@ function Top8Row({
   inView,
   delay,
   totalSims,
+  maxPct,
 }: {
   rank: number;
   item: ChampionProbability;
   inView: boolean;
   delay: number;
   totalSims: number;
+  maxPct: number;
 }) {
   const pct = useCountUp(item.pct, 1200, inView);
 
@@ -88,7 +90,7 @@ function Top8Row({
         <div
           className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{
-            width: inView ? `${(item.pct / 35) * 100}%` : '0%',
+            width: inView ? `${(item.pct / maxPct) * 100}%` : '0%',
             background:
               rank === 1
                 ? 'var(--gradient-gold)'
@@ -107,7 +109,7 @@ function Top8Row({
       </span>
 
       <span className="text-[10px] text-fg-disabled w-16 text-right shrink-0 font-mono hidden sm:block">
-        {item.wins}/{item.pct > 0 ? Math.round(item.wins / (item.pct / 100)) : totalSims} sims
+        {item.wins}/{totalSims} sims
       </span>
     </div>
   );
@@ -116,6 +118,9 @@ function Top8Row({
 export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Normalize bar widths relative to max probability in dataset (not hardcoded 35%)
+  const maxPct = data.length > 0 ? Math.max(...data.map(d => d.pct)) : 1;
 
   useEffect(() => {
     const el = ref.current;
@@ -174,7 +179,7 @@ export default function Top8Ranking({ data, totalSims }: Top8RankingProps) {
       {/* Rows */}
       <div className="space-y-0.5">
         {data.map((item, idx) => (
-          <Top8Row key={item.team} rank={idx + 1} item={item} inView={inView} delay={idx * 100} totalSims={totalSims} />
+          <Top8Row key={item.team} rank={idx + 1} item={item} inView={inView} delay={idx * 100} totalSims={totalSims} maxPct={maxPct} />
         ))}
       </div>
 
