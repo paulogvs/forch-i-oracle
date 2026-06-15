@@ -27,19 +27,38 @@ API-Football (cada 6h) → Cron Ingest → Supabase/Store → Re-simulate → Pa
 
 | Route | Purpose |
 |---|---|
-| `/` | **📊 Dashboard** — Accuracy metrics, trend graph, Top 8 Elo, quick nav, Partido del Día |
-| `/fixture` | **⚡ Predicción** — 3 tabs: Predicciones (128 partidos), Top 8 Campeón, Bracket |
+| `/` | **📊 Dashboard** — Reordenado: Partido del Día → En Vivo → Próximos → Resultados por fecha → Campeón |
+| `/fixture` | **⚡ Predicción** — 4 tabs: Partidos, Tablas, Top 8, Bracket |
 | `/live` | **📈 En Vivo** — Real results vs predictions, live standings, live bracket |
 | `/benchmark` | **🤖 Benchmark** — 10 AI models comparison, champion consensus, ORACLE vs Modelos |
 
-### Panel Predicción — 3 Tabs
-- **🔮 Predicciones**: All 128 matches with predicted scores. Toggle: Partidos ↔ Tablas de Posiciones, Por Fecha ↔ Por Grupo. Tap any match → Detail Modal (probabilities, xG, Elo, top 5 scores, confidence)
-- **🏆 Top 8**: Champion probability ranking with progress bars. "Simular" runs 100 Monte Carlo simulations
+### Dashboard — Reordenado (v2)
+El dashboard ahora sigue el flujo natural del usuario:
+
+1. **Header + Métricas** — Accuracy, MAE, Over 2.5, Jugados (2x2 grid)
+2. **⭐ Partido del Día** — Match más equilibrado con probabilidades de cada equipo
+3. **🔴 En Vivo** — Matches en curso con dot pulsante, tiempo, goleadores
+4. **⏰ Próximos Partidos** — Siguientes 4 partidos con predicción
+5. **✅ Resultados Reales** — Agrupados por fecha con separadores + badge de aciertos por día
+6. **🏆 Campeón del Mundo** — Top 8 probabilidades con barras animadas (auto-ajusta con resultados reales)
+7. **🧭 Navegación** — Links rápidos a /fixture, /live, /benchmark
+
+#### Funcionalidades del Dashboard
+- **Auto-ajuste**: Cuando un resultado real se registra, las predicciones y el campeón se recalculan automáticamente
+- **Resultados por fecha**: Cada día muestra aciertos (ej: "3/5" en verde/amarillo/rojo)
+- **Animaciones**: Entrada suave con motion/react (Framer Motion) en cada sección
+- **Empty states**: Mensajes contextuales cuando no hay datos
+
+### Panel Predicción — 4 Tabs
+- **⚽ Partidos**: All 128 matches with predicted scores. Phase filter (Todos/Grupos/1/16/1/8/1/4/Semis/Final). Tap any match → Detail Modal
+- **📊 Tablas**: Live group standings from real-time data
+- **🏆 Top 8**: Champion probability ranking with progress bars
 - **📐 Bracket**: Full knockout bracket from 1/16 to Final with predicted scores
 
-### Panel En Vivo — 2 Tabs
-- **📋 Tabla de Grupos**: Live standings recalculated from real results (PJ PG PE PP GF GC DG Pts)
-- **🏆 Eliminatorias**: Live knockout bracket advancing with real winners
+### Panel En Vivo — 3 Tabs
+- **🎮 Juego**: Currently playing matches with live scores
+- **📋 Resultados**: Finished matches with real vs predicted comparison
+- **⏳ Pendiente**: Upcoming matches
 
 **"🔄 Actualizar" button**: Refreshes all data from the persistent store.
 
@@ -210,35 +229,34 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 
 ```
 ├── app/
-│   ├── page.tsx              # 📊 Dashboard
-│   ├── fixture/page.tsx      # ⚡ Predicción (3 tabs)
-│   ├── live/page.tsx         # 📈 En Vivo (2 tabs)
-│   ├── benchmark/page.tsx    # 🤖 Benchmark (3 tabs)
+│   ├── page.tsx              # 📊 Dashboard (reordered v2)
+│   ├── fixture/page.tsx      # ⚡ Predicción (4 tabs)
+│   ├── live/page.tsx         # 📈 En Vivo (3 tabs)
+│   ├── benchmark/page.tsx    # 🤖 Benchmark
 │   └── api/                  # API routes
 ├── components/
-│   ├── MainNav.tsx           # Sidebar navigation (4 panels)
+│   ├── Top8Ranking.tsx       # Champion probability bars
+│   ├── ChampionConsensusCard.tsx  # Multi-model consensus
 │   ├── BracketPhase.tsx      # Knockout bracket display
-│   └── ...                   # 17 total components
+│   └── ...                   # 20+ total components
 ├── lib/
 │   ├── predictor-engine.ts   # Poisson + Dixon-Coles + Elo
-│   ├── enhanced-engine.ts   # v2 with momentum, fatigue, altitude
+│   ├── enhanced-engine.ts    # v2 with momentum, fatigue, altitude
+│   ├── ensemble-engine.ts    # v3: 4-model blend
 │   ├── tournament-sim.ts     # 100 Monte Carlo simulations
-│   ├── prediction-history.ts # Drift tracking, live standings
-│   ├── accuracy-engine.ts    # Accuracy metrics calculation
-│   ├── file-store.ts         # JSON file persistence
-│   ├── timezone.ts           # UTC to local time conversion
+│   ├── prediction-store.ts   # Bayesian dynamic updating
+│   ├── dashboard-utils.ts    # 🆕 date grouping, upcoming matches
 │   ├── data-layer/           # Abstraction (in-memory ↔ Supabase)
 │   ├── matches.ts            # 128 WC2026 matches
 │   ├── teams.ts              # 48 teams with Elo, power ratings
 │   └── venues.ts             # 16 venues with altitude data
-├── supabase/
-│   └── migrations/
-│       └── 001_initial_schema.sql  # Database schema
-├── scripts/
-│   ├── debug-knockout.ts     # Test knockout predictions
-│   └── test-full-system.ts   # Integration test
-└── .github/workflows/
-    └── cron-jobs.yml         # Scheduled cron jobs
+├── lib/__tests__/            # 105 tests (10 files)
+│   ├── dashboard-utils.test.ts  # 🆕 6 tests for dashboard utils
+│   └── ...
+├── supabase/migrations/
+│   └── 001_initial_schema.sql
+└── scripts/
+    └── ...
 ```
 
 ---
@@ -259,7 +277,11 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 - **Auto-refresh inteligente** — 2min during match windows, 30min otherwise (via SWR)
 - **Instant panel switching** — SWR cache shows data instantly when switching tabs
 - **Partido del Día** — highlighted upcoming match with most balanced prediction
-- **Predicciones en Pendientes** — predicted scores shown for upcoming matches
+- **Próximos Partidos** — next 4 upcoming matches with predictions
+- **Resultados por fecha** — results grouped by day with accuracy badges per day
+- **Campeón del Mundo widget** — Top 8 champion probabilities, auto-adjusts with real results
+- **En Vivo mejorado** — live badge, elapsed time, goalscorers
+- **Motion animations** — smooth entrance animations via motion/react (Framer Motion)
 - **Skeleton loading** — smooth skeleton screens instead of spinners
 - **Empty states amigables** — contextual messages with emojis when no data
 
