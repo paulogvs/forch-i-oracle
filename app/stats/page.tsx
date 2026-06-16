@@ -29,8 +29,26 @@ function getFlag(name: string): string {
   return WORLD_CUP_TEAMS.find((t) => t.name === name)?.flag || '🏳️';
 }
 
-function getTeamData(name: string) {
-  return WORLD_CUP_TEAMS.find((t) => t.name === name);
+// ─── Theme-aware card wrapper ─────────────────────────────────────────────
+
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-surface border border-border-subtle rounded-2xl ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function StatCard({ label, value, emoji, gradient }: {
+  label: string; value: string | number; emoji: string; gradient: string;
+}) {
+  return (
+    <div className={`p-4 rounded-xl bg-gradient-to-br ${gradient} border border-border-subtle`}>
+      <div className="text-2xl mb-1">{emoji}</div>
+      <div className="text-3xl font-black text-fg-primary">{value}</div>
+      <div className="text-xs text-fg-secondary">{label}</div>
+    </div>
+  );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────
@@ -100,9 +118,7 @@ export default function StatsPage() {
     return Array.from(stats.values()).sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff);
   }, [matches]);
 
-  // Top scorers (simplified — counts from finished matches)
   const topScorers = useMemo(() => {
-    // We don't have individual goal data, so we show team-level goals
     return teamStats
       .filter(t => t.played > 0)
       .sort((a, b) => b.goalsFor - a.goalsFor)
@@ -117,32 +133,32 @@ export default function StatsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950/30 to-slate-950 text-white p-4 md:p-8">
+    <div className="min-h-screen bg-canvas text-fg-primary p-4 md:p-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold text-accent-primary">
           📈 Estadísticas en Vivo
         </h1>
-        <p className="text-slate-400 mt-2">
+        <p className="text-fg-secondary mt-2">
           Mundial 2026 — {totalMatches} partidos jugados
         </p>
       </motion.div>
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto mb-6">
-        <div className="flex gap-2 p-1 bg-slate-900/60 backdrop-blur-xl rounded-xl border border-slate-800">
+        <div className="flex gap-2 p-1 bg-elevated rounded-xl border border-border-subtle">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold transition-all ${
                 tab === t.id
-                  ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 shadow-lg shadow-cyan-500/10'
-                  : 'text-slate-500 hover:text-slate-300'
+                  ? 'bg-accent-primary/20 text-accent-primary shadow-lg'
+                  : 'text-fg-secondary hover:text-fg-primary hover:bg-raised/50'
               }`}
             >
               <span>{t.emoji}</span>
@@ -155,53 +171,22 @@ export default function StatsPage() {
       <div className="max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           {tab === 'overview' && (
-            <motion.div
-              key="overview"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <OverviewTab
-                totalMatches={totalMatches}
-                totalGoals={totalGoals}
-                avgGoals={avgGoals}
-                cleanSheets={cleanSheets}
-                highScoring={highScoring}
-                teamStats={teamStats}
-                matches={matches}
-              />
+            <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+              <OverviewTab totalMatches={totalMatches} totalGoals={totalGoals} avgGoals={avgGoals} cleanSheets={cleanSheets} highScoring={highScoring} teamStats={teamStats} matches={matches} />
             </motion.div>
           )}
-
           {tab === 'teams' && (
-            <motion.div
-              key="teams"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
+            <motion.div key="teams" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <TeamsTab teamStats={teamStats} />
             </motion.div>
           )}
-
           {tab === 'matches' && (
-            <motion.div
-              key="matches"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
+            <motion.div key="matches" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <MatchesTab matches={matches} />
             </motion.div>
           )}
-
           {tab === 'scorers' && (
-            <motion.div
-              key="scorers"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
+            <motion.div key="scorers" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
               <ScorersTab topScorers={topScorers} />
             </motion.div>
           )}
@@ -218,123 +203,101 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
   teamStats: any[]; matches: any[];
 }) {
   const stats = [
-    { label: 'Partidos', value: totalMatches, emoji: '⚽', color: 'from-cyan-500 to-blue-500' },
-    { label: 'Goles', value: totalGoals, emoji: '🥅', color: 'from-emerald-500 to-green-500' },
-    { label: 'Promedio', value: avgGoals, emoji: '📊', color: 'from-purple-500 to-pink-500' },
-    { label: 'Vallas Invictas', value: cleanSheets, emoji: '🛡️', color: 'from-amber-500 to-orange-500' },
-    { label: 'Alta Anotación', value: highScoring, emoji: '🔥', color: 'from-red-500 to-pink-500' },
+    { label: 'Partidos', value: totalMatches, emoji: '⚽', gradient: 'from-cyan-500/20 to-blue-500/20' },
+    { label: 'Goles', value: totalGoals, emoji: '🥅', gradient: 'from-emerald-500/20 to-green-500/20' },
+    { label: 'Promedio', value: avgGoals, emoji: '📊', gradient: 'from-purple-500/20 to-pink-500/20' },
+    { label: 'Vallas Invictas', value: cleanSheets, emoji: '🛡️', gradient: 'from-amber-500/20 to-orange-500/20' },
+    { label: 'Alta Anotación', value: highScoring, emoji: '🔥', gradient: 'from-red-500/20 to-pink-500/20' },
   ];
 
-  // Biggest wins
-  const biggestWins = [...matches]
-    .sort((a, b) => b.goalDiff - a.goalDiff)
-    .slice(0, 5);
-
-  // Highest scoring
-  const highestScoring = [...matches]
-    .sort((a, b) => b.totalGoals - a.totalGoals)
-    .slice(0, 5);
+  const biggestWins = [...matches].sort((a, b) => b.goalDiff - a.goalDiff).slice(0, 5);
+  const highestScoring = [...matches].sort((a, b) => b.totalGoals - a.totalGoals).slice(0, 5);
 
   return (
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.05 }}
-            className={`p-4 rounded-xl bg-gradient-to-br ${s.color} bg-opacity-10 border border-white/10`}
-          >
-            <div className="text-2xl mb-1">{s.emoji}</div>
-            <div className="text-3xl font-black text-white">{s.value}</div>
-            <div className="text-xs text-slate-400">{s.label}</div>
+          <motion.div key={s.label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
+            <StatCard {...s} />
           </motion.div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Biggest wins */}
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-5">
-          <h3 className="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2">
+        <Card className="p-5">
+          <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
             💥 Mayores Victorias
           </h3>
           <div className="space-y-2">
             {biggestWins.map((m, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50 text-sm">
+              <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-elevated text-sm">
                 <div className="flex items-center gap-2 min-w-0">
                   <span>{getFlag(m.homeTeam)}</span>
-                  <span className="truncate">{m.homeTeam}</span>
+                  <span className="truncate text-fg-primary">{m.homeTeam}</span>
                 </div>
-                <span className="font-mono font-bold text-cyan-400 px-3">
-                  {m.homeScore} - {m.awayScore}
-                </span>
+                <span className="font-mono font-bold text-accent-primary px-3">{m.homeScore} - {m.awayScore}</span>
                 <div className="flex items-center gap-2 min-w-0 justify-end">
-                  <span className="truncate text-right">{m.awayTeam}</span>
+                  <span className="truncate text-right text-fg-primary">{m.awayTeam}</span>
                   <span>{getFlag(m.awayTeam)}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Highest scoring */}
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-5">
-          <h3 className="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2">
+        <Card className="p-5">
+          <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
             🔥 Mayor Anotación
           </h3>
           <div className="space-y-2">
             {highestScoring.map((m, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50 text-sm">
+              <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-elevated text-sm">
                 <div className="flex items-center gap-2 min-w-0">
                   <span>{getFlag(m.homeTeam)}</span>
-                  <span className="truncate">{m.homeTeam}</span>
+                  <span className="truncate text-fg-primary">{m.homeTeam}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-amber-400 px-3">
-                    {m.homeScore} - {m.awayScore}
-                  </span>
-                  <span className="text-xs text-slate-500">({m.totalGoals} goles)</span>
+                  <span className="font-mono font-bold text-accent-premium px-3">{m.homeScore} - {m.awayScore}</span>
+                  <span className="text-xs text-fg-tertiary">({m.totalGoals} goles)</span>
                 </div>
                 <div className="flex items-center gap-2 min-w-0 justify-end">
-                  <span className="truncate text-right">{m.awayTeam}</span>
+                  <span className="truncate text-right text-fg-primary">{m.awayTeam}</span>
                   <span>{getFlag(m.awayTeam)}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Top teams */}
-      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-5">
-        <h3 className="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2">
+      <Card className="p-5">
+        <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
           🏆 Mejores Equipos (por puntos)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
           {teamStats.filter(t => t.played > 0).slice(0, 9).map((t, i) => (
             <div key={t.name} className={`flex items-center gap-3 p-3 rounded-xl border ${
-              i < 3 ? 'bg-gradient-to-r from-emerald-500/10 to-transparent border-emerald-500/20' :
-              'bg-slate-800/30 border-slate-800'
+              i < 3 ? 'bg-accent-emerald/10 border-accent-emerald/30' : 'bg-elevated border-border-subtle'
             }`}>
               <span className="text-xl">{t.flag}</span>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm truncate">{t.name}</div>
-                <div className="text-xs text-slate-500">
-                  {t.played}PJ · {t.won}G · {t.drawn}E · {t.lost}P
-                </div>
+                <div className="font-semibold text-sm truncate text-fg-primary">{t.name}</div>
+                <div className="text-xs text-fg-tertiary">{t.played}PJ · {t.won}G · {t.drawn}E · {t.lost}P</div>
               </div>
               <div className="text-right">
-                <div className="text-lg font-black text-white">{t.points}</div>
-                <div className={`text-xs ${t.goalDiff > 0 ? 'text-emerald-400' : t.goalDiff < 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                <div className="text-lg font-black text-fg-primary">{t.points}</div>
+                <div className={`text-xs ${t.goalDiff > 0 ? 'text-state-success' : t.goalDiff < 0 ? 'text-state-danger' : 'text-fg-tertiary'}`}>
                   {t.goalDiff > 0 ? '+' : ''}{t.goalDiff} DG
                 </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -361,24 +324,19 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
           { id: 'goals' as const, label: 'Goles' },
           { id: 'gd' as const, label: 'Dif. Goles' },
         ].map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSortBy(s.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              sortBy === s.id
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'bg-slate-900/60 text-slate-500 border border-slate-800 hover:text-slate-300'
-            }`}
-          >
+          <button key={s.id} onClick={() => setSortBy(s.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+              sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary'
+            }`}>
             {s.label}
           </button>
         ))}
       </div>
 
-      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 overflow-hidden">
+      <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 text-xs">
+            <tr className="border-b border-border-subtle text-fg-tertiary text-xs">
               <th className="px-4 py-3 text-left">#</th>
               <th className="px-4 py-3 text-left">Equipo</th>
               <th className="px-4 py-3 text-center">PJ</th>
@@ -394,30 +352,30 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
           </thead>
           <tbody>
             {sorted.map((t, i) => (
-              <tr key={t.name} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                <td className="px-4 py-3 text-slate-500">{i + 1}</td>
+              <tr key={t.name} className="border-b border-border-subtle/50 hover:bg-elevated/50 transition-colors">
+                <td className="px-4 py-3 text-fg-tertiary">{i + 1}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{t.flag}</span>
-                    <span className="font-semibold">{t.name}</span>
+                    <span className="font-semibold text-fg-primary">{t.name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-center text-slate-400">{t.played}</td>
-                <td className="px-4 py-3 text-center text-emerald-400">{t.won}</td>
-                <td className="px-4 py-3 text-center text-yellow-400">{t.drawn}</td>
-                <td className="px-4 py-3 text-center text-red-400">{t.lost}</td>
-                <td className="px-4 py-3 text-center">{t.goalsFor}</td>
-                <td className="px-4 py-3 text-center">{t.goalsAgainst}</td>
-                <td className={`px-4 py-3 text-center font-mono ${t.goalDiff > 0 ? 'text-emerald-400' : t.goalDiff < 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                <td className="px-4 py-3 text-center text-fg-secondary">{t.played}</td>
+                <td className="px-4 py-3 text-center text-state-success">{t.won}</td>
+                <td className="px-4 py-3 text-center text-state-warning">{t.drawn}</td>
+                <td className="px-4 py-3 text-center text-state-danger">{t.lost}</td>
+                <td className="px-4 py-3 text-center text-fg-primary">{t.goalsFor}</td>
+                <td className="px-4 py-3 text-center text-fg-primary">{t.goalsAgainst}</td>
+                <td className={`px-4 py-3 text-center font-mono ${t.goalDiff > 0 ? 'text-state-success' : t.goalDiff < 0 ? 'text-state-danger' : 'text-fg-tertiary'}`}>
                   {t.goalDiff > 0 ? '+' : ''}{t.goalDiff}
                 </td>
-                <td className="px-4 py-3 text-center font-bold text-white">{t.points}</td>
-                <td className="px-4 py-3 text-center text-slate-400">{t.cleanSheets}</td>
+                <td className="px-4 py-3 text-center font-bold text-fg-primary">{t.points}</td>
+                <td className="px-4 py-3 text-center text-fg-secondary">{t.cleanSheets}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -443,15 +401,10 @@ function MatchesTab({ matches }: { matches: any[] }) {
           { id: 'goals' as const, label: 'Más Goles' },
           { id: 'diff' as const, label: 'Mayor Dif.' },
         ].map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSortBy(s.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              sortBy === s.id
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'bg-slate-900/60 text-slate-500 border border-slate-800 hover:text-slate-300'
-            }`}
-          >
+          <button key={s.id} onClick={() => setSortBy(s.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+              sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary'
+            }`}>
             {s.label}
           </button>
         ))}
@@ -459,45 +412,37 @@ function MatchesTab({ matches }: { matches: any[] }) {
 
       <div className="space-y-2">
         {sorted.map((m, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.02 }}
-            className="flex items-center justify-between p-4 bg-slate-900/60 backdrop-blur-xl rounded-xl border border-slate-800"
-          >
-            <div className="flex items-center gap-3 min-w-0 w-[40%]">
-              <span className="text-2xl">{getFlag(m.homeTeam)}</span>
-              <div className="min-w-0">
-                <div className="font-semibold truncate">{m.homeTeam}</div>
-                <div className="text-xs text-slate-500">
-                  {m.homeScore > m.awayScore ? 'Victoria' : m.homeScore < m.awayScore ? 'Derrota' : 'Empate'}
+          <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}>
+            <Card className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3 min-w-0 w-[40%]">
+                <span className="text-2xl">{getFlag(m.homeTeam)}</span>
+                <div className="min-w-0">
+                  <div className="font-semibold truncate text-fg-primary">{m.homeTeam}</div>
+                  <div className="text-xs text-fg-tertiary">
+                    {m.homeScore > m.awayScore ? 'Victoria' : m.homeScore < m.awayScore ? 'Derrota' : 'Empate'}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="text-center shrink-0">
-              <div className="text-3xl font-black font-mono">
-                <span className={m.homeScore > m.awayScore ? 'text-emerald-400' : 'text-slate-400'}>
-                  {m.homeScore}
-                </span>
-                <span className="text-slate-600 mx-1">-</span>
-                <span className={m.awayScore > m.homeScore ? 'text-emerald-400' : 'text-slate-400'}>
-                  {m.awayScore}
-                </span>
-              </div>
-              <div className="text-xs text-slate-500">{m.totalGoals} goles</div>
-            </div>
-
-            <div className="flex items-center gap-3 min-w-0 w-[40%] justify-end">
-              <div className="min-w-0 text-right">
-                <div className="font-semibold truncate">{m.awayTeam}</div>
-                <div className="text-xs text-slate-500">
-                  {m.awayScore > m.homeScore ? 'Victoria' : m.awayScore < m.homeScore ? 'Derrota' : 'Empate'}
+              <div className="text-center shrink-0">
+                <div className="text-3xl font-black font-mono">
+                  <span className={m.homeScore > m.awayScore ? 'text-state-success' : 'text-fg-secondary'}>{m.homeScore}</span>
+                  <span className="text-fg-tertiary mx-1">-</span>
+                  <span className={m.awayScore > m.homeScore ? 'text-state-success' : 'text-fg-secondary'}>{m.awayScore}</span>
                 </div>
+                <div className="text-xs text-fg-tertiary">{m.totalGoals} goles</div>
               </div>
-              <span className="text-2xl">{getFlag(m.awayTeam)}</span>
-            </div>
+
+              <div className="flex items-center gap-3 min-w-0 w-[40%] justify-end">
+                <div className="min-w-0 text-right">
+                  <div className="font-semibold truncate text-fg-primary">{m.awayTeam}</div>
+                  <div className="text-xs text-fg-tertiary">
+                    {m.awayScore > m.homeScore ? 'Victoria' : m.awayScore < m.homeScore ? 'Derrota' : 'Empate'}
+                  </div>
+                </div>
+                <span className="text-2xl">{getFlag(m.awayTeam)}</span>
+              </div>
+            </Card>
           </motion.div>
         ))}
       </div>
@@ -510,30 +455,25 @@ function MatchesTab({ matches }: { matches: any[] }) {
 function ScorersTab({ topScorers }: { topScorers: any[] }) {
   return (
     <div className="space-y-4">
-      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-5">
-        <h3 className="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2">
+      <Card className="p-5">
+        <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
           ⚽ Goleadores por Equipo
         </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          goles por equipo en el torneo
-        </p>
+        <p className="text-xs text-fg-tertiary mb-4">Goles por equipo en el torneo</p>
         <div className="space-y-3">
           {topScorers.map((t, i) => (
             <div key={t.name} className="flex items-center gap-4">
-              <span className="text-slate-500 w-6 text-right text-sm">{i + 1}</span>
+              <span className="text-fg-tertiary w-6 text-right text-sm">{i + 1}</span>
               <span className="text-xl">{t.flag}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-sm truncate">{t.name}</span>
-                  <span className="text-sm font-bold text-cyan-400">{t.goalsFor} goles</span>
+                  <span className="font-semibold text-sm truncate text-fg-primary">{t.name}</span>
+                  <span className="text-sm font-bold text-accent-primary">{t.goalsFor} goles</span>
                 </div>
-                <div className="w-full bg-slate-800 rounded-full h-2">
-                  <div
-                    className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                    style={{ width: `${(t.goalsFor / (topScorers[0]?.goalsFor || 1)) * 100}%` }}
-                  />
+                <div className="w-full bg-elevated rounded-full h-2">
+                  <div className="h-2 rounded-full bg-accent-primary" style={{ width: `${(t.goalsFor / (topScorers[0]?.goalsFor || 1)) * 100}%` }} />
                 </div>
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                <div className="flex justify-between text-xs text-fg-tertiary mt-1">
                   <span>{t.played}PJ</span>
                   <span>{(t.goalsFor / t.played).toFixed(1)} gol/partido</span>
                 </div>
@@ -541,56 +481,52 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Fun facts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-5">
-          <h3 className="text-sm font-bold text-slate-400 mb-3 flex items-center gap-2">
-            🎯 Datos Curiosos
-          </h3>
+        <Card className="p-5">
+          <h3 className="text-sm font-bold text-fg-secondary mb-3 flex items-center gap-2">🎯 Datos Curiosos</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">Equipo más goleador</span>
-              <span className="font-semibold">
+              <span className="text-fg-tertiary">Equipo más goleador</span>
+              <span className="font-semibold text-fg-primary">
                 {topScorers[0]?.flag} {topScorers[0]?.name} ({topScorers[0]?.goalsFor})
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Mejor diferencia de goles</span>
-              <span className="font-semibold">
-                {topScorers.sort((a, b) => b.goalDiff - a.goalDiff)[0]?.flag}{' '}
-                {topScorers.sort((a, b) => b.goalDiff - a.goalDiff)[0]?.name}{' '}
-                ({topScorers.sort((a, b) => b.goalDiff - a.goalDiff)[0]?.goalDiff > 0 ? '+' : ''}
-                {topScorers.sort((a, b) => b.goalDiff - a.goalDiff)[0]?.goalDiff})
+              <span className="text-fg-tertiary">Mejor diferencia de goles</span>
+              <span className="font-semibold text-fg-primary">
+                {[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.flag}{' '}
+                {[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.name}{' '}
+                ({[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.goalDiff > 0 ? '+' : ''}
+                {[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.goalDiff})
               </span>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-5">
-          <h3 className="text-sm font-bold text-slate-400 mb-3 flex items-center gap-2">
-            📊 Rendimiento
-          </h3>
+        <Card className="p-5">
+          <h3 className="text-sm font-bold text-fg-secondary mb-3 flex items-center gap-2">📊 Rendimiento</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">Más victorias</span>
-              <span className="font-semibold">
-                {topScorers.sort((a, b) => b.won - a.won)[0]?.flag}{' '}
-                {topScorers.sort((a, b) => b.won - a.won)[0]?.name}{' '}
-                ({topScorers.sort((a, b) => b.won - a.won)[0]?.won})
+              <span className="text-fg-tertiary">Más victorias</span>
+              <span className="font-semibold text-fg-primary">
+                {[...topScorers].sort((a, b) => b.won - a.won)[0]?.flag}{' '}
+                {[...topScorers].sort((a, b) => b.won - a.won)[0]?.name}{' '}
+                ({[...topScorers].sort((a, b) => b.won - a.won)[0]?.won})
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Más vallas invictas</span>
-              <span className="font-semibold">
-                {topScorers.sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.flag}{' '}
-                {topScorers.sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.name}{' '}
-                ({topScorers.sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.cleanSheets})
+              <span className="text-fg-tertiary">Más vallas invictas</span>
+              <span className="font-semibold text-fg-primary">
+                {[...topScorers].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.flag}{' '}
+                {[...topScorers].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.name}{' '}
+                ({[...topScorers].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.cleanSheets})
               </span>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

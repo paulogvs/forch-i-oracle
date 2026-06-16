@@ -116,10 +116,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      {/* BottomNav (mobile) */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 h-16 bg-surface/80 backdrop-blur-xl border-t border-border-subtle" role="navigation" aria-label="Navegación móvil">
-        <ul className="h-full grid grid-cols-5">
-          {NAV.slice(0, 5).map((item) => {
+      {/* BottomNav (mobile) — scrollable for 7 items */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/80 backdrop-blur-xl border-t border-border-subtle" role="navigation" aria-label="Navegación móvil">
+        <ul className="flex overflow-x-auto h-16 hide-scrollbar">
+          {NAV.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             const colorMap: Record<string, string> = {
@@ -130,7 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               '/teams': 'text-amber-400',
             };
             return (
-              <li key={item.href}>
+              <li key={item.href} className="shrink-0 w-[72px]">
                 <Link
                   href={item.href}
                   className={cn(
@@ -140,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon className="h-5 w-5" />
-                  <span>{item.label.startsWith('nav.') ? t(item.label as any) : item.label}</span>
+                  <span className="truncate w-full text-center">{item.label.startsWith('nav.') ? t(item.label as any) : item.label}</span>
                 </Link>
               </li>
             );

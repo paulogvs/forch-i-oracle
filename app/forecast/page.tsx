@@ -63,17 +63,17 @@ export default function ForecastPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950/30 to-slate-950 text-white p-4 md:p-8">
+    <div className="min-h-screen bg-canvas text-fg-primary p-4 md:p-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-bold text-accent-primary">
           📊 Pronóstico del Torneo
         </h1>
-        <p className="text-slate-400 mt-2">
+        <p className="text-fg-secondary mt-2">
           Simulaciones Monte Carlo — motor Dixon-Coles + Poisson + Elo + bayesiano
         </p>
       </motion.div>
@@ -85,12 +85,12 @@ export default function ForecastPage() {
         transition={{ delay: 0.1 }}
         className="max-w-4xl mx-auto mb-8"
       >
-        <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-6">
+        <div className="bg-surface border border-border-subtle rounded-2xl p-6">
           <div className="flex flex-wrap items-center gap-6">
             {/* Sim count slider */}
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm text-slate-400 mb-2">
-                Simulaciones: <span className="text-cyan-400 font-bold">{numSims.toLocaleString()}</span>
+              <label className="block text-sm text-fg-secondary mb-2">
+                Simulaciones: <span className="text-accent-primary font-bold">{numSims.toLocaleString()}</span>
               </label>
               <input
                 type="range"
@@ -99,9 +99,9 @@ export default function ForecastPage() {
                 step={10}
                 value={numSims}
                 onChange={(e) => setNumSims(Number(e.target.value))}
-                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                className="w-full h-2 bg-elevated rounded-lg appearance-none cursor-pointer accent-cyan-500"
               />
-              <div className="flex justify-between text-xs text-slate-500 mt-1">
+              <div className="flex justify-between text-xs text-fg-tertiary mt-1">
                 <span>10</span>
                 <span>500</span>
                 <span>1000</span>
@@ -137,8 +137,8 @@ export default function ForecastPage() {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-4"
               >
-                <div className="text-sm text-slate-400 mb-1">{progress.message}</div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="text-sm text-fg-secondary mb-1">{progress.message}</div>
+                <div className="w-full bg-elevated rounded-full h-2">
                   <motion.div
                     className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full"
                     initial={{ width: 0 }}
@@ -161,7 +161,7 @@ export default function ForecastPage() {
         >
           {/* Top 8 Champions */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-accent-primary mb-4 flex items-center gap-2">
               🏆 Top 8 Campeones
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -171,9 +171,9 @@ export default function ForecastPage() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className={`bg-slate-900/60 backdrop-blur rounded-xl border p-4 ${
+                  className={`bg-surface backdrop-blur rounded-xl border p-4 ${
                     i === 0 ? 'border-yellow-500/50 shadow-lg shadow-yellow-500/20' :
-                    i < 3 ? 'border-slate-700' : 'border-slate-800'
+                    i < 3 ? 'border-border-strong' : 'border-border-subtle'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -184,13 +184,13 @@ export default function ForecastPage() {
                     <span className={`text-3xl font-black ${
                       i === 0 ? 'text-yellow-400' :
                       i === 1 ? 'text-slate-300' :
-                      i === 2 ? 'text-amber-600' : 'text-slate-400'
+                      i === 2 ? 'text-amber-600' : 'text-fg-secondary'
                     }`}>
                       {c.pct.toFixed(1)}%
                     </span>
-                    <span className="text-xs text-slate-500">({c.wins} wins)</span>
+                    <span className="text-xs text-fg-tertiary">({c.wins} wins)</span>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
+                  <div className="w-full bg-elevated rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${
                         i === 0 ? 'bg-yellow-500' :
@@ -210,7 +210,7 @@ export default function ForecastPage() {
             <select
               value={filterGroup}
               onChange={(e) => setFilterGroup(e.target.value)}
-              className="bg-slate-900/60 border border-slate-700 rounded-lg px-4 py-2 text-sm"
+              className="bg-surface border border-border-strong rounded-lg px-4 py-2 text-sm"
             >
               <option value="all">Todos los grupos</option>
               {['A','B','C','D','E','F','G','H','I','J','K','L'].map(g => (
@@ -221,24 +221,24 @@ export default function ForecastPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="bg-slate-900/60 border border-slate-700 rounded-lg px-4 py-2 text-sm"
+              className="bg-surface border border-border-strong rounded-lg px-4 py-2 text-sm"
             >
               <option value="champion">Por campeonato</option>
               <option value="advance">Por avanzar</option>
               <option value="group">Por grupo</option>
             </select>
 
-            <div className="text-sm text-slate-500 flex items-center">
+            <div className="text-sm text-fg-tertiary flex items-center">
               {filteredTeams.length} equipos
             </div>
           </div>
 
           {/* Outcomes Table */}
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-surface backdrop-blur-xl rounded-2xl border border-border-subtle overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400">
+                  <tr className="border-b border-border-subtle text-fg-secondary">
                     <th className="px-4 py-3 text-left sticky left-0 bg-slate-900/90">#</th>
                     <th className="px-4 py-3 text-left sticky left-8 bg-slate-900/90">Equipo</th>
                     <th className="px-4 py-3 text-center">Grupo</th>
@@ -261,18 +261,18 @@ export default function ForecastPage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.02 }}
                       onClick={() => setSelectedTeam(team)}
-                      className={`border-b border-slate-800/50 cursor-pointer transition-colors ${
+                      className={`border-b border-border-subtle/50 cursor-pointer transition-colors ${
                         selectedTeam?.team === team.team
                           ? 'bg-cyan-500/10'
-                          : 'hover:bg-slate-800/50'
+                          : 'hover:bg-elevated/50'
                       }`}
                     >
-                      <td className="px-4 py-3 text-slate-500 sticky left-0 bg-slate-900/90">{idx + 1}</td>
+                      <td className="px-4 py-3 text-fg-tertiary sticky left-0 bg-slate-900/90">{idx + 1}</td>
                       <td className="px-4 py-3 sticky left-8 bg-slate-900/90">
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{team.flag}</span>
                           <span className="font-semibold">{team.team}</span>
-                          <span className="text-xs text-slate-500">({team.code})</span>
+                          <span className="text-xs text-fg-tertiary">({team.code})</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center font-mono">{team.group}</td>
@@ -316,19 +316,19 @@ export default function ForecastPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="mt-8 bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-6"
+                className="mt-8 bg-surface backdrop-blur-xl rounded-2xl border border-border-subtle p-6"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <span className="text-4xl">{selectedTeam.flag}</span>
                     <div>
                       <h3 className="text-2xl font-bold">{selectedTeam.team}</h3>
-                      <span className="text-slate-400">Grupo {selectedTeam.group}</span>
+                      <span className="text-fg-secondary">Grupo {selectedTeam.group}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedTeam(null)}
-                    className="text-slate-500 hover:text-white transition-colors"
+                    className="text-fg-tertiary hover:text-white transition-colors"
                   >
                     ✕
                   </button>
@@ -337,7 +337,7 @@ export default function ForecastPage() {
                 {/* Probability bars */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-400 mb-3">Probabilidades de Posición Final</h4>
+                    <h4 className="text-sm font-semibold text-fg-secondary mb-3">Probabilidades de Posición Final</h4>
                     <div className="space-y-3">
                       {[
                         { label: '🏆 Campeón', value: selectedTeam.championPct },
@@ -350,7 +350,7 @@ export default function ForecastPage() {
                             <span>{item.label}</span>
                             <span className={getProbColor(item.value)}>{item.value.toFixed(1)}%</span>
                           </div>
-                          <div className="w-full bg-slate-700 rounded-full h-2">
+                          <div className="w-full bg-elevated rounded-full h-2">
                             <div
                               className={`h-2 rounded-full ${getProbBarColor(item.value)}`}
                               style={{ width: `${Math.min(100, item.value)}%` }}
@@ -362,7 +362,7 @@ export default function ForecastPage() {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-400 mb-3">Probabilidades por Ronda</h4>
+                    <h4 className="text-sm font-semibold text-fg-secondary mb-3">Probabilidades por Ronda</h4>
                     <div className="space-y-3">
                       {[
                         { label: 'Avanza de grupo', value: selectedTeam.groupAdvances },
@@ -376,7 +376,7 @@ export default function ForecastPage() {
                             <span>{item.label}</span>
                             <span className={getProbColor(item.value)}>{item.value.toFixed(1)}%</span>
                           </div>
-                          <div className="w-full bg-slate-700 rounded-full h-2">
+                          <div className="w-full bg-elevated rounded-full h-2">
                             <div
                               className={`h-2 rounded-full ${getProbBarColor(item.value)}`}
                               style={{ width: `${Math.min(100, item.value)}%` }}
@@ -391,7 +391,7 @@ export default function ForecastPage() {
                 {/* Knockout Path */}
                 {selectedTeam.path.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-slate-400 mb-3">Ruta en Eliminatorias</h4>
+                    <h4 className="text-sm font-semibold text-fg-secondary mb-3">Ruta en Eliminatorias</h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedTeam.path.map((entry, i) => (
                         <div
@@ -401,10 +401,10 @@ export default function ForecastPage() {
                               ? entry.result === 'W'
                                 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300'
                                 : 'bg-red-500/20 border-red-500/30 text-red-300'
-                              : 'bg-slate-800/50 border-slate-700 text-slate-300'
+                              : 'bg-elevated/50 border-border-strong text-slate-300'
                           }`}
                         >
-                          <span className="text-xs text-slate-500">{entry.round}</span>
+                          <span className="text-xs text-fg-tertiary">{entry.round}</span>
                           <div className="font-semibold">
                             {entry.isPlayed ? (
                               entry.result === 'W' ? '✓' : '✗'
@@ -420,7 +420,7 @@ export default function ForecastPage() {
                 )}
 
                 {/* Simulation info */}
-                <div className="mt-6 text-xs text-slate-500">
+                <div className="mt-6 text-xs text-fg-tertiary">
                   Basado en {outcome.simulations.toLocaleString()} simulaciones • {new Date(outcome.generatedAt).toLocaleString()}
                 </div>
               </motion.div>
@@ -440,25 +440,25 @@ export default function ForecastPage() {
           <h2 className="text-2xl font-bold text-slate-300 mb-4">
             Configura y ejecuta el forecast
           </h2>
-          <p className="text-slate-500 max-w-md mx-auto">
+          <p className="text-fg-tertiary max-w-md mx-auto">
             Selecciona el número de simulaciones y presiona &quot;Ejecutar Forecast&quot; para ver las probabilidades
             de cada equipo de avanzar, llegar a la final, o ganar el Mundial 2026.
           </p>
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="bg-slate-900/60 rounded-xl border border-slate-800 p-4">
+            <div className="bg-surface rounded-xl border border-border-subtle p-4">
               <div className="text-2xl mb-2">⚡</div>
               <div className="font-semibold text-slate-300">Motor Dixon-Coles</div>
-              <div className="text-slate-500">Modelo estadístico avanzado con ajuste por goles</div>
+              <div className="text-fg-tertiary">Modelo estadístico avanzado con ajuste por goles</div>
             </div>
-            <div className="bg-slate-900/60 rounded-xl border border-slate-800 p-4">
+            <div className="bg-surface rounded-xl border border-border-subtle p-4">
               <div className="text-2xl mb-2">🔄</div>
               <div className="font-semibold text-slate-300">Circuito Bayesiano</div>
-              <div className="text-slate-500">Actualización dinámica con resultados reales</div>
+              <div className="text-fg-tertiary">Actualización dinámica con resultados reales</div>
             </div>
-            <div className="bg-slate-900/60 rounded-xl border border-slate-800 p-4">
+            <div className="bg-surface rounded-xl border border-border-subtle p-4">
               <div className="text-2xl mb-2">🎯</div>
               <div className="font-semibold text-slate-300">Poisson + Elo</div>
-              <div className="text-slate-500">Blending de 4 modelos con pesos optimizados</div>
+              <div className="text-fg-tertiary">Blending de 4 modelos con pesos optimizados</div>
             </div>
           </div>
         </motion.div>

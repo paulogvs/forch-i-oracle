@@ -20,25 +20,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Read from localStorage or system preference
     const saved = localStorage.getItem('forchi-theme') as Theme | null;
-    if (saved) {
-      setTheme(saved);
-    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-      setTheme('light');
-    }
+    const systemPrefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const initial = saved || (systemPrefersLight ? 'light' : 'dark');
+    setTheme(initial);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    document.documentElement.classList.toggle('light', theme === 'light');
+    // Apply to <html> element
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+    }
     localStorage.setItem('forchi-theme', theme);
+    // Update meta theme-color
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', theme === 'light' ? '#F8FAFC' : '#06080D');
+    }
   }, [theme, mounted]);
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-
-  // Prevent flash by rendering nothing until mounted
-  if (!mounted) return <>{children}</>;
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
