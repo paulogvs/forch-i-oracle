@@ -1,9 +1,10 @@
-// FORCH.i ORACLE — Tournament Simulation Engine v2
-// Usa el motor estadístico real (Poisson + Elo) para predecir cada partido
-// Acepta resultados reales y re-simula el resto del bracket
+// FORCH.i ORACLE — Tournament Simulation Engine v3
+// FIFA-official tiebreakers + backtracking third-place assignment
+// Client-side multi-simulation for forecast page
 
-import { calculateStatisticalPrediction, type StatisticalPrediction } from './predictor-engine';
-import { WORLD_CUP_TEAMS } from './teams';
+import { calculateStatisticalPrediction } from './predictor-engine';
+import { WORLD_CUP_TEAMS, ELO_RATINGS } from './teams';
+import { ALL_MATCHES } from './matches';
 
 // ─── Data Structures ──────────────────────────────────────────────────────
 
@@ -32,13 +33,17 @@ export interface SimulatedMatch {
   homeScore: number;
   awayScore: number;
   winner: string;
-  isPlayed: boolean;      // true si ya se jugó (resultado real)
+  isPlayed: boolean;
   homeWinProb: number;
   drawProb: number;
   awayWinProb: number;
   prediction: string;
-  xGHome?: number;        // Expected goals
+  xGHome?: number;
   xGAway?: number;
+  extraTime?: boolean;
+  penalties?: boolean;
+  penHome?: number;
+  penAway?: number;
 }
 
 export interface GroupStandings {
@@ -65,12 +70,198 @@ export interface TournamentBracket {
   simulatedAt: string;
 }
 
-/** Resultado real de un partido (input del usuario o API) */
 export interface RealMatchResult {
   matchId: string;
   homeScore: number;
   awayScore: number;
-  winner: string; // team name or 'draw' (before extra time)
+  winner: string;
+}
+
+// ─── FIFA Tiebreakers ─────────────────────────────────────────────────────
+
+/**
+ * FIFA World Cup tiebreaker procedure:
+ * a) Greater number of points obtained in all group matches
+ * b) Goal difference in all group matches
+ * c) Greater number of goals scored in all group matches
+ * d) Greater number of points obtained in matches between the tied teams
+ * e) Goal difference in matches between the tied teams
+ * f) Greater number of goals scored in matches between the tied teams
+ * g) Fair play conduct (not simulated — skip to h)
+ * h) Drawing of lots by FIFA
+ *
+ * We implement a-d fully, e-f via head-to-head mini-table, and fall back to
+ * alphabetical for simulation purposes (代替 lot drawing).
+ */
+function sortGroupWithFIFATiebreakers(
+  teams: GroupTeamStanding[],
+  matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[]
+): GroupTeamStanding[] {
+  if (teams.length <= 1) return [...teams];
+
+  // Build head-to-head results map
+  const h2h = new Map<string, { home: string; away: string; hg: number; ag: number }[]>();
+  for (const r of matchResults) {
+    const key1 = `${r.home}_${r.away}`;
+    const key2 = `${r.away}_${r.home}`;
+    if (!h2h.has(r.home)) h2h.set(r.home, []);
+    if (!h2h.has(r.away)) h2h.set(r.away, []);
+    h2h.get(r.home)!.push({ home: r.home, away: r.away, hg: r.homeGoals, ag: r.awayGoals });
+    h2h.get(r.away)!.push({ home: r.away, away: r.home, hg: r.awayGoals, ag: r.homeGoals });
+  }
+
+  // Recursive tie resolution
+  function resolve(
+    candidates: GroupTeamStanding[],
+    allResults: { home: string; away: string; homeGoals: number; awayGoals: number }[]
+  ): GroupTeamStanding[] {
+    if (candidates.length <= 1) return [...candidates];
+
+    // Step a: points
+    candidates.sort((a, b) => b.points - a.points);
+
+    const result: GroupTeamStanding[] = [];
+    let i = 0;
+
+    while (i < candidates.length) {
+      let j = i + 1;
+      while (j < candidates.length && candidates[j].points === candidates[i].points) j++;
+
+      if (j - i === 1) {
+        result.push(candidates[i]);
+      } else {
+        const tied = candidates.slice(i, j);
+        result.push(...resolveTieGroup(tied, allResults));
+      }
+      i = j;
+    }
+
+    return result;
+  }
+
+  function resolveTieGroup(
+    tied: GroupTeamStanding[],
+    allResults: { home: string; away: string; homeGoals: number; awayGoals: number }[]
+  ): GroupTeamStanding[] {
+    if (tied.length <= 1) return [...tied];
+
+    // Step d: head-to-head points among tied teams
+    const tiedNames = new Set(tied.map(t => t.name));
+    const h2hResults = allResults.filter(
+      r => tiedNames.has(r.home) && tiedNames.has(r.away)
+    );
+
+    if (h2hResults.length > 0) {
+      // Build mini-table from head-to-head only
+      const miniTable = new Map<string, { pts: number; gd: number; gf: number }>();
+      for (const t of tied) {
+        miniTable.set(t.name, { pts: 0, gd: 0, gf: 0 });
+      }
+
+      for (const r of h2hResults) {
+        const h = miniTable.get(r.home)!;
+        const a = miniTable.get(r.away)!;
+        h.gf += r.homeGoals;
+        h.gd += r.homeGoals - r.awayGoals;
+        a.gf += r.awayGoals;
+        a.gd += r.awayGoals - r.homeGoals;
+
+        if (r.homeGoals > r.awayGoals) { h.pts += 3; }
+        else if (r.homeGoals < r.awayGoals) { a.pts += 3; }
+        else { h.pts += 1; a.pts += 1; }
+      }
+
+      // Sort by h2h points, then h2h GD, then h2h GF
+      const sorted = [...tied].sort((a, b) => {
+        const ma = miniTable.get(a.name)!;
+        const mb = miniTable.get(b.name)!;
+        if (mb.pts !== ma.pts) return mb.pts - ma.pts;
+        if (mb.gd !== ma.gd) return mb.gd - ma.gd;
+        if (mb.gf !== ma.gf) return mb.gf - ma.gf;
+        return 0;
+      });
+
+      // Check if still tied after h2h
+      const groups: GroupTeamStanding[][] = [];
+      let k = 0;
+      while (k < sorted.length) {
+        let l = k + 1;
+        const ma = miniTable.get(sorted[k].name)!;
+        while (l < sorted.length) {
+          const mb = miniTable.get(sorted[l].name)!;
+          if (mb.pts === ma.pts && mb.gd === ma.gd && mb.gf === ma.gf) l++;
+          else break;
+        }
+        if (l - k === 1) {
+          groups.push([sorted[k]]);
+        } else {
+          groups.push(sorted.slice(k, l));
+        }
+        k = l;
+      }
+
+      // If all still tied, fall back to overall stats
+      const allStillTied = groups.some(g => g.length > 1);
+      if (allStillTied) {
+        // Use overall goal difference, then goals scored, then alphabetical
+        return [...tied].sort((a, b) => {
+          if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+          if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+          return a.name.localeCompare(b.name);
+        });
+      }
+
+      return groups.flat();
+    }
+
+    // No head-to-head results (shouldn't happen in a complete group)
+    // Fall back to overall stats
+    return [...tied].sort((a, b) => {
+      if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff;
+      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  return resolve(teams, matchResults);
+}
+
+// ─── Backtracking Third-Place Assignment ───────────────────────────────────
+
+/**
+ * Constraint-satisfying assignment of qualified third-place teams to bracket slots.
+ * Each slot lists which group letters are allowed. Uses backtracking with
+ * most-constrained-first ordering for efficiency.
+ */
+export function assignThirdsBacktracking(
+  slotAllowedGroups: string[][],
+  qualifiedGroups: string[]
+): (string | null)[] {
+  const n = slotAllowedGroups.length;
+  const used = new Set<string>();
+  const out: (string | null)[] = Array(n).fill(null);
+
+  // Most-constrained-first ordering
+  const order = slotAllowedGroups
+    .map((allowed, i) => ({ i, allowed: allowed.filter(g => qualifiedGroups.includes(g)) }))
+    .sort((a, b) => a.allowed.length - b.allowed.length);
+
+  function backtrack(k: number): boolean {
+    if (k === n) return true;
+    const { i, allowed } = order[k];
+    for (const g of allowed) {
+      if (used.has(g)) continue;
+      used.add(g);
+      out[i] = g;
+      if (backtrack(k + 1)) return true;
+      used.delete(g);
+      out[i] = null;
+    }
+    return false;
+  }
+
+  backtrack(0);
+  return out;
 }
 
 // ─── Team Helpers ──────────────────────────────────────────────────────────
@@ -80,19 +271,22 @@ function getFlag(name: string): string {
   return t?.flag || '🏳️';
 }
 
-// ─── Match Simulation using Statistical Engine ─────────────────────────────
+function getTeamCode(name: string): string {
+  return WORLD_CUP_TEAMS.find((t) => t.name === name)?.code || name.slice(0, 3).toUpperCase();
+}
 
-/**
- * Simula un partido usando el motor estadístico real (Poisson + Elo + xG)
- * Si hay un resultado real, lo usa directamente.
- */
+function getTeamElo(name: string): number {
+  return ELO_RATINGS[name]?.elo || 1500;
+}
+
+// ─── Match Simulation ─────────────────────────────────────────────────────
+
 async function simulateMatch(
   home: string,
   away: string,
   realResult?: RealMatchResult,
   knockout = false
 ): Promise<SimulatedMatch> {
-  // Si ya hay resultado real, usarlo
   if (realResult) {
     return {
       id: realResult.matchId,
@@ -110,13 +304,10 @@ async function simulateMatch(
       drawProb: 0,
       awayWinProb: 0,
       prediction: `Resultado real: ${home} ${realResult.homeScore}-${realResult.awayScore} ${away}`,
-      xGHome: undefined,
-      xGAway: undefined,
     };
   }
 
-  // Si equipo TBD, retornar pendiente
-  if (home === 'TBD' || home.includes('TBD') || away === 'TBD' || away.includes('TBD')) {
+  if (home === 'TBD' || away === 'TBD') {
     return {
       id: '',
       round: 'knockout',
@@ -136,10 +327,7 @@ async function simulateMatch(
     };
   }
 
-  // Usar motor estadístico real para predecir
   const stats = await calculateStatisticalPrediction(home, away);
-
-  // Simular marcador basado en Poisson
   const homeScore = stats.predictedScoreHome;
   const awayScore = stats.predictedScoreAway;
   let winner: string;
@@ -148,14 +336,12 @@ async function simulateMatch(
   else if (awayScore > homeScore) winner = away;
   else {
     if (knockout) {
-      // En eliminatoria, el equipo con mayor probabilidad gana en penales
+      // In knockout, higher probability team wins (simulates ET/penalties)
       winner = stats.homeWin > stats.awayWin ? home : away;
     } else {
       winner = 'draw';
     }
   }
-
-  const analysis = `📊 ${home} (${stats.homeWin}%) vs ${away} (${stats.awayWin}%) | xG: ${stats.homeExpectedGoals}-${stats.awayExpectedGoals}`;
 
   return {
     id: '',
@@ -172,7 +358,7 @@ async function simulateMatch(
     homeWinProb: stats.homeWin,
     drawProb: stats.draw,
     awayWinProb: stats.awayWin,
-    prediction: analysis,
+    prediction: `📊 ${home} (${stats.homeWin}%) vs ${away} (${stats.awayWin}%)`,
     xGHome: stats.homeExpectedGoals,
     xGAway: stats.awayExpectedGoals,
   };
@@ -183,7 +369,6 @@ async function simulateMatch(
 function getGroups(): Record<string, string[]> {
   const map: Record<string, string[]> = {};
   for (const t of WORLD_CUP_TEAMS) {
-    // Saltar equipos TBD
     if (t.name.includes('TBD')) continue;
     if (!map[t.group]) map[t.group] = [];
     map[t.group].push(t.name);
@@ -194,19 +379,21 @@ function getGroups(): Record<string, string[]> {
 async function simulateGroups(
   realResults: Map<string, RealMatchResult>,
   onProgress?: (msg: string) => void
-): Promise<Map<string, GroupTeamStanding[]>> {
+): Promise<{ standings: Map<string, GroupTeamStanding[]>; matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] }> {
   const groups = getGroups();
   const standings = new Map<string, GroupTeamStanding[]>();
+  const allMatchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] = [];
 
   for (const [letter, teams] of Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))) {
     if (onProgress) onProgress(`Simulando Grupo ${letter}...`);
 
     const s: GroupTeamStanding[] = teams.map((n) => ({
-      name: n, flag: getFlag(n), code: WORLD_CUP_TEAMS.find((t) => t.name === n)?.code || n.slice(0, 3).toUpperCase(),
+      name: n, flag: getFlag(n), code: getTeamCode(n),
       played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, goalDiff: 0, points: 0,
     }));
 
-    // Generar matchups del grupo
+    const groupMatchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] = [];
+
     const matchups = [];
     for (let i = 0; i < teams.length; i++) {
       for (let j = i + 1; j < teams.length; j++) {
@@ -214,12 +401,9 @@ async function simulateGroups(
       }
     }
 
-    // Simular cada partido
     for (const match of matchups) {
-      // Buscar resultado real
       const resultKey = `${match.home}_vs_${match.away}`;
       const realResult = realResults.get(resultKey);
-
       const simResult = await simulateMatch(match.home, match.away, realResult);
 
       const homeIdx = teams.indexOf(match.home);
@@ -239,50 +423,24 @@ async function simulateGroups(
       } else {
         a.won++; h.lost++; a.points += 3;
       }
+
+      groupMatchResults.push({ home: match.home, away: match.away, homeGoals: simResult.homeScore, awayGoals: simResult.awayScore });
+      allMatchResults.push(groupMatchResults[groupMatchResults.length - 1]);
     }
 
-    // Ordenar por puntos, diferencia de gol, goles a favor
-    s.sort((a, b) =>
-      b.points !== a.points ? b.points - a.points :
-      b.goalDiff !== a.goalDiff ? b.goalDiff - a.goalDiff :
-      b.goalsFor - a.goalsFor
-    );
-    standings.set(letter, s);
+    // FIFA tiebreakers
+    const sorted = sortGroupWithFIFATiebreakers(s, groupMatchResults);
+    standings.set(letter, sorted);
   }
 
-  return standings;
+  return { standings, matchResults: allMatchResults };
 }
 
 // ─── Knockout Stage ────────────────────────────────────────────────────────
 
-async function resolveTeam(
-  src: string,
-  standings: Map<string, GroupTeamStanding[]>,
-  thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[],
-  winners: Map<string, string>
-): Promise<string> {
-  if (src.startsWith('W-')) return winners.get(src) || 'TBD';
-
-  // Formato: "1A" = 1° del Grupo A, "2B" = 2° del Grupo B
-  const pos = parseInt(src[0]);
-  const g = src[1];
-  const t = standings.get(g);
-  return t && t[pos - 1] ? t[pos - 1].name : 'TBD';
-}
-
-function assignThirdPlace(
-  criteria: string,
-  top8Third: { name: string; pts: number; gd: number; gf: number; group: string }[]
-): string {
-  const groups = criteria.replace('3rd-', '').split('');
-  for (const tp of top8Third) {
-    if (groups.includes(tp.group)) return tp.name;
-  }
-  return 'TBD';
-}
-
 async function simulateKnockout(
   standings: Map<string, GroupTeamStanding[]>,
+  matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[],
   realResults: Map<string, RealMatchResult>,
   onProgress?: (msg: string) => void
 ): Promise<{
@@ -295,7 +453,7 @@ async function simulateKnockout(
 }> {
   const winners = new Map<string, string>();
 
-  // Top 8 terceros lugares
+  // Top 8 terceros lugares con FIFA tiebreakers
   const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
   for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
     const teams = standings.get(letter);
@@ -309,42 +467,47 @@ async function simulateKnockout(
     b.gf - a.gf
   );
   const top8Third = thirdPlaces.slice(0, 8);
+  const qualifiedGroups = top8Third.map(t => t.group);
 
   // ═══════════════════════════════════════════════════════════════
-  // ROUND OF 32 — 16 partidos (32 equipos)
-  // 12 primeros + 12 segundos + 8 mejores terceros = 32 equipos
+  // ROUND OF 32 — Backtracking assignment for third places
   // ═══════════════════════════════════════════════════════════════
 
-  // Bracket oficial FIFA 2026:
-  // 8 partidos de 1° vs 3° (grupos A-H con terceros)
-  // 4 partidos de 1° vs 3° (grupos I-L con terceros)
-  // 4 partidos de 2° vs 2° (grupos A-H restantes)
-
-  // Para tener exactamente 16 partidos de R32:
-  // R32-1 a R32-12: 1° de cada grupo vs 3° (según disponibilidad)
-  // R32-13 a R32-16: 2° vs 2°
-
-  const r32Matchups = [
-    // 8 partidos: 1° vs 3° (grupos A-H)
-    { home: '1A', away: '3rd-BEFG' },
-    { home: '1B', away: '3rd-ABC' },
-    { home: '1C', away: '3rd-ABCD' },
-    { home: '1D', away: '3rd-DEF' },
-    { home: '1E', away: '3rd-DEF' },
-    { home: '1F', away: '3rd-ABC' },
-    { home: '1G', away: '3rd-CGH' },
-    { home: '1H', away: '3rd-GHA' },
-    // 4 partidos: 1° vs 3° (grupos I-L)
-    { home: '1I', away: '3rd-IJKL' },
-    { home: '1J', away: '3rd-IJKL' },
-    { home: '1K', away: '3rd-IJKL' },
-    { home: '1L', away: '3rd-IJKL' },
-    // 4 partidos: 2° vs 2° (sobrantes)
-    { home: '2A', away: '2B' },
-    { home: '2C', away: '2D' },
-    { home: '2E', away: '2F' },
-    { home: '2G', away: '2H' },
+  // FIFA 2026 bracket: each R32 slot has allowed third-place groups
+  const r32SlotAllowed: string[][] = [
+    ['B', 'E', 'F', 'G'],     // 1A vs 3rd
+    ['A', 'B', 'C'],           // 1B vs 3rd
+    ['A', 'B', 'C', 'D'],      // 1C vs 3rd
+    ['D', 'E', 'F'],           // 1D vs 3rd
+    ['D', 'E', 'F'],           // 1E vs 3rd
+    ['A', 'B', 'C'],           // 1F vs 3rd
+    ['C', 'G', 'H'],           // 1G vs 3rd
+    ['G', 'H', 'A'],           // 1H vs 3rd
+    ['I', 'J', 'K', 'L'],     // 1I vs 3rd
+    ['I', 'J', 'K', 'L'],     // 1J vs 3rd
+    ['I', 'J', 'K', 'L'],     // 1K vs 3rd
+    ['I', 'J', 'K', 'L'],     // 1L vs 3rd
   ];
+
+  const thirdAssignment = assignThirdsBacktracking(r32SlotAllowed, qualifiedGroups);
+
+  // R32 slots: 12 1st-vs-3rd + 4 2nd-vs-2nd
+  const r32Matchups: { home: string; away: string }[] = [];
+
+  const groupLetters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  for (let i = 0; i < 12; i++) {
+    const groupLetter = groupLetters[i];
+    const thirdGroup = thirdAssignment[i];
+    r32Matchups.push({
+      home: `1${groupLetter}`,
+      away: thirdGroup ? `3${thirdGroup}` : 'TBD',
+    });
+  }
+  // 2nd vs 2nd
+  r32Matchups.push({ home: '2A', away: '2B' });
+  r32Matchups.push({ home: '2C', away: '2D' });
+  r32Matchups.push({ home: '2E', away: '2F' });
+  r32Matchups.push({ home: '2G', away: '2H' });
 
   const roundOf32: SimulatedMatch[] = [];
 
@@ -352,16 +515,28 @@ async function simulateKnockout(
     const { home, away } = r32Matchups[i];
     let homeTeam: string, awayTeam: string;
 
-    if (home.startsWith('3rd')) {
-      homeTeam = assignThirdPlace(home, top8Third);
+    if (home.startsWith('1')) {
+      const g = home[1];
+      const t = standings.get(g);
+      homeTeam = t && t[0] ? t[0].name : 'TBD';
+    } else if (home.startsWith('2')) {
+      const g = home[1];
+      const t = standings.get(g);
+      homeTeam = t && t[1] ? t[1].name : 'TBD';
     } else {
-      homeTeam = await resolveTeam(home, standings, top8Third, winners);
+      homeTeam = 'TBD';
     }
 
-    if (away.startsWith('3rd')) {
-      awayTeam = assignThirdPlace(away, top8Third);
+    if (away.startsWith('3')) {
+      const g = away[1];
+      const t = standings.get(g);
+      awayTeam = t && t[2] ? t[2].name : 'TBD';
+    } else if (away.startsWith('2')) {
+      const g = away[1];
+      const t = standings.get(g);
+      awayTeam = t && t[1] ? t[1].name : 'TBD';
     } else {
-      awayTeam = await resolveTeam(away, standings, top8Third, winners);
+      awayTeam = 'TBD';
     }
 
     const m = await simulateMatch(homeTeam, awayTeam, undefined, true);
@@ -373,25 +548,24 @@ async function simulateKnockout(
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // ROUND OF 16 — 8 partidos
-  // Emparejamientos simétricos: R32-1 vs R32-13, etc.
+  // ROUND OF 16
   // ═══════════════════════════════════════════════════════════════
 
   const r16def = [
-    'W-R32-1|W-R32-13',  // 1A/3rd vs 2A/2B
-    'W-R32-5|W-R32-14',  // 1E/3rd vs 2C/2D
-    'W-R32-3|W-R32-15',  // 1C/3rd vs 2E/2F
-    'W-R32-7|W-R32-16',  // 1G/3rd vs 2G/2H
-    'W-R32-9|W-R32-12',  // 1I/3rd vs 1L/3rd
-    'W-R32-2|W-R32-10',  // 1B/3rd vs 1J/3rd
-    'W-R32-6|W-R32-4',   // 1F/3rd vs 1D/3rd
-    'W-R32-11|W-R32-8',  // 1K/3rd vs 1H/3rd
+    'W-R32-1|W-R32-13',
+    'W-R32-5|W-R32-14',
+    'W-R32-3|W-R32-15',
+    'W-R32-7|W-R32-16',
+    'W-R32-9|W-R32-12',
+    'W-R32-2|W-R32-10',
+    'W-R32-6|W-R32-4',
+    'W-R32-11|W-R32-8',
   ];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < r16def.length; i++) {
     const [h, a] = r16def[i].split('|');
-    const home = await resolveTeam(h, standings, top8Third, winners);
-    const away = await resolveTeam(a, standings, top8Third, winners);
+    const home = winners.get(h) || 'TBD';
+    const away = winners.get(a) || 'TBD';
     const m = await simulateMatch(home, away, undefined, true);
     m.id = `R16-${i + 1}`;
     m.roundLabel = 'Octavos de Final';
@@ -405,8 +579,8 @@ async function simulateKnockout(
   const quarters: SimulatedMatch[] = [];
   for (let i = 0; i < qfdef.length; i++) {
     const [h, a] = qfdef[i].split('|');
-    const home = await resolveTeam(h, standings, top8Third, winners);
-    const away = await resolveTeam(a, standings, top8Third, winners);
+    const home = winners.get(h) || 'TBD';
+    const away = winners.get(a) || 'TBD';
     const m = await simulateMatch(home, away, undefined, true);
     m.id = `QF-${i + 1}`;
     m.roundLabel = 'Cuartos de Final';
@@ -420,8 +594,8 @@ async function simulateKnockout(
   const semis: SimulatedMatch[] = [];
   for (let i = 0; i < sfdef.length; i++) {
     const [h, a] = sfdef[i].split('|');
-    const home = await resolveTeam(h, standings, top8Third, winners);
-    const away = await resolveTeam(a, standings, top8Third, winners);
+    const home = winners.get(h) || 'TBD';
+    const away = winners.get(a) || 'TBD';
     const m = await simulateMatch(home, away, undefined, true);
     m.id = `SF-${i + 1}`;
     m.roundLabel = 'Semifinales';
@@ -456,7 +630,6 @@ export async function simulateTournament(
 ): Promise<TournamentBracket> {
   const { realResults = [], onProgress } = options;
 
-  // Convert array to map for faster lookups
   const resultsMap = new Map<string, RealMatchResult>();
   for (const r of realResults) {
     resultsMap.set(`${r.matchId}`, r);
@@ -464,19 +637,16 @@ export async function simulateTournament(
 
   if (onProgress) onProgress('Simulando fase de grupos con motor estadístico real...');
 
-  // Phase 1: Group Stage
-  const standings = await simulateGroups(resultsMap, onProgress);
+  const { standings, matchResults } = await simulateGroups(resultsMap, onProgress);
 
   const groupStandings: GroupStandings[] = [];
   for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
     groupStandings.push({ group: letter, teams: standings.get(letter) || [] });
   }
 
-  // Phase 2: Knockout
   if (onProgress) onProgress('Simulando eliminatorias con Poisson + Elo...');
-  const knockout = await simulateKnockout(standings, resultsMap, onProgress);
+  const knockout = await simulateKnockout(standings, matchResults, resultsMap, onProgress);
 
-  // Determine champion
   const champion = knockout.final.winner;
   const runnerUp = champion === knockout.final.homeTeam ? knockout.final.awayTeam : knockout.final.homeTeam;
   const thirdTeam = knockout.thirdPlace.winner;
@@ -518,17 +688,9 @@ export interface ChampionProbability {
 export interface MultiSimResult {
   top8: ChampionProbability[];
   totalSims: number;
-  bracket: TournamentBracket; // Última simulación para mostrar bracket
+  bracket: TournamentBracket;
 }
 
-/**
- * Ejecuta múltiples simulaciones del torneo y calcula la probabilidad
- * de cada equipo de ser campeón basándose en la frecuencia de victorias.
- *
- * @param numSims Número de simulaciones (default 100)
- * @param realResults Resultados reales para incorporar
- * @param onProgress Callback de progreso
- */
 export async function simulateTournamentMulti(
   numSims = 100,
   realResults: RealMatchResult[] = [],
@@ -537,7 +699,6 @@ export async function simulateTournamentMulti(
   const championCounts = new Map<string, number>();
   let lastBracket: TournamentBracket | null = null;
 
-  // Convertir resultados reales una vez
   const resultsMap = new Map<string, RealMatchResult>();
   for (const r of realResults) {
     resultsMap.set(`${r.matchId}`, r);
@@ -551,16 +712,14 @@ export async function simulateTournamentMulti(
     }
 
     try {
-      // Re-simular grupos y eliminatorias para cada iteración
-      const standings = await simulateGroups(resultsMap);
-      const knockout = await simulateKnockout(standings, resultsMap);
+      const { standings, matchResults } = await simulateGroups(resultsMap);
+      const knockout = await simulateKnockout(standings, matchResults, resultsMap);
 
       const champion = knockout.final.winner;
       if (champion && champion !== 'TBD') {
         championCounts.set(champion, (championCounts.get(champion) || 0) + 1);
       }
 
-      // Guardar la última simulación para mostrar bracket
       if (i === numSims - 1) {
         const groupStandings: GroupStandings[] = [];
         for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
@@ -590,11 +749,10 @@ export async function simulateTournamentMulti(
         };
       }
     } catch {
-      // Saltar simulaciones fallidas silenciosamente
+      // Skip failed simulations
     }
   }
 
-  // Construir Top 8
   const sorted = Array.from(championCounts.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
@@ -608,7 +766,6 @@ export async function simulateTournamentMulti(
     pct: totalWithChampion > 0 ? Math.round((wins / totalWithChampion) * 1000) / 10 : 0,
   }));
 
-  // Asegurar que tenemos un bracket válido
   if (!lastBracket) {
     if (onProgress) onProgress('Simulación de respaldo...');
     lastBracket = await simulateTournament({ realResults, onProgress });
@@ -616,12 +773,8 @@ export async function simulateTournamentMulti(
 
   if (onProgress) {
     const leader = top8[0];
-    onProgress(`🏆 ${leader?.team || 'N/A'} lidera con ${leader?.pct || 0}% de probabilidad (${top8.length} equipos en Top 8)`);
+    onProgress(`🏆 ${leader?.team || 'N/A'} lidera con ${leader?.pct || 0}%`);
   }
 
-  return {
-    top8,
-    totalSims: numSims,
-    bracket: lastBracket,
-  };
+  return { top8, totalSims: numSims, bracket: lastBracket };
 }

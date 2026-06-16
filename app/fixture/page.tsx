@@ -422,35 +422,118 @@ function Top8Tab({ top8, getFlag }: { top8: any[]; getFlag: (n: string) => strin
 
 function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) => string }) {
   if (!bracket) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">📐 El bracket se generará con las simulaciones del torneo</p></div>;
+
+  const isPlayed = (m: any) => m?.isPlayed || m?.homeScore != null;
+
   return (
-    <div className="space-y-4">
-      {bracket.roundOf32?.length > 0 && <BracketRound title="1/16" matches={bracket.roundOf32} getFlag={getFlag} />}
-      {bracket.roundOf16?.length > 0 && <BracketRound title="Octavos" matches={bracket.roundOf16} getFlag={getFlag} />}
-      {bracket.quarters?.length > 0 && <BracketRound title="Cuartos" matches={bracket.quarters} getFlag={getFlag} />}
-      {bracket.semis?.length > 0 && <BracketRound title="Semis" matches={bracket.semis} getFlag={getFlag} />}
-      {bracket.final && (
-        <div className="p-5 text-center rounded-[var(--r-lg)] bg-[#1A1705] border border-[#854D0E]">
-          <div className="text-2xl mb-1">🏆</div>
-          <div className="text-base font-bold text-[#E2B340]">{bracket.champion || 'Por definir'}</div>
-          <div className="text-[10px] text-[#6B7280]">Campeón Simulado</div>
+    <div className="space-y-6">
+      {/* Champion reveal */}
+      {bracket.champion && (
+        <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-[#1A1705] via-[#0C1017] to-[#1A1705] border border-[#854D0E]/50">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9MSBmaWxsPSIjODU0RDBFIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgZmlsbD0idXJsKCNnKSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==')] opacity-50" />
+          <div className="relative text-center">
+            <div className="text-5xl mb-2 animate-bounce">{bracket.championFlag || '🏆'}</div>
+            <div className="text-2xl font-black text-[#E2B340] tracking-wide">{bracket.champion}</div>
+            <div className="text-[10px] text-[#854D0E] uppercase tracking-[0.2em] mt-1">Campeón Mundial 2026</div>
+            {bracket.runnerUp && (
+              <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+                <span className="text-[#9CA3AF]">🥈 {bracket.runnerUp}</span>
+                {bracket.thirdPlaceTeam && <span className="text-[#CD7F32]">🥉 {bracket.thirdPlaceTeam}</span>}
+              </div>
+            )}
+          </div>
         </div>
       )}
+
+      {/* Bracket rounds — visual flow */}
+      <div className="space-y-4">
+        {bracket.roundOf32?.length > 0 && (
+          <BracketRoundAesthetic title="1/16 Final" subtitle="32 equipos" matches={bracket.roundOf32} getFlag={getFlag} roundColor="from-cyan-500/20 to-blue-500/10" />
+        )}
+        {bracket.roundOf16?.length > 0 && (
+          <BracketRoundAesthetic title="Octavos de Final" subtitle="16 equipos" matches={bracket.roundOf16} getFlag={getFlag} roundColor="from-blue-500/20 to-purple-500/10" />
+        )}
+        {bracket.quarters?.length > 0 && (
+          <BracketRoundAesthetic title="Cuartos de Final" subtitle="8 equipos" matches={bracket.quarters} getFlag={getFlag} roundColor="from-purple-500/20 to-pink-500/10" />
+        )}
+        {bracket.semis?.length > 0 && (
+          <BracketRoundAesthetic title="Semifinales" subtitle="4 equipos" matches={bracket.semis} getFlag={getFlag} roundColor="from-pink-500/20 to-amber-500/10" />
+        )}
+        {bracket.thirdPlace && (
+          <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+            <div className="text-[10px] text-amber-400 uppercase tracking-wider font-semibold mb-2">🥉 Tercer Puesto</div>
+            <BracketMatchCard match={bracket.thirdPlace} getFlag={getFlag} />
+          </div>
+        )}
+        {bracket.final && (
+          <div className="p-5 rounded-xl bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-yellow-500/10 border border-yellow-500/30">
+            <div className="text-center mb-3">
+              <span className="text-xl">🏆</span>
+              <div className="text-[10px] text-yellow-400 uppercase tracking-[0.2em] font-bold">La Gran Final</div>
+            </div>
+            <BracketMatchCard match={bracket.final} getFlag={getFlag} isFinal />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function BracketRound({ title, matches, getFlag }: { title: string; matches: any[]; getFlag: (n: string) => string }) {
+function BracketRoundAesthetic({ title, subtitle, matches, getFlag, roundColor }: {
+  title: string; subtitle: string; matches: any[]; getFlag: (n: string) => string; roundColor: string;
+}) {
   return (
-    <div>
-      <h4 className="text-[11px] font-bold text-[#6B7280] uppercase mb-2">{title}</h4>
-      <div className="space-y-1.5">
-        {matches.map((m: any) => m && (
-          <div key={m.id} className="flex items-center justify-between p-2.5 rounded-[var(--r-md)] bg-[#1A1D24] border border-[#2A2D35] text-xs">
-            <div className="flex items-center gap-1.5 min-w-0"><span>{getFlag(m.homeTeam)}</span><span className="truncate">{m.homeTeam}</span></div>
-            <span className="font-mono font-bold text-fg-tertiary">{m.homeScore ?? '—'} - {m.awayScore ?? '—'}</span>
-            <div className="flex items-center gap-1.5 min-w-0 justify-end"><span className="truncate text-right">{m.awayTeam}</span><span>{getFlag(m.awayTeam)}</span></div>
-          </div>
-        ))}
+    <div className={`p-4 rounded-xl bg-gradient-to-r ${roundColor} border border-white/5`}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h4 className="text-xs font-bold text-fg-primary">{title}</h4>
+          <span className="text-[10px] text-[#6B7280]">{subtitle}</span>
+        </div>
+        <span className="text-[10px] text-[#6B7280] font-mono">{matches.length} partidos</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {matches.map((m: any) => m && <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />)}
+      </div>
+    </div>
+  );
+}
+
+function BracketMatchCard({ match: m, getFlag, isFinal = false }: { match: any; getFlag: (n: string) => string; isFinal?: boolean }) {
+  if (!m) return null;
+  const played = m.isPlayed || m.homeScore != null;
+  const homeWin = played && m.winner === m.homeTeam;
+  const awayWin = played && m.winner === m.awayTeam;
+
+  return (
+    <div className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${
+      isFinal ? 'bg-[#1A1705]/80 border-[#854D0E]/40' :
+      played ? 'bg-[#0C1017]/80 border-[#2A2D35]' : 'bg-[#1A1D24]/60 border-[#2A2D35]/60'
+    }`}>
+      <div className="flex items-center gap-1.5 min-w-0 w-[40%]">
+        <span className="text-base shrink-0">{getFlag(m.homeTeam)}</span>
+        <span className={`truncate ${homeWin ? 'font-bold text-[#4ADE80]' : played && !homeWin ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+          {m.homeTeam}
+        </span>
+      </div>
+      <div className="shrink-0 px-2 text-center">
+        {played ? (
+          <span className={`font-mono font-bold ${isFinal ? 'text-lg text-[#E2B340]' : 'text-sm'} ${
+            homeWin ? 'text-[#4ADE80]' : awayWin ? 'text-[#4ADE80]' : 'text-[#FACC15]'
+          }`}>
+            {m.homeScore} - {m.awayScore}
+          </span>
+        ) : (
+          <span className="text-[#4B5563] font-mono">vs</span>
+        )}
+        {!played && m.homeWinProb != null && (
+          <div className="text-[9px] text-[#6B7280] mt-0.5">{m.homeWinProb}%</div>
+        )}
+      </div>
+      <div className="flex items-center gap-1.5 min-w-0 w-[40%] justify-end">
+        <span className={`truncate text-right ${awayWin ? 'font-bold text-[#4ADE80]' : played && !awayWin ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+          {m.awayTeam}
+        </span>
+        <span className="text-base shrink-0">{getFlag(m.awayTeam)}</span>
       </div>
     </div>
   );

@@ -1,20 +1,27 @@
 'use client';
-import { LayoutDashboard, Trophy, Radio, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Trophy, Radio, BarChart3, TrendingUp, BarChart2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { TopBar } from './TopBar';
 import { AutoSync } from '@/components/system/AutoSync';
+import { useTheme } from '@/lib/theme-context';
+import { useI18n, LanguageSelector } from '@/lib/i18n';
 
 const NAV = [
-  { href: '/',          label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/fixture',   label: 'Predicción', icon: Trophy },
-  { href: '/live',      label: 'En Vivo',    icon: Radio },
-  { href: '/benchmark', label: 'Benchmark',  icon: BarChart3 },
+  { href: '/',          label: 'nav.home',      icon: LayoutDashboard },
+  { href: '/fixture',   label: 'nav.fixture',   icon: Trophy },
+  { href: '/forecast',  label: 'nav.forecast',  icon: TrendingUp },
+  { href: '/stats',     label: 'nav.stats',     icon: BarChart2 },
+  { href: '/teams',     label: 'nav.teams',     icon: Users },
+  { href: '/live',      label: 'En Vivo',       icon: Radio },
+  { href: '/benchmark', label: 'Benchmark',     icon: BarChart3 },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
+  const { t } = useI18n();
 
   return (
     <div className="min-h-screen">
@@ -39,10 +46,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {NAV.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
+            const label = item.label.startsWith('nav.') ? t(item.label as any) : item.label;
             // Color accent per nav item
             const accentMap: Record<string, string> = {
               '/': 'text-accent-primary bg-accent-primary/10',
               '/fixture': 'text-accent-premium bg-accent-premium/10',
+              '/forecast': 'text-cyan-400 bg-cyan-500/10',
+              '/stats': 'text-emerald-400 bg-emerald-500/10',
+              '/teams': 'text-amber-400 bg-amber-500/10',
               '/live': 'text-accent-emerald bg-accent-emerald/10',
               '/benchmark': 'text-accent-secondary bg-accent-secondary/10',
             };
@@ -50,6 +61,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const dotColor: Record<string, string> = {
               '/': 'bg-accent-primary',
               '/fixture': 'bg-accent-premium',
+              '/forecast': 'bg-cyan-400',
+              '/stats': 'bg-emerald-400',
+              '/teams': 'bg-amber-400',
               '/live': 'bg-accent-emerald',
               '/benchmark': 'bg-accent-secondary',
             };
@@ -65,16 +79,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <Icon className={cn('h-4 w-4')} />
-                <span>{item.label}</span>
+                <span>{label}</span>
                 {active && <span className={cn('ml-auto h-1.5 w-1.5 rounded-full', dotColor[item.href])} />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-border-subtle">
+        <div className="p-4 border-t border-border-subtle space-y-3">
+          {/* Theme toggle + Language selector */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-secondary hover:text-fg-primary hover:bg-elevated/60 transition-all"
+              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+              <span className="hidden xl:inline">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
+            </button>
+            <LanguageSelector />
+          </div>
           <p className="t-micro text-fg-tertiary">FORCH.i © 2026</p>
-          <p className="t-micro text-fg-disabled">WorldCup 2026</p>
         </div>
       </aside>
 
@@ -93,15 +118,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* BottomNav (mobile) */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 h-16 bg-surface/80 backdrop-blur-xl border-t border-border-subtle" role="navigation" aria-label="Navegación móvil">
-        <ul className="h-full grid grid-cols-4">
-          {NAV.map((item) => {
+        <ul className="h-full grid grid-cols-5">
+          {NAV.slice(0, 5).map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             const colorMap: Record<string, string> = {
               '/': 'text-accent-primary',
               '/fixture': 'text-accent-premium',
-              '/live': 'text-accent-emerald',
-              '/benchmark': 'text-accent-secondary',
+              '/forecast': 'text-cyan-400',
+              '/stats': 'text-emerald-400',
+              '/teams': 'text-amber-400',
             };
             return (
               <li key={item.href}>
@@ -114,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   aria-current={active ? 'page' : undefined}
                 >
                   <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <span>{item.label.startsWith('nav.') ? t(item.label as any) : item.label}</span>
                 </Link>
               </li>
             );

@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { AppShell } from '@/components/layout/AppShell';
+import Providers from './providers';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains', display: 'swap' });
@@ -27,9 +28,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${jetbrains.variable}`}>
+    <html lang="es" className={`${inter.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-canvas text-fg-primary">
-        <AppShell>{children}</AppShell>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
         <Toaster
           theme="dark"
           position="top-right"
