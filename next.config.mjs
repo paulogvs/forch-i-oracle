@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Optimizaciones para Vercel
   reactStrictMode: true,
+
+  // Groq SDK uses ESM-only imports that Next.js webpack can't resolve
+  experimental: {
+    serverComponentsExternalPackages: ['groq-sdk'],
+  },
 
   // Headers de seguridad
   async headers() {

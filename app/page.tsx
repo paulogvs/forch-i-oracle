@@ -12,7 +12,6 @@ import { useLiveScores } from '@/lib/swr/hooks';
 import { useSimulation } from '@/lib/swr/hooks';
 import { groupResultsByDate, getUpcomingMatches, getFlag, getRoundLabel } from '@/lib/dashboard-utils';
 import type { MatchResultDetail } from '@/lib/dashboard-utils';
-import Top8Ranking from '@/components/Top8Ranking';
 import { motion, AnimatePresence } from 'motion/react';
 import { simulateTournamentMulti, type ChampionProbability } from '@/lib/tournament-sim';
 
@@ -89,11 +88,11 @@ export default function DashboardPage() {
 
   // ─── Champion Probabilities from simulation ───────────────
   const [fallbackChampionProbs, setFallbackChampionProbs] = useState<ChampionProbability[] | null>(null);
+  const [championTimedOut, setChampionTimedOut] = useState(false);
 
   const championProbs = useMemo(() => {
-    if (!simData?.success) return null;
-    // Try championProbs first (from cron), fallback to top8
-    if (simData.championProbs && simData.championProbs.length > 0) {
+    // Try server championProbs first (from cron simulation)
+    if (simData?.success && simData.championProbs && simData.championProbs.length > 0) {
       return simData.championProbs.slice(0, 8);
     }
     // Use fallback client-side simulation results if available
@@ -108,20 +107,38 @@ export default function DashboardPage() {
     return null;
   }, [simData, fallbackChampionProbs]);
 
-  // Client-side fallback: run simulation if no server data
+  // Client-side fallback: run simulation if no server data or after timeout
   useEffect(() => {
-    if (simData?.success && (!simData.championProbs || simData.championProbs.length === 0) && !fallbackChampionProbs) {
-      // Fetch real results and run client-side simulation
-      fetch('/api/simulate-tournament')
-        .then(r => r.json())
-        .then(async (data) => {
-          const realResults = data.results || [];
-          const result = await simulateTournamentMulti(50, realResults);
-          setFallbackChampionProbs(result.top8);
-        })
+    const needsFallback = !championProbs && !fallbackChampionProbs;
+    if (!needsFallback) return;
+
+    // 8-second timeout: if no champion data arrives, force client-side simulation
+    const timeout = setTimeout(() => {
+      setChampionTimedOut(true);
+      simulateTournamentMulti(50, [])
+        .then(result => setFallbackChampionProbs(result.top8))
         .catch(() => {});
-    }
-  }, [simData, fallbackChampionProbs]);
+    }, 8000);
+
+    // Also try fetching from server and running local simulation
+    fetch('/api/simulate-tournament')
+      .then(r => r.json())
+      .then(async (data) => {
+        clearTimeout(timeout);
+        if (data.championProbs && data.championProbs.length > 0) {
+          // Server has data — use it directly
+          return;
+        }
+        const realResults = data.results || [];
+        const result = await simulateTournamentMulti(50, realResults);
+        setFallbackChampionProbs(result.top8);
+      })
+      .catch(() => {
+        // On fetch failure, rely on timeout fallback
+      });
+
+    return () => clearTimeout(timeout);
+  }, [championProbs, fallbackChampionProbs]);
 
   // ─── Compute Stats ────────────────────────────────────────
   const stats = (() => {
@@ -381,10 +398,18 @@ export default function DashboardPage() {
         {championProbs && championProbs.length > 0 ? (
           <ChampionWidget probs={championProbs} />
         ) : (
-          <div className="bg-surface rounded-lg border border-border p-4 text-center">
-            <div className="flex items-center justify-center gap-2 text-fg-muted text-xs">
-              <Sparkles className="h-3.5 w-3.5 animate-pulse text-accent-premium" />
-              <span>Calculando predicciones de campeón...</span>
+          <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-premium/20 text-center">
+            <div className="flex items-center justify-center gap-2 text-xs">
+              <div className="h-3 w-3 rounded-full bg-accent-premium/40 animate-pulse" />
+              <span className="text-fg-secondary">{championTimedOut ? 'Generando predicciones locales...' : 'Cargando campeones...'}</span>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="h-4 w-4 rounded-full bg-raised animate-pulse" />
+                  <div className="flex-1 h-3 rounded bg-raised/60 animate-pulse" style={{ width: `${80 - i * 15}%`, marginLeft: 'auto', marginRight: 'auto' }} />
+                </div>
+              ))}
             </div>
           </div>
         )}

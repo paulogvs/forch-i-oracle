@@ -12,7 +12,7 @@ import { getDataLayerAsync } from '@/lib/data-layer';
 // ═══ RESPONSE CACHE (5 minutes) ═══
 interface FixtureCacheEntry { data: unknown; expiresAt: number; }
 const fixtureCache = new Map<string, FixtureCacheEntry>();
-const FIXTURE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const FIXTURE_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 function getFixtureCache(key: string): unknown | null {
   const entry = fixtureCache.get(key);

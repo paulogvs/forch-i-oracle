@@ -14,8 +14,16 @@ export function useFixture<T = unknown>() {
   return useSWR<T>(SWR_KEYS.fixture, (k) => postFetcher(k, {}), {
     refreshInterval: getRefreshInterval,
     revalidateOnFocus: true,
-    dedupingInterval: 30 * 1000,
+    dedupingInterval: 60 * 1000, // 60s dedup — reduces redundant POST calls
     refreshWhenHidden: false,
+    onErrorRetry: (err, _key, _config, revalidate, { retryCount }) => {
+      // Never retry on 5xx errors (server overloaded)
+      if (err?.message?.startsWith('[5')) return;
+      // Retry up to 3 times, with exponential backoff starting at 30s
+      if (retryCount >= 3) return;
+      setTimeout(() => revalidate({ retryCount }), 30000 * (retryCount + 1));
+    },
+    keepPreviousData: true, // Show stale data while revalidating
   });
 }
 
@@ -24,6 +32,7 @@ export function useAccuracy<T = unknown>() {
     refreshInterval: getRefreshInterval,
     revalidateOnFocus: true,
     refreshWhenHidden: false,
+    keepPreviousData: true,
   });
 }
 
@@ -32,6 +41,7 @@ export function useSimulation<T = unknown>() {
     refreshInterval: getRefreshInterval,
     revalidateOnFocus: false,
     refreshWhenHidden: false,
+    keepPreviousData: true,
   });
 }
 
@@ -40,5 +50,6 @@ export function useLiveScores<T = unknown>(active = true) {
     refreshInterval: active ? 30 * 1000 : 0,
     revalidateOnFocus: true,
     refreshWhenHidden: false,
+    keepPreviousData: true,
   });
 }

@@ -10,6 +10,7 @@ import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot }
 import { motion, AnimatePresence } from 'motion/react';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
+import { MatchCardSkeleton, StatCardSkeleton, GroupTableSkeleton } from '@/components/Skeleton';
 
 type MainTab = 'partidos' | 'tablas' | 'top8' | 'bracket';
 type PhaseFilter = string;
@@ -40,8 +41,8 @@ export default function FixturePage() {
   const { data: liveData } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
 
-  const loading = fixtureLoading || simLoading;
-  const error = fixtureError ? 'Error cargando datos' : simError ? 'Error cargando datos' : '';
+  const loading = fixtureLoading && simLoading; // Only show global loading when ALL are loading
+  const allFailed = fixtureError && simError; // Only show error when ALL fail
 
   useEffect(() => { setTzOffset(getUserTimezoneOffset()); }, []);
 
@@ -205,11 +206,21 @@ export default function FixturePage() {
         </div>
       )}
 
-      {loading && <div className="space-y-5"><div className="text-xs text-fg-tertiary text-center py-4">Cargando...</div></div>}
-      {error && <div className="surface-danger p-5 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
+      {loading && (
+        <div className="space-y-2 animate-fade">
+          {[1,2,3,4].map(i => <MatchCardSkeleton key={i} />)}
+        </div>
+      )}
+      {allFailed && <div className="surface-danger p-5 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">Error cargando datos. Reintentando...</p></div>}
+      {!loading && !allFailed && (fixtureError || simError) && (
+        <div className="surface-elevated p-3 rounded-[var(--r-lg)] border border-state-warning/20 text-xs text-fg-secondary flex items-center gap-2 mb-3">
+          <span>⚠️</span>
+          <span>Algunos datos podrían no estar disponibles. {fixtureError && 'Predicciones no cargadas. '} {simError && 'Resultados storificados no disponibles.'}</span>
+        </div>
+      )}
 
       {/* PARTIDOS */}
-      {!loading && !error && mainTab === 'partidos' && (
+      {!loading && !allFailed && mainTab === 'partidos' && (
         <div className="space-y-5">
           {Object.entries(groupedByDate).map(([date, matches]) => (
             <div key={date}>
@@ -240,9 +251,9 @@ export default function FixturePage() {
         </div>
       )}
 
-      {!loading && !error && mainTab === 'tablas' && <TablasTab liveStandings={liveStandings} getFlag={getFlag} />}
-      {!loading && !error && mainTab === 'top8' && <Top8Tab top8={top8} getFlag={getFlag} />}
-      {!loading && !error && mainTab === 'bracket' && bracket && <BracketTab bracket={bracket} getFlag={getFlag} />}
+      {!loading && !allFailed && mainTab === 'tablas' && <TablasTab liveStandings={liveStandings} getFlag={getFlag} />}
+      {!loading && !allFailed && mainTab === 'top8' && <Top8Tab top8={top8} getFlag={getFlag} />}
+      {!loading && !allFailed && mainTab === 'bracket' && bracket && <BracketTab bracket={bracket} getFlag={getFlag} />}
 
       {selectedMatch && (
         <MatchDetailModal match={selectedMatch} realResult={realResults.get(selectedMatch.id)} status={getMatchStatus(selectedMatch, realResults.get(selectedMatch.id))} getFlag={getFlag} getRoundLabel={getRoundLabel} onClose={() => setSelectedMatch(null)} />

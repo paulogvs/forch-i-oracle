@@ -14,9 +14,11 @@ const translations = {
     // Navigation
     'nav.home': 'Inicio',
     'nav.fixture': 'Fixture',
+    'nav.live': 'En Vivo',
     'nav.forecast': 'Pronóstico',
     'nav.stats': 'Estadísticas',
     'nav.teams': 'Equipos',
+    'nav.benchmark': 'Benchmark',
 
     // Dashboard
     'dash.title': 'Mundial 2026',
@@ -95,9 +97,11 @@ const translations = {
   en: {
     'nav.home': 'Home',
     'nav.fixture': 'Fixture',
+    'nav.live': 'Live',
     'nav.forecast': 'Forecast',
     'nav.stats': 'Stats',
     'nav.teams': 'Teams',
+    'nav.benchmark': 'Benchmark',
     'dash.title': 'World Cup 2026',
     'dash.subtitle': 'Real-time predictions',
     'dash.live': 'Live',
@@ -162,9 +166,11 @@ const translations = {
   pt: {
     'nav.home': 'Início',
     'nav.fixture': 'Fixture',
+    'nav.live': 'Ao Vivo',
     'nav.forecast': 'Previsão',
     'nav.stats': 'Estatísticas',
     'nav.teams': 'Equipas',
+    'nav.benchmark': 'Benchmark',
     'dash.title': 'Copa do Mundo 2026',
     'dash.subtitle': 'Previsões em tempo real',
     'dash.live': 'Ao Vivo',
@@ -229,9 +235,11 @@ const translations = {
   fr: {
     'nav.home': 'Accueil',
     'nav.fixture': 'Calendrier',
+    'nav.live': 'En Direct',
     'nav.forecast': 'Prévisions',
     'nav.stats': 'Statistiques',
     'nav.teams': 'Équipes',
+    'nav.benchmark': 'Benchmark',
     'dash.title': 'Coupe du Monde 2026',
     'dash.subtitle': 'Prédictions en direct',
     'dash.live': 'En Direct',

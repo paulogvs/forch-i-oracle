@@ -91,7 +91,7 @@ export default function ForecastPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-4xl font-bold text-accent-primary">
+        <h1 className="h-page text-accent-primary">
           📊 Pronóstico del Torneo
         </h1>
         <p className="text-fg-secondary mt-2">
@@ -106,7 +106,7 @@ export default function ForecastPage() {
         transition={{ delay: 0.1 }}
         className="max-w-4xl mx-auto mb-8"
       >
-        <div className="bg-surface border border-border-subtle rounded-2xl p-6">
+        <div className="surface p-6">
           <div className="flex flex-wrap items-center gap-6">
             {/* Sim count slider */}
             <div className="flex-1 min-w-[200px]">
@@ -120,7 +120,7 @@ export default function ForecastPage() {
                 step={10}
                 value={numSims}
                 onChange={(e) => setNumSims(Number(e.target.value))}
-                className="w-full h-2 bg-elevated rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                className="w-full h-2 bg-elevated rounded-lg appearance-none cursor-pointer accent-[var(--accent-primary)]"
               />
               <div className="flex justify-between text-xs text-fg-tertiary mt-1">
                 <span>10</span>
@@ -133,7 +133,7 @@ export default function ForecastPage() {
             <button
               onClick={handleRunForecast}
               disabled={isRunning}
-              className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 disabled:from-slate-600 disabled:to-slate-600 rounded-xl font-bold text-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-lg shadow-cyan-500/25"
+              className="px-8 py-3 bg-accent-primary text-fg-primary hover:brightness-110 disabled:bg-raised disabled:text-fg-disabled rounded-xl font-bold text-lg transition-all transform hover:scale-105 disabled:scale-100 shadow-md"
             >
               {isRunning ? (
                 <span className="flex items-center gap-2">
@@ -161,7 +161,7 @@ export default function ForecastPage() {
                 <div className="text-sm text-fg-secondary mb-1">{progress.message}</div>
                 <div className="w-full bg-elevated rounded-full h-2">
                   <motion.div
-                    className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full"
+                    className="bg-accent-primary h-2 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${progress.progress}%` }}
                     transition={{ duration: 0.3 }}
@@ -182,7 +182,7 @@ export default function ForecastPage() {
         >
           {/* Top 8 Champions */}
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-accent-primary mb-4 flex items-center gap-2">
+            <h2 className="h-section text-accent-primary mb-4 flex items-center gap-2">
               🏆 Top 8 Campeones
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -192,9 +192,9 @@ export default function ForecastPage() {
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className={`bg-surface backdrop-blur rounded-xl border p-4 ${
-                    i === 0 ? 'border-yellow-500/50 shadow-lg shadow-yellow-500/20' :
-                    i < 3 ? 'border-border-strong' : 'border-border-subtle'
+                  className={`p-4 ${
+                    i === 0 ? 'surface-gold' :
+                    i < 3 ? 'surface border-border-strong' : 'surface'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -203,9 +203,9 @@ export default function ForecastPage() {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <span className={`text-3xl font-black ${
-                      i === 0 ? 'text-yellow-400' :
-                      i === 1 ? 'text-slate-300' :
-                      i === 2 ? 'text-amber-600' : 'text-fg-secondary'
+                      i === 0 ? 'text-accent-premium' :
+                      i === 1 ? 'text-fg-secondary' :
+                      i === 2 ? 'text-state-warning' : 'text-fg-secondary'
                     }`}>
                       {c.pct.toFixed(1)}%
                     </span>
@@ -214,9 +214,9 @@ export default function ForecastPage() {
                   <div className="w-full bg-elevated rounded-full h-2 mt-2">
                     <div
                       className={`h-2 rounded-full ${
-                        i === 0 ? 'bg-yellow-500' :
-                        i === 1 ? 'bg-slate-400' :
-                        i === 2 ? 'bg-amber-600' : 'bg-slate-600'
+                        i === 0 ? 'bg-accent-premium' :
+                        i === 1 ? 'bg-fg-secondary' :
+                        i === 2 ? 'bg-state-warning' : 'bg-raised'
                       }`}
                       style={{ width: `${c.pct}%` }}
                     />
@@ -255,13 +255,13 @@ export default function ForecastPage() {
           </div>
 
           {/* Outcomes Table */}
-          <div className="bg-surface backdrop-blur-xl rounded-2xl border border-border-subtle overflow-hidden">
+          <div className="surface overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-subtle text-fg-secondary">
-                    <th className="px-4 py-3 text-left sticky left-0 bg-slate-900/90">#</th>
-                    <th className="px-4 py-3 text-left sticky left-8 bg-slate-900/90">Equipo</th>
+                    <th className="px-4 py-3 text-left sticky left-0 bg-surface">#</th>
+                    <th className="px-4 py-3 text-left sticky left-8 bg-surface">Equipo</th>
                     <th className="px-4 py-3 text-center">Grupo</th>
                     <th className="px-4 py-3 text-center">🏆 Campeón</th>
                     <th className="px-4 py-3 text-center">🥈 Subcampeón</th>
@@ -284,12 +284,12 @@ export default function ForecastPage() {
                       onClick={() => setSelectedTeam(team)}
                       className={`border-b border-border-subtle/50 cursor-pointer transition-colors ${
                         selectedTeam?.team === team.team
-                          ? 'bg-cyan-500/10'
-                          : 'hover:bg-elevated/50'
+                          ? 'bg-tint-blue'
+                          : 'hover:bg-elevated'
                       }`}
                     >
-                      <td className="px-4 py-3 text-fg-tertiary sticky left-0 bg-slate-900/90">{idx + 1}</td>
-                      <td className="px-4 py-3 sticky left-8 bg-slate-900/90">
+                      <td className="px-4 py-3 text-fg-tertiary sticky left-0 bg-surface">{idx + 1}</td>
+                      <td className="px-4 py-3 sticky left-8 bg-surface">
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{team.flag}</span>
                           <span className="font-semibold">{team.team}</span>
@@ -337,19 +337,19 @@ export default function ForecastPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="mt-8 bg-surface backdrop-blur-xl rounded-2xl border border-border-subtle p-6"
+                className="mt-8 surface p-6"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <span className="text-4xl">{selectedTeam.flag}</span>
                     <div>
-                      <h3 className="text-2xl font-bold">{selectedTeam.team}</h3>
+                      <h3 className="h-page">{selectedTeam.team}</h3>
                       <span className="text-fg-secondary">Grupo {selectedTeam.group}</span>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedTeam(null)}
-                    className="text-fg-tertiary hover:text-white transition-colors"
+                    className="text-fg-tertiary hover:text-fg-primary transition-colors"
                   >
                     ✕
                   </button>
@@ -358,7 +358,7 @@ export default function ForecastPage() {
                 {/* Probability bars */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-sm font-semibold text-fg-secondary mb-3">Probabilidades de Posición Final</h4>
+                    <h4 className="h-card text-fg-secondary mb-3">Probabilidades de Posición Final</h4>
                     <div className="space-y-3">
                       {[
                         { label: '🏆 Campeón', value: selectedTeam.championPct },
@@ -383,7 +383,7 @@ export default function ForecastPage() {
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-semibold text-fg-secondary mb-3">Probabilidades por Ronda</h4>
+                    <h4 className="h-card text-fg-secondary mb-3">Probabilidades por Ronda</h4>
                     <div className="space-y-3">
                       {[
                         { label: 'Avanza de grupo', value: selectedTeam.groupAdvances },
@@ -412,17 +412,17 @@ export default function ForecastPage() {
                 {/* Knockout Path */}
                 {selectedTeam.path.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="text-sm font-semibold text-fg-secondary mb-3">Ruta en Eliminatorias</h4>
+                    <h4 className="h-card text-fg-secondary mb-3">Ruta en Eliminatorias</h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedTeam.path.map((entry, i) => (
                         <div
                           key={i}
-                          className={`px-3 py-2 rounded-lg border text-sm ${
+                          className={`px-3 py-2 text-sm ${
                             entry.isPlayed
                               ? entry.result === 'W'
-                                ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300'
-                                : 'bg-red-500/20 border-red-500/30 text-red-300'
-                              : 'bg-elevated/50 border-border-strong text-slate-300'
+                                ? 'surface-green text-accent-emerald'
+                                : 'surface-danger text-state-danger'
+                              : 'surface border-border-strong text-fg-secondary'
                           }`}
                         >
                           <span className="text-xs text-fg-tertiary">{entry.round}</span>
@@ -458,7 +458,7 @@ export default function ForecastPage() {
           className="max-w-4xl mx-auto text-center py-20"
         >
           <div className="text-6xl mb-6">🔮</div>
-          <h2 className="text-2xl font-bold text-slate-300 mb-4">
+          <h2 className="h-page text-fg-secondary mb-4">
             Configura y ejecuta el forecast
           </h2>
           <p className="text-fg-tertiary max-w-md mx-auto">
@@ -466,19 +466,19 @@ export default function ForecastPage() {
             de cada equipo de avanzar, llegar a la final, o ganar el Mundial 2026.
           </p>
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="bg-surface rounded-xl border border-border-subtle p-4">
+            <div className="surface p-4">
               <div className="text-2xl mb-2">⚡</div>
-              <div className="font-semibold text-slate-300">Motor Dixon-Coles</div>
+              <div className="h-card text-fg-secondary">Motor Dixon-Coles</div>
               <div className="text-fg-tertiary">Modelo estadístico avanzado con ajuste por goles</div>
             </div>
-            <div className="bg-surface rounded-xl border border-border-subtle p-4">
+            <div className="surface p-4">
               <div className="text-2xl mb-2">🔄</div>
-              <div className="font-semibold text-slate-300">Circuito Bayesiano</div>
+              <div className="h-card text-fg-secondary">Circuito Bayesiano</div>
               <div className="text-fg-tertiary">Actualización dinámica con resultados reales</div>
             </div>
-            <div className="bg-surface rounded-xl border border-border-subtle p-4">
+            <div className="surface p-4">
               <div className="text-2xl mb-2">🎯</div>
-              <div className="font-semibold text-slate-300">Poisson + Elo</div>
+              <div className="h-card text-fg-secondary">Poisson + Elo</div>
               <div className="text-fg-tertiary">Blending de 4 modelos con pesos optimizados</div>
             </div>
           </div>

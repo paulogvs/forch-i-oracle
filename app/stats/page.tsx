@@ -33,20 +33,28 @@ function getFlag(name: string): string {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-surface border border-border-subtle rounded-2xl ${className}`}>
+    <div className={`surface ${className}`}>
       {children}
     </div>
   );
 }
 
-function StatCard({ label, value, emoji, gradient }: {
-  label: string; value: string | number; emoji: string; gradient: string;
+const STAT_TINTS: Record<string, string> = {
+  blue:    'bg-tint-blue',
+  green:   'bg-tint-green',
+  violet:  'bg-tint-violet',
+  gold:    'bg-tint-gold',
+  red:     'bg-tint-red',
+};
+
+function StatCard({ label, value, emoji, tint }: {
+  label: string; value: string | number; emoji: string; tint: string;
 }) {
   return (
-    <div className={`p-4 rounded-xl bg-gradient-to-br ${gradient} border border-border-subtle`}>
+    <div className={`p-4 rounded-xl ${STAT_TINTS[tint]} border border-border-subtle`}>
       <div className="text-2xl mb-1">{emoji}</div>
-      <div className="text-3xl font-black text-fg-primary">{value}</div>
-      <div className="text-xs text-fg-secondary">{label}</div>
+      <div className="text-2xl font-black text-fg-primary">{value}</div>
+      <div className="t-micro">{label}</div>
     </div>
   );
 }
@@ -140,22 +148,22 @@ export default function StatsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-4xl font-bold text-accent-primary">
+        <h1 className="h-page text-accent-primary">
           📈 Estadísticas en Vivo
         </h1>
-        <p className="text-fg-secondary mt-2">
+        <p className="t-meta mt-2">
           Mundial 2026 — {totalMatches} partidos jugados
         </p>
       </motion.div>
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto mb-6">
-        <div className="flex gap-2 p-1 bg-elevated rounded-xl border border-border-subtle">
+        <div className="flex gap-2 p-1 surface rounded-xl">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg h-card transition-all ${
                 tab === t.id
                   ? 'bg-accent-primary/20 text-accent-primary shadow-lg'
                   : 'text-fg-secondary hover:text-fg-primary hover:bg-raised/50'
@@ -203,11 +211,11 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
   teamStats: any[]; matches: any[];
 }) {
   const stats = [
-    { label: 'Partidos', value: totalMatches, emoji: '⚽', gradient: 'from-cyan-500/20 to-blue-500/20' },
-    { label: 'Goles', value: totalGoals, emoji: '🥅', gradient: 'from-emerald-500/20 to-green-500/20' },
-    { label: 'Promedio', value: avgGoals, emoji: '📊', gradient: 'from-purple-500/20 to-pink-500/20' },
-    { label: 'Vallas Invictas', value: cleanSheets, emoji: '🛡️', gradient: 'from-amber-500/20 to-orange-500/20' },
-    { label: 'Alta Anotación', value: highScoring, emoji: '🔥', gradient: 'from-red-500/20 to-pink-500/20' },
+    { label: 'Partidos', value: totalMatches, emoji: '⚽', tint: 'blue' },
+    { label: 'Goles', value: totalGoals, emoji: '🥅', tint: 'green' },
+    { label: 'Promedio', value: avgGoals, emoji: '📊', tint: 'violet' },
+    { label: 'Vallas Invictas', value: cleanSheets, emoji: '🛡️', tint: 'gold' },
+    { label: 'Alta Anotación', value: highScoring, emoji: '🔥', tint: 'red' },
   ];
 
   const biggestWins = [...matches].sort((a, b) => b.goalDiff - a.goalDiff).slice(0, 5);
@@ -227,19 +235,19 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Biggest wins */}
         <Card className="p-5">
-          <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
+          <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
             💥 Mayores Victorias
           </h3>
           <div className="space-y-2">
             {biggestWins.map((m, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-elevated text-sm">
+              <div key={i} className="flex items-center justify-between p-2 rounded-lg surface-elevated t-body">
                 <div className="flex items-center gap-2 min-w-0">
                   <span>{getFlag(m.homeTeam)}</span>
-                  <span className="truncate text-fg-primary">{m.homeTeam}</span>
+                  <span className="truncate">{m.homeTeam}</span>
                 </div>
                 <span className="font-mono font-bold text-accent-primary px-3">{m.homeScore} - {m.awayScore}</span>
                 <div className="flex items-center gap-2 min-w-0 justify-end">
-                  <span className="truncate text-right text-fg-primary">{m.awayTeam}</span>
+                  <span className="truncate text-right">{m.awayTeam}</span>
                   <span>{getFlag(m.awayTeam)}</span>
                 </div>
               </div>
@@ -249,22 +257,22 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
 
         {/* Highest scoring */}
         <Card className="p-5">
-          <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
+          <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
             🔥 Mayor Anotación
           </h3>
           <div className="space-y-2">
             {highestScoring.map((m, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-elevated text-sm">
+              <div key={i} className="flex items-center justify-between p-2 rounded-lg surface-elevated t-body">
                 <div className="flex items-center gap-2 min-w-0">
                   <span>{getFlag(m.homeTeam)}</span>
-                  <span className="truncate text-fg-primary">{m.homeTeam}</span>
+                  <span className="truncate">{m.homeTeam}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold text-accent-premium px-3">{m.homeScore} - {m.awayScore}</span>
-                  <span className="text-xs text-fg-tertiary">({m.totalGoals} goles)</span>
+                  <span className="t-micro">({m.totalGoals} goles)</span>
                 </div>
                 <div className="flex items-center gap-2 min-w-0 justify-end">
-                  <span className="truncate text-right text-fg-primary">{m.awayTeam}</span>
+                  <span className="truncate text-right">{m.awayTeam}</span>
                   <span>{getFlag(m.awayTeam)}</span>
                 </div>
               </div>
@@ -275,22 +283,22 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
 
       {/* Top teams */}
       <Card className="p-5">
-        <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
+        <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
           🏆 Mejores Equipos (por puntos)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
           {teamStats.filter(t => t.played > 0).slice(0, 9).map((t, i) => (
-            <div key={t.name} className={`flex items-center gap-3 p-3 rounded-xl border ${
-              i < 3 ? 'bg-accent-emerald/10 border-accent-emerald/30' : 'bg-elevated border-border-subtle'
+            <div key={t.name} className={`flex items-center gap-3 p-3 ${
+              i < 3 ? 'surface-blue' : 'surface'
             }`}>
               <span className="text-xl">{t.flag}</span>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm truncate text-fg-primary">{t.name}</div>
-                <div className="text-xs text-fg-tertiary">{t.played}PJ · {t.won}G · {t.drawn}E · {t.lost}P</div>
+                <div className="h-card truncate">{t.name}</div>
+                <div className="t-micro">{t.played}PJ · {t.won}G · {t.drawn}E · {t.lost}P</div>
               </div>
               <div className="text-right">
-                <div className="text-lg font-black text-fg-primary">{t.points}</div>
-                <div className={`text-xs ${t.goalDiff > 0 ? 'text-state-success' : t.goalDiff < 0 ? 'text-state-danger' : 'text-fg-tertiary'}`}>
+                <div className="h-section text-fg-primary">{t.points}</div>
+                <div className={`t-micro ${t.goalDiff > 0 ? 'text-state-success' : t.goalDiff < 0 ? 'text-state-danger' : ''}`}>
                   {t.goalDiff > 0 ? '+' : ''}{t.goalDiff} DG
                 </div>
               </div>
@@ -325,7 +333,7 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
           { id: 'gd' as const, label: 'Dif. Goles' },
         ].map((s) => (
           <button key={s.id} onClick={() => setSortBy(s.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+            className={`px-4 py-2 rounded-lg h-card transition-all border ${
               sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary'
             }`}>
             {s.label}
@@ -334,9 +342,9 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
       </div>
 
       <Card className="overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full t-body">
           <thead>
-            <tr className="border-b border-border-subtle text-fg-tertiary text-xs">
+            <tr className="border-b border-border-subtle t-micro">
               <th className="px-4 py-3 text-left">#</th>
               <th className="px-4 py-3 text-left">Equipo</th>
               <th className="px-4 py-3 text-center">PJ</th>
@@ -357,20 +365,20 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{t.flag}</span>
-                    <span className="font-semibold text-fg-primary">{t.name}</span>
+                    <span className="h-card">{t.name}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-center text-fg-secondary">{t.played}</td>
+                <td className="px-4 py-3 text-center t-mono">{t.played}</td>
                 <td className="px-4 py-3 text-center text-state-success">{t.won}</td>
                 <td className="px-4 py-3 text-center text-state-warning">{t.drawn}</td>
                 <td className="px-4 py-3 text-center text-state-danger">{t.lost}</td>
-                <td className="px-4 py-3 text-center text-fg-primary">{t.goalsFor}</td>
-                <td className="px-4 py-3 text-center text-fg-primary">{t.goalsAgainst}</td>
-                <td className={`px-4 py-3 text-center font-mono ${t.goalDiff > 0 ? 'text-state-success' : t.goalDiff < 0 ? 'text-state-danger' : 'text-fg-tertiary'}`}>
+                <td className="px-4 py-3 text-center t-mono">{t.goalsFor}</td>
+                <td className="px-4 py-3 text-center t-mono">{t.goalsAgainst}</td>
+                <td className={`px-4 py-3 text-center t-mono ${t.goalDiff > 0 ? 'text-state-success' : t.goalDiff < 0 ? 'text-state-danger' : ''}`}>
                   {t.goalDiff > 0 ? '+' : ''}{t.goalDiff}
                 </td>
-                <td className="px-4 py-3 text-center font-bold text-fg-primary">{t.points}</td>
-                <td className="px-4 py-3 text-center text-fg-secondary">{t.cleanSheets}</td>
+                <td className="px-4 py-3 text-center font-bold">{t.points}</td>
+                <td className="px-4 py-3 text-center t-mono">{t.cleanSheets}</td>
               </tr>
             ))}
           </tbody>
@@ -402,7 +410,7 @@ function MatchesTab({ matches }: { matches: any[] }) {
           { id: 'diff' as const, label: 'Mayor Dif.' },
         ].map((s) => (
           <button key={s.id} onClick={() => setSortBy(s.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border ${
+            className={`px-4 py-2 rounded-lg h-card transition-all border ${
               sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary'
             }`}>
             {s.label}
@@ -417,26 +425,26 @@ function MatchesTab({ matches }: { matches: any[] }) {
               <div className="flex items-center gap-3 min-w-0 w-[40%]">
                 <span className="text-2xl">{getFlag(m.homeTeam)}</span>
                 <div className="min-w-0">
-                  <div className="font-semibold truncate text-fg-primary">{m.homeTeam}</div>
-                  <div className="text-xs text-fg-tertiary">
+                  <div className="h-card truncate">{m.homeTeam}</div>
+                  <div className="t-micro">
                     {m.homeScore > m.awayScore ? 'Victoria' : m.homeScore < m.awayScore ? 'Derrota' : 'Empate'}
                   </div>
                 </div>
               </div>
 
               <div className="text-center shrink-0">
-                <div className="text-3xl font-black font-mono">
+                <div className="h-section font-mono">
                   <span className={m.homeScore > m.awayScore ? 'text-state-success' : 'text-fg-secondary'}>{m.homeScore}</span>
                   <span className="text-fg-tertiary mx-1">-</span>
                   <span className={m.awayScore > m.homeScore ? 'text-state-success' : 'text-fg-secondary'}>{m.awayScore}</span>
                 </div>
-                <div className="text-xs text-fg-tertiary">{m.totalGoals} goles</div>
+                <div className="t-micro">{m.totalGoals} goles</div>
               </div>
 
               <div className="flex items-center gap-3 min-w-0 w-[40%] justify-end">
                 <div className="min-w-0 text-right">
-                  <div className="font-semibold truncate text-fg-primary">{m.awayTeam}</div>
-                  <div className="text-xs text-fg-tertiary">
+                  <div className="h-card truncate">{m.awayTeam}</div>
+                  <div className="t-micro">
                     {m.awayScore > m.homeScore ? 'Victoria' : m.awayScore < m.homeScore ? 'Derrota' : 'Empate'}
                   </div>
                 </div>
@@ -456,24 +464,24 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
   return (
     <div className="space-y-4">
       <Card className="p-5">
-        <h3 className="text-sm font-bold text-fg-secondary mb-4 flex items-center gap-2">
+        <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
           ⚽ Goleadores por Equipo
         </h3>
-        <p className="text-xs text-fg-tertiary mb-4">Goles por equipo en el torneo</p>
+        <p className="t-micro mb-4">Goles por equipo en el torneo</p>
         <div className="space-y-3">
           {topScorers.map((t, i) => (
             <div key={t.name} className="flex items-center gap-4">
-              <span className="text-fg-tertiary w-6 text-right text-sm">{i + 1}</span>
+              <span className="text-fg-tertiary w-6 text-right t-mono">{i + 1}</span>
               <span className="text-xl">{t.flag}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-sm truncate text-fg-primary">{t.name}</span>
-                  <span className="text-sm font-bold text-accent-primary">{t.goalsFor} goles</span>
+                  <span className="h-card truncate">{t.name}</span>
+                  <span className="h-card text-accent-primary">{t.goalsFor} goles</span>
                 </div>
                 <div className="w-full bg-elevated rounded-full h-2">
                   <div className="h-2 rounded-full bg-accent-primary" style={{ width: `${(t.goalsFor / (topScorers[0]?.goalsFor || 1)) * 100}%` }} />
                 </div>
-                <div className="flex justify-between text-xs text-fg-tertiary mt-1">
+                <div className="flex justify-between t-micro mt-1">
                   <span>{t.played}PJ</span>
                   <span>{(t.goalsFor / t.played).toFixed(1)} gol/partido</span>
                 </div>
@@ -486,17 +494,17 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
       {/* Fun facts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-5">
-          <h3 className="text-sm font-bold text-fg-secondary mb-3 flex items-center gap-2">🎯 Datos Curiosos</h3>
-          <div className="space-y-2 text-sm">
+          <h3 className="h-card text-fg-secondary mb-3 flex items-center gap-2">🎯 Datos Curiosos</h3>
+          <div className="space-y-2 t-body">
             <div className="flex justify-between">
-              <span className="text-fg-tertiary">Equipo más goleador</span>
-              <span className="font-semibold text-fg-primary">
+              <span className="t-meta">Equipo más goleador</span>
+              <span className="font-semibold">
                 {topScorers[0]?.flag} {topScorers[0]?.name} ({topScorers[0]?.goalsFor})
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-fg-tertiary">Mejor diferencia de goles</span>
-              <span className="font-semibold text-fg-primary">
+              <span className="t-meta">Mejor diferencia de goles</span>
+              <span className="font-semibold">
                 {[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.flag}{' '}
                 {[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.name}{' '}
                 ({[...topScorers].sort((a, b) => b.goalDiff - a.goalDiff)[0]?.goalDiff > 0 ? '+' : ''}
@@ -507,19 +515,19 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
         </Card>
 
         <Card className="p-5">
-          <h3 className="text-sm font-bold text-fg-secondary mb-3 flex items-center gap-2">📊 Rendimiento</h3>
-          <div className="space-y-2 text-sm">
+          <h3 className="h-card text-fg-secondary mb-3 flex items-center gap-2">📊 Rendimiento</h3>
+          <div className="space-y-2 t-body">
             <div className="flex justify-between">
-              <span className="text-fg-tertiary">Más victorias</span>
-              <span className="font-semibold text-fg-primary">
+              <span className="t-meta">Más victorias</span>
+              <span className="font-semibold">
                 {[...topScorers].sort((a, b) => b.won - a.won)[0]?.flag}{' '}
                 {[...topScorers].sort((a, b) => b.won - a.won)[0]?.name}{' '}
                 ({[...topScorers].sort((a, b) => b.won - a.won)[0]?.won})
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-fg-tertiary">Más vallas invictas</span>
-              <span className="font-semibold text-fg-primary">
+              <span className="t-meta">Más vallas invictas</span>
+              <span className="font-semibold">
                 {[...topScorers].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.flag}{' '}
                 {[...topScorers].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.name}{' '}
                 ({[...topScorers].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]?.cleanSheets})

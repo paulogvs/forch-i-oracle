@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { WORLD_CUP_TEAMS, ELO_RATINGS, POWER_RATINGS, type Team } from '@/lib/teams';
 import { WC2026_VENUES } from '@/lib/venues';
 import { useLiveScores } from '@/lib/swr/hooks';
+import { Badge } from '@/components/ui/Badge';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -24,16 +25,28 @@ interface TeamStats {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
-function getConfederationColor(conf: string): string {
-  const colors: Record<string, string> = {
-    UEFA: 'from-blue-500 to-indigo-500',
-    CONMEBOL: 'from-emerald-500 to-green-500',
-    CONCACAF: 'from-orange-500 to-amber-500',
-    CAF: 'from-yellow-500 to-orange-500',
-    AFC: 'from-red-500 to-pink-500',
-    OFC: 'from-cyan-500 to-teal-500',
+function getConfederationAccent(conf: string): string {
+  const accents: Record<string, string> = {
+    UEFA: 'text-accent-primary',
+    CONMEBOL: 'text-accent-emerald',
+    CONCACAF: 'text-accent-premium',
+    CAF: 'text-accent-premium',
+    AFC: 'text-state-danger',
+    OFC: 'text-accent-secondary',
   };
-  return colors[conf] || 'from-slate-500 to-gray-500';
+  return accents[conf] || 'text-fg-secondary';
+}
+
+function getConfederationSurface(conf: string): string {
+  const surfaces: Record<string, string> = {
+    UEFA: 'surface-blue',
+    CONMEBOL: 'surface-live',
+    CONCACAF: 'surface-gold',
+    CAF: 'surface-gold',
+    AFC: 'surface-danger',
+    OFC: 'surface-violet',
+  };
+  return surfaces[conf] || 'surface';
 }
 
 function getConfederationBadge(conf: string): string {
@@ -49,11 +62,11 @@ function getConfederationBadge(conf: string): string {
 }
 
 function getEloTier(elo: number): { label: string; color: string } {
-  if (elo >= 2100) return { label: 'Élite', color: 'text-yellow-400' };
+  if (elo >= 2100) return { label: 'Élite', color: 'text-accent-premium' };
   if (elo >= 2000) return { label: 'Top', color: 'text-accent-primary' };
-  if (elo >= 1900) return { label: 'Competitivo', color: 'text-emerald-400' };
+  if (elo >= 1900) return { label: 'Competitivo', color: 'text-accent-emerald' };
   if (elo >= 1800) return { label: 'Promedio', color: 'text-fg-secondary' };
-  return { label: 'Revelación', color: 'text-orange-400' };
+  return { label: 'Revelación', color: 'text-state-warning' };
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────
@@ -113,17 +126,17 @@ export default function TeamsPage() {
   }, [filteredTeams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950/30 to-slate-950 text-white p-4 md:p-8">
+    <div className="min-h-screen bg-canvas text-fg-primary p-4 md:p-8">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-red-400 bg-clip-text text-transparent">
+        <h1 className="h-page text-accent-premium">
           ⚽ 48 Equipos
         </h1>
-        <p className="text-fg-secondary mt-2">
+        <p className="t-meta mt-2">
           Mundial FIFA 2026 — {filteredTeams.length} equipos
         </p>
       </motion.div>
@@ -137,7 +150,7 @@ export default function TeamsPage() {
             placeholder="Buscar equipo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface backdrop-blur-xl border border-border-subtle rounded-xl px-4 py-3 pl-10 text-sm focus:outline-none focus:border-cyan-500/50 transition-colors"
+            className="w-full bg-surface backdrop-blur-xl border border-border-subtle rounded-xl px-4 py-3 pl-10 t-body focus:outline-none focus:border-border-focus transition-colors"
           />
           <span className="absolute left-3 top-3 text-fg-tertiary">🔍</span>
         </div>
@@ -150,8 +163,8 @@ export default function TeamsPage() {
               onClick={() => setConfFilter(c)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 confFilter === c
-                  ? `bg-gradient-to-r ${getConfederationColor(c)} text-white shadow-lg`
-                  : 'bg-surface text-fg-tertiary border border-border-subtle hover:text-slate-300'
+                  ? `${getConfederationSurface(c)} ${getConfederationAccent(c)}`
+                  : 'bg-surface text-fg-tertiary border border-border-subtle hover:text-fg-secondary'
               }`}
             >
               {c === 'all' ? '🌐 Todos' : `${getConfederationBadge(c)} ${c}`}
@@ -165,8 +178,8 @@ export default function TeamsPage() {
             onClick={() => setGroupFilter('all')}
             className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
               groupFilter === 'all'
-                ? 'bg-cyan-500/20 text-accent-primary border-cyan-500/30'
-                : 'text-fg-tertiary border-border-subtle hover:text-slate-300'
+                ? 'surface-blue text-accent-primary border-accent-primary/20'
+                : 'text-fg-tertiary border-border-subtle hover:text-fg-secondary'
             }`}
           >
             Todos
@@ -177,8 +190,8 @@ export default function TeamsPage() {
               onClick={() => setGroupFilter(g)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
                 groupFilter === g
-                  ? 'bg-cyan-500/20 text-accent-primary border-cyan-500/30'
-                  : 'text-fg-tertiary border-border-subtle hover:text-slate-300'
+                  ? 'surface-blue text-accent-primary border-accent-primary/20'
+                  : 'text-fg-tertiary border-border-subtle hover:text-fg-secondary'
               }`}
             >
               {g}
@@ -193,9 +206,9 @@ export default function TeamsPage() {
           <div key={conf} className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xl">{getConfederationBadge(conf)}</span>
-              <h2 className="text-lg font-bold">{conf}</h2>
-              <span className="text-xs text-fg-tertiary">({teams.length})</span>
-              <div className="flex-1 h-px bg-elevated ml-2" />
+              <h2 className="h-section">{conf}</h2>
+              <span className="t-micro">({teams.length})</span>
+              <div className="flex-1 h-px bg-border-subtle ml-2" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {teams.map((team, i) => (
@@ -242,47 +255,45 @@ function TeamCard({ team, stats, index, onClick }: {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.02 }}
       onClick={onClick}
-      className="group text-left p-4 bg-surface backdrop-blur-xl rounded-xl border border-border-subtle hover:border-cyan-500/30 hover:bg-elevated/60 transition-all hover:shadow-lg hover:shadow-cyan-500/5"
+      className="group text-left p-4 surface-interactive"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-3xl group-hover:scale-110 transition-transform">{team.flag}</span>
           <div>
-            <div className="font-bold text-sm group-hover:text-accent-primary transition-colors">{team.name}</div>
-            <div className="text-[10px] text-fg-tertiary">{team.englishName}</div>
+            <div className="h-card group-hover:text-accent-primary transition-colors">{team.name}</div>
+            <div className="t-micro">{team.englishName}</div>
           </div>
         </div>
-        <span className={`text-xs font-bold ${tier.color}`}>{elo}</span>
+        <span className={`t-body font-bold ${tier.color}`}>{elo}</span>
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center gap-2 text-xs mb-3">
-        <span className="px-2 py-0.5 rounded bg-elevated text-fg-secondary">{team.group}</span>
-        <span className="px-2 py-0.5 rounded bg-elevated text-fg-secondary">{team.code}</span>
+      <div className="flex items-center gap-2 mb-3">
+        <Badge variant="neutral">{team.group}</Badge>
+        <Badge variant="neutral">{team.code}</Badge>
         {stats && stats.played > 0 && (
-          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
-            {stats.points}pts
-          </span>
+          <Badge variant="success">{stats.points}pts</Badge>
         )}
       </div>
 
       {/* Power bar */}
       <div className="mb-3">
-        <div className="flex justify-between text-[10px] text-fg-tertiary mb-1">
+        <div className="flex justify-between t-micro mb-1">
           <span>Poder</span>
           <span>{avgPower}/100</span>
         </div>
         <div className="w-full bg-elevated rounded-full h-1.5">
           <div
-            className={`h-1.5 rounded-full bg-gradient-to-r ${getConfederationColor(team.confederation)}`}
-            style={{ width: `${avgPower}%` }}
+            className={`h-1.5 rounded-full ${getConfederationAccent(team.confederation)}`}
+            style={{ width: `${avgPower}%`, opacity: 0.6 }}
           />
         </div>
       </div>
 
       {/* Star players */}
-      <div className="text-[10px] text-fg-tertiary">
+      <div className="t-micro">
         <span className="text-fg-secondary">⭐</span> {team.starPlayers.slice(0, 2).join(', ')}
       </div>
     </motion.button>
@@ -313,19 +324,21 @@ function TeamDetailModal({ team, stats, onClose }: {
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={`p-6 bg-gradient-to-r ${getConfederationColor(team.confederation)} bg-opacity-10`}>
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-lg bg-black/30 text-white/70 hover:text-white transition-colors">
+        <div className={`p-6 ${getConfederationSurface(team.confederation)}`}>
+          <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-lg bg-overlay text-fg-tertiary hover:text-fg-primary transition-colors">
             ✕
           </button>
           <div className="flex items-center gap-4">
             <span className="text-6xl">{team.flag}</span>
             <div>
-              <h2 className="text-2xl font-black">{team.name}</h2>
-              <div className="text-sm text-white/70">{team.englishName}</div>
+              <h2 className="h-page">{team.name}</h2>
+              <div className="t-meta">{team.englishName}</div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="px-2 py-0.5 rounded bg-black/30 text-xs font-bold">{team.code}</span>
-                <span className="px-2 py-0.5 rounded bg-black/30 text-xs">{team.group}</span>
-                <span className={`px-2 py-0.5 rounded bg-black/30 text-xs font-bold ${tier.color}`}>{elo} Elo</span>
+                <Badge variant="neutral">{team.code}</Badge>
+                <Badge variant="neutral">{team.group}</Badge>
+                <Badge variant={elo >= 2100 ? 'premium' : elo >= 2000 ? 'info' : elo >= 1900 ? 'live' : 'neutral'}>
+                  {elo} Elo
+                </Badge>
               </div>
             </div>
           </div>
@@ -335,34 +348,34 @@ function TeamDetailModal({ team, stats, onClose }: {
           {/* Stats */}
           {stats && stats.played > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-3">📊 Estadísticas en Vivo</h3>
+              <h3 className="t-micro mb-3">📊 Estadísticas en Vivo</h3>
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { label: 'PJ', value: stats.played },
-                  { label: 'G', value: stats.won, color: 'text-emerald-400' },
-                  { label: 'E', value: stats.drawn, color: 'text-yellow-400' },
-                  { label: 'P', value: stats.lost, color: 'text-red-400' },
+                  { label: 'G', value: stats.won, color: 'text-state-success' },
+                  { label: 'E', value: stats.drawn, color: 'text-state-warning' },
+                  { label: 'P', value: stats.lost, color: 'text-state-danger' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-2 rounded-lg bg-surface">
-                    <div className={`text-lg font-black ${s.color || 'text-white'}`}>{s.value}</div>
-                    <div className="text-[10px] text-fg-tertiary">{s.label}</div>
+                  <div key={s.label} className="text-center p-2 rounded-lg surface">
+                    <div className={`text-lg font-black ${s.color || 'text-fg-primary'}`}>{s.value}</div>
+                    <div className="t-micro">{s.label}</div>
                   </div>
                 ))}
               </div>
               <div className="grid grid-cols-3 gap-2 mt-2">
-                <div className="text-center p-2 rounded-lg bg-surface">
-                  <div className="text-lg font-black">{stats.gf}</div>
-                  <div className="text-[10px] text-fg-tertiary">GF</div>
+                <div className="text-center p-2 rounded-lg surface">
+                  <div className="text-lg font-black text-fg-primary">{stats.gf}</div>
+                  <div className="t-micro">GF</div>
                 </div>
-                <div className="text-center p-2 rounded-lg bg-surface">
-                  <div className="text-lg font-black">{stats.ga}</div>
-                  <div className="text-[10px] text-fg-tertiary">GC</div>
+                <div className="text-center p-2 rounded-lg surface">
+                  <div className="text-lg font-black text-fg-primary">{stats.ga}</div>
+                  <div className="t-micro">GC</div>
                 </div>
-                <div className="text-center p-2 rounded-lg bg-surface">
-                  <div className={`text-lg font-black ${stats.gd > 0 ? 'text-emerald-400' : stats.gd < 0 ? 'text-red-400' : 'text-fg-secondary'}`}>
+                <div className="text-center p-2 rounded-lg surface">
+                  <div className={`text-lg font-black ${stats.gd > 0 ? 'text-state-success' : stats.gd < 0 ? 'text-state-danger' : 'text-fg-secondary'}`}>
                     {stats.gd > 0 ? '+' : ''}{stats.gd}
                   </div>
-                  <div className="text-[10px] text-fg-tertiary">DG</div>
+                  <div className="t-micro">DG</div>
                 </div>
               </div>
             </div>
@@ -370,7 +383,7 @@ function TeamDetailModal({ team, stats, onClose }: {
 
           {/* Power ratings */}
           <div>
-            <h3 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-3">💪 Ratings de Poder</h3>
+            <h3 className="t-micro mb-3">💪 Ratings de Poder</h3>
             <div className="space-y-3">
               {[
                 { label: 'Ataque', value: power.attack, icon: '⚔️' },
@@ -378,14 +391,14 @@ function TeamDetailModal({ team, stats, onClose }: {
                 { label: 'Defensa', value: power.defense, icon: '🛡️' },
               ].map((p) => (
                 <div key={p.label}>
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between t-body mb-1">
                     <span className="flex items-center gap-1"><span>{p.icon}</span> {p.label}</span>
                     <span className="font-bold">{p.value}/100</span>
                   </div>
                   <div className="w-full bg-elevated rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full bg-gradient-to-r ${getConfederationColor(team.confederation)}`}
-                      style={{ width: `${p.value}%` }}
+                      className={`h-2 rounded-full ${getConfederationAccent(team.confederation)}`}
+                      style={{ width: `${p.value}%`, opacity: 0.6 }}
                     />
                   </div>
                 </div>
@@ -396,19 +409,19 @@ function TeamDetailModal({ team, stats, onClose }: {
           {/* Elo details */}
           {eloData && (
             <div>
-              <h3 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-3">📈 Elo Rating</h3>
+              <h3 className="t-micro mb-3">📈 Elo Rating</h3>
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center p-3 rounded-lg bg-surface">
+                <div className="text-center p-3 rounded-lg surface">
                   <div className="text-xl font-black text-accent-primary">{elo}</div>
-                  <div className="text-[10px] text-fg-tertiary">Elo</div>
+                  <div className="t-micro">Elo</div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-surface">
-                  <div className="text-xl font-black text-emerald-400">{eloData.attack}</div>
-                  <div className="text-[10px] text-fg-tertiary">Ataque avg</div>
+                <div className="text-center p-3 rounded-lg surface">
+                  <div className="text-xl font-black text-accent-emerald">{eloData.attack}</div>
+                  <div className="t-micro">Ataque avg</div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-surface">
-                  <div className="text-xl font-black text-red-400">{eloData.defense}</div>
-                  <div className="text-[10px] text-fg-tertiary">Defensa avg</div>
+                <div className="text-center p-3 rounded-lg surface">
+                  <div className="text-xl font-black text-state-danger">{eloData.defense}</div>
+                  <div className="t-micro">Defensa avg</div>
                 </div>
               </div>
             </div>
@@ -416,23 +429,23 @@ function TeamDetailModal({ team, stats, onClose }: {
 
           {/* Star players */}
           <div>
-            <h3 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-3">⭐ Jugadores Estrella</h3>
+            <h3 className="t-micro mb-3">⭐ Jugadores Estrella</h3>
             <div className="flex flex-wrap gap-2">
               {team.starPlayers.map((p) => (
-                <span key={p} className="px-3 py-1.5 rounded-lg bg-surface border border-border-subtle text-sm">
-                  {p}
-                </span>
+                <Badge key={p} variant="neutral" className="text-sm">{p}</Badge>
               ))}
             </div>
           </div>
 
           {/* Confederation */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-surface border border-border-subtle">
+          <div className="flex items-center justify-between p-3 surface">
             <div className="flex items-center gap-2">
               <span>{getConfederationBadge(team.confederation)}</span>
-              <span className="text-sm font-semibold">{team.confederation}</span>
+              <span className="t-body font-semibold">{team.confederation}</span>
             </div>
-            <span className={`text-xs font-bold ${tier.color}`}>{tier.label}</span>
+            <Badge variant={elo >= 2100 ? 'premium' : elo >= 2000 ? 'info' : elo >= 1900 ? 'live' : 'neutral'}>
+              {tier.label}
+            </Badge>
           </div>
         </div>
       </motion.div>

@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
-import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import { cn } from '@/lib/utils';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
@@ -29,8 +28,8 @@ export default function LivePage() {
   const { data: liveScoresData, isLoading: liveLoading, error: liveError } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
 
-  const loading = fixtureLoading || liveLoading || simLoading;
-  const error = fixtureError ? 'No se pudieron cargar los datos' : liveError ? 'No se pudieron cargar los datos' : simError ? 'No se pudieron cargar los datos' : null;
+  const loading = fixtureLoading && liveLoading && simLoading; // Only show global loading when ALL are loading
+  const allFailed = fixtureError && liveError && simError; // Only show error when ALL fail
 
   const matches = useMemo(() => {
     const realResultsMap = new Map<string, { home: number; away: number }>();
@@ -172,12 +171,32 @@ export default function LivePage() {
       </div>
 
       {loading && (
-        <div className="text-xs text-fg-tertiary text-center py-4">Cargando...</div>
+        <div className="space-y-3 py-4">
+          {[1,2,3].map(i => (
+            <div key={i} className="surface p-3 rounded-[var(--r-lg)] animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 rounded-full bg-raised" />
+                <div className="flex-1 h-4 rounded bg-raised/60" />
+                <div className="h-6 w-20 rounded bg-raised/60" />
+                <div className="flex-1 h-4 rounded bg-raised/60" />
+                <div className="h-5 w-5 rounded-full bg-raised" />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
-      {error && <div className="surface-danger p-4 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">{error}</p></div>}
+      {allFailed && <div className="surface-danger p-4 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">No se pudieron cargar los datos. Reintentando automáticamente...</p></div>}
+
+      {/* Partial error warnings — show only when some hooks fail but not all */}
+      {!loading && !allFailed && (fixtureError || liveError || simError) && (
+        <div className="surface-elevated p-3 rounded-[var(--r-lg)] border border-state-warning/20 text-xs text-fg-secondary flex items-center gap-2">
+          <span>⚠️</span>
+          <span>Algunos datos podrían no estar disponibles. {fixtureError && 'Predicciones no cargadas. '} {liveError && 'Scores en vivo no disponibles. '} {simError && 'Resultados storificados no disponibles.'}</span>
+        </div>
+      )}
 
       {/* ═══ EN JUEGO ═══ */}
-      {!loading && !error && subPanel === 'ahora' && (
+      {!loading && !allFailed && subPanel === 'ahora' && (
         liveNow.length > 0 ? (
           <div className="space-y-2">
             {liveNow.map(m => (
@@ -197,7 +216,7 @@ export default function LivePage() {
       )}
 
       {/* ═══ RESULTADOS ═══ */}
-      {!loading && !error && subPanel === 'resultados' && (
+      {!loading && !allFailed && subPanel === 'resultados' && (
         finished.length > 0 ? (
           <div className="space-y-2">
             {/* Summary bar */}
@@ -258,7 +277,7 @@ export default function LivePage() {
       )}
 
       {/* ═══ PENDIENTES ═══ */}
-      {!loading && !error && subPanel === 'pendientes' && (
+      {!loading && !allFailed && subPanel === 'pendientes' && (
         upcoming.length > 0 ? (
           <div className="space-y-1">
             {upcoming.slice(0, 30).map(m => {

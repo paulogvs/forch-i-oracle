@@ -13,11 +13,11 @@ import BackToTop from '@/components/BackToTop';
 const NAV = [
   { href: '/',          label: 'nav.home',      icon: LayoutDashboard, key: '1' },
   { href: '/fixture',   label: 'nav.fixture',   icon: Trophy, key: '2' },
-  { href: '/forecast',  label: 'nav.forecast',  icon: TrendingUp, key: '3' },
-  { href: '/stats',     label: 'nav.stats',     icon: BarChart2, key: '4' },
-  { href: '/teams',     label: 'nav.teams',     icon: Users, key: '5' },
-  { href: '/live',      label: 'En Vivo',       icon: Radio, key: 'L' },
-  { href: '/benchmark', label: 'Benchmark',     icon: BarChart3, key: 'B' },
+  { href: '/live',      label: 'nav.live',      icon: Radio, key: '3' },
+  { href: '/forecast',  label: 'nav.forecast',  icon: TrendingUp, key: '4' },
+  { href: '/stats',     label: 'nav.stats',     icon: BarChart2, key: '5' },
+  { href: '/teams',     label: 'nav.teams',     icon: Users, key: '6' },
+  { href: '/benchmark', label: 'nav.benchmark', icon: BarChart3, key: '7' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -49,7 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {NAV.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
-            const label = item.label.startsWith('nav.') ? t(item.label as any) : item.label;
+            const label = t(item.label as any);
             const accentMap: Record<string, string> = {
               '/': 'text-accent-primary bg-accent-primary/10 shadow-lg shadow-accent-primary/10',
               '/fixture': 'text-accent-premium bg-accent-premium/10 shadow-lg shadow-accent-premium/10',
@@ -74,7 +74,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 h-10 px-3 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200',
+                  'group flex items-center gap-3 h-10 px-3 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200',
                   active
                     ? `${accentColor} ring-1 ring-current/20`
                     : 'text-fg-secondary hover:text-fg-primary hover:bg-elevated/60',
@@ -148,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-current" />}
                   <Icon className="h-5 w-5" />
-                  <span className="truncate w-full text-center">{item.label.startsWith('nav.') ? t(item.label as any) : item.label}</span>
+                  <span className="truncate w-full text-center">{t(item.label as any)}</span>
                 </Link>
               </li>
             );
