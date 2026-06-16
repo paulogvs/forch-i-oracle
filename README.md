@@ -1,6 +1,6 @@
 # FORCH.i ORACLE ⚽🔮
 
-> **Built with FORCH.i by Paulo Velasco** · Poisson + Dixon-Coles + Elo + xG
+> **Built with FORCH.i by Paulo Velasco** · Poisson + Dixon-Coles + Elo + xG · v2.1
 
 AI-powered sports predictions for FIFA World Cup 2026 — a **closed-loop prediction circuit** that automatically recalculates as real results come in.
 
