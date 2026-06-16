@@ -310,7 +310,7 @@ function TeamDetailModal({ team, stats, onClose }: {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
         className="relative w-full sm:max-w-lg bg-canvas border border-border-subtle rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         {/* Header */}
         <div className={`p-6 bg-gradient-to-r ${getConfederationColor(team.confederation)} bg-opacity-10`}>

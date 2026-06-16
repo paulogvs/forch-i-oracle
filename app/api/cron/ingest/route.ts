@@ -256,19 +256,19 @@ export async function GET(request: Request) {
       message: apiKey ? `API key present (${apiKey.slice(0, 6)}...)` : 'FOOTBALL_API_KEY not set',
     });
 
-    // Step 2: Check Supabase connection
+    // Step 2: Check data layer connection
     try {
       const teams = await db.getAllTeams();
       diagnostics.push({
-        step: 'supabase',
+        step: 'database',
         status: 'ok',
-        message: `Supabase connected. ${teams.length} teams in database.`,
+        message: `Data layer connected. ${teams.length} teams in database.`,
       });
     } catch (err) {
       diagnostics.push({
-        step: 'supabase',
+        step: 'database',
         status: 'error',
-        message: `Supabase connection failed: ${err instanceof Error ? err.message : String(err)}`,
+        message: `Data layer connection failed: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
 

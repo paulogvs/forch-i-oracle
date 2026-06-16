@@ -563,7 +563,7 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
         className="relative w-full sm:max-w-md bg-[#0C1017] border border-[#2A2D35] rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute top-3 right-3 z-10 p-1.5 rounded-[var(--r-md)] bg-[#2A2D35] text-[#6B7280]"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
 

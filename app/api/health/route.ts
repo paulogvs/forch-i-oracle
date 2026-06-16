@@ -1,9 +1,8 @@
 // FORCH.i ORACLE — API Route: Health Check
 // GET /api/health — Returns system health status
-// Used by dashboard to verify Supabase connectivity and data freshness
 
 import { NextResponse } from 'next/server';
-import { getDataLayerAsync, isSupabaseActive } from '@/lib/data-layer';
+import { getDataLayerAsync } from '@/lib/data-layer';
 
 export async function GET() {
   const startTime = Date.now();
@@ -12,7 +11,6 @@ export async function GET() {
     timestamp: new Date().toISOString(),
   };
 
-  // Check Supabase connectivity
   try {
     const db = await getDataLayerAsync();
     const teams = await db.getAllTeams();
@@ -24,7 +22,6 @@ export async function GET() {
 
     health.database = {
       connected: true,
-      supabaseActive: isSupabaseActive(),
       teams: teams.length,
       matches: matches.length,
       predictions: predictions.length,
@@ -45,7 +42,6 @@ export async function GET() {
       } : { status: 'never_run' },
     };
 
-    // Data freshness check
     const now = Date.now();
     const sixHoursAgo = now - 6 * 60 * 60 * 1000;
     const twelveHoursAgo = now - 12 * 60 * 60 * 1000;
