@@ -272,13 +272,21 @@ export async function POST(request: NextRequest) {
     revalidateTag('fixture');
     revalidateTag('tournament');
 
-    // AUTO-SIMULATE: After match result, re-simulate tournament
+    // AUTO-SIMULATE: After match result, re-simulate tournament directly (no HTTP)
     try {
-      const simUrl = new URL(request.url);
-      simUrl.pathname = '/api/cron/simulate';
-      simUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
-      await fetch(simUrl.toString(), { signal: AbortSignal.timeout(120000) }).catch(() => {});
-      console.log('[match-result] Auto-simulate triggered');
+      const { simulateTournamentMulti } = await import('@/lib/tournament-sim');
+      const allResults = await db.getMatchResults();
+      const simResult = await simulateTournamentMulti(100, allResults);
+
+      // Store champion probabilities
+      await db.saveTournamentProbs(simResult.top8.map(c => ({
+        teamId: c.team,
+        championProb: c.pct,
+        simulationsCount: c.wins,
+        totalSimulations: 100,
+      })));
+
+      console.log(`[match-result] Auto-simulate complete: champion=${simResult.top8[0]?.team} (${simResult.top8[0]?.pct}%)`);
     } catch (err) {
       console.warn('[match-result] Auto-simulate error:', err);
     }

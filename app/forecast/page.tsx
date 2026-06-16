@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   runForecast,
@@ -11,6 +11,7 @@ import {
   getProbBarColor,
 } from '@/lib/forecast-engine';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
+import type { RealMatchResult } from '@/lib/tournament-sim';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -32,13 +33,26 @@ export default function ForecastPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [filterGroup, setFilterGroup] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'champion' | 'advance' | 'group'>('champion');
+  const [realResults, setRealResults] = useState<RealMatchResult[]>([]);
+
+  // Fetch real results on mount
+  useEffect(() => {
+    fetch('/api/simulate-tournament')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.results) {
+          setRealResults(data.results);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleRunForecast = useCallback(async () => {
     setIsRunning(true);
     setProgress({ phase: 'groups', message: 'Iniciando...', progress: 0 });
 
     try {
-      const result = await runForecast(numSims, [], (p) => setProgress(p));
+      const result = await runForecast(numSims, realResults, (p) => setProgress(p));
       setOutcome(result);
       setSelectedTeam(null);
     } catch (err) {
@@ -47,7 +61,14 @@ export default function ForecastPage() {
     } finally {
       setIsRunning(false);
     }
-  }, [numSims]);
+  }, [numSims, realResults]);
+
+  // Auto-run forecast once real results are loaded
+  useEffect(() => {
+    if (realResults.length > 0 && !outcome && !isRunning) {
+      handleRunForecast();
+    }
+  }, [realResults, outcome, isRunning, handleRunForecast]);
 
   const filteredTeams = outcome?.outcomes.filter(
     (o) => filterGroup === 'all' || o.group === filterGroup

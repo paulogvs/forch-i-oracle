@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
@@ -14,6 +14,7 @@ import { groupResultsByDate, getUpcomingMatches, getFlag, getRoundLabel } from '
 import type { MatchResultDetail } from '@/lib/dashboard-utils';
 import Top8Ranking from '@/components/Top8Ranking';
 import { motion, AnimatePresence } from 'motion/react';
+import { simulateTournamentMulti, type ChampionProbability } from '@/lib/tournament-sim';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -87,14 +88,40 @@ export default function DashboardPage() {
   }, [simData]);
 
   // ─── Champion Probabilities from simulation ───────────────
+  const [fallbackChampionProbs, setFallbackChampionProbs] = useState<ChampionProbability[] | null>(null);
+
   const championProbs = useMemo(() => {
     if (!simData?.success) return null;
     // Try championProbs first (from cron), fallback to top8
     if (simData.championProbs && simData.championProbs.length > 0) {
       return simData.championProbs.slice(0, 8);
     }
+    // Use fallback client-side simulation results if available
+    if (fallbackChampionProbs && fallbackChampionProbs.length > 0) {
+      return fallbackChampionProbs.map(c => ({
+        teamId: c.team,
+        championProb: c.pct,
+        simulationsCount: c.wins,
+        totalSimulations: c.wins / (c.pct / 100) || 100,
+      }));
+    }
     return null;
-  }, [simData]);
+  }, [simData, fallbackChampionProbs]);
+
+  // Client-side fallback: run simulation if no server data
+  useEffect(() => {
+    if (simData?.success && (!simData.championProbs || simData.championProbs.length === 0) && !fallbackChampionProbs) {
+      // Fetch real results and run client-side simulation
+      fetch('/api/simulate-tournament')
+        .then(r => r.json())
+        .then(async (data) => {
+          const realResults = data.results || [];
+          const result = await simulateTournamentMulti(50, realResults);
+          setFallbackChampionProbs(result.top8);
+        })
+        .catch(() => {});
+    }
+  }, [simData, fallbackChampionProbs]);
 
   // ─── Compute Stats ────────────────────────────────────────
   const stats = (() => {
@@ -341,20 +368,27 @@ export default function DashboardPage() {
       )}
 
       {/* ═══ CAMPEÓN DEL MUNDO — Top 8 ═══ */}
-      {championProbs && championProbs.length > 0 && (
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="space-y-2"
-        >
-          <h2 className="text-xs font-bold text-fg-primary flex items-center gap-2">
-            <Trophy className="h-3.5 w-3.5 text-accent-premium" />
-            Campeón del Mundo
-          </h2>
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="space-y-2"
+      >
+        <h2 className="text-xs font-bold text-fg-primary flex items-center gap-2">
+          <Trophy className="h-3.5 w-3.5 text-accent-premium" />
+          Campeón del Mundo
+        </h2>
+        {championProbs && championProbs.length > 0 ? (
           <ChampionWidget probs={championProbs} />
-        </motion.section>
-      )}
+        ) : (
+          <div className="bg-surface rounded-lg border border-border p-4 text-center">
+            <div className="flex items-center justify-center gap-2 text-fg-muted text-xs">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse text-accent-premium" />
+              <span>Calculando predicciones de campeón...</span>
+            </div>
+          </div>
+        )}
+      </motion.section>
 
       {/* ═══ NAV ═══ */}
       <section className="space-y-2">

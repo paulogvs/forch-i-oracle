@@ -158,22 +158,33 @@ function buildTeamOutcome(
   const champData = result.top8.find(c => c.team === teamName);
   const championPct = champData?.pct || 0;
 
-  // Estimate other outcomes based on champion probability and group position
-  // These are approximations based on typical tournament distributions
+  // Use real per-round counts from simulations
+  const totalSims = result.totalSims || 1;
+  const rc = result.roundCounts;
+
+  const r32Appearances = rc.r32.get(teamName) || 0;
+  const r16Wins = rc.r16.get(teamName) || 0;    // won R32 = reached R16
+  const qfWins = rc.qf.get(teamName) || 0;       // won R16 = reached QF
+  const sfWins = rc.sf.get(teamName) || 0;        // won QF = reached SF
+  const finalAppearances = rc.final.get(teamName) || 0; // won SF = reached Final
+  const championWins = rc.champion.get(teamName) || 0;
+  const runnerUpWins = rc.runnerUp.get(teamName) || 0;
+  const thirdWins = rc.third.get(teamName) || 0;
+
+  // Real per-round probabilities (% of simulations where team reached each round)
+  const roundOf32Wins = r32Appearances > 0 ? Math.round((r16Wins / r32Appearances) * 1000) / 10 : 0;
+  const roundOf16Wins = r16Wins > 0 ? Math.round((qfWins / r16Wins) * 1000) / 10 : 0;
+  const quarterWins = qfWins > 0 ? Math.round((sfWins / qfWins) * 1000) / 10 : 0;
+  const semiWins = sfWins > 0 ? Math.round((finalAppearances / sfWins) * 1000) / 10 : 0;
+  const runnerUpPct = finalAppearances > 0 ? Math.round((runnerUpWins / finalAppearances) * 1000) / 10 : 0;
+  const thirdPct = thirdWins > 0 ? Math.round((thirdWins / totalSims) * 1000) / 10 : 0;
+
+  // Group position estimates (still heuristic — not tracked per-sim)
   const groupFirst = estimateGroupFirst(teamName, bracket);
   const groupSecond = estimateGroupSecond(teamName, bracket);
   const groupThird = estimateGroupThird(teamName, bracket);
   const groupFourth = estimateGroupFourth(teamName, bracket);
   const groupAdvances = groupFirst + groupSecond + groupThird;
-
-  // Knockout probabilities derived from championship probability
-  // Higher championship % means deeper run is more likely
-  const roundOf32Wins = Math.min(100, championPct * 5 + 10);
-  const roundOf16Wins = Math.min(100, championPct * 3 + 5);
-  const quarterWins = Math.min(100, championPct * 2 + 2);
-  const semiWins = Math.min(100, championPct * 1.5 + 1);
-  const runnerUpPct = championPct * 0.3;
-  const thirdPct = championPct * 0.15;
 
   // Build path
   const path = buildKnockoutPath(teamName, bracket, realResults);

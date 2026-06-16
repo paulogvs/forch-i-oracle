@@ -384,6 +384,17 @@ async function simulateGroups(
   const standings = new Map<string, GroupTeamStanding[]>();
   const allMatchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] = [];
 
+  // Build a lookup by team names: "Argentina_vs_Canada" -> RealMatchResult
+  const resultByTeams = new Map<string, RealMatchResult>();
+  // Build team-name-based lookup from ALL_MATCHES + realResults
+  const { ALL_MATCHES: matches } = await import('./matches');
+  for (const m of matches) {
+    const r = realResults.get(m.id);
+    if (r) {
+      resultByTeams.set(`${m.homeTeam}_vs_${m.awayTeam}`, r);
+    }
+  }
+
   for (const [letter, teams] of Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))) {
     if (onProgress) onProgress(`Simulando Grupo ${letter}...`);
 
@@ -403,7 +414,7 @@ async function simulateGroups(
 
     for (const match of matchups) {
       const resultKey = `${match.home}_vs_${match.away}`;
-      const realResult = realResults.get(resultKey);
+      const realResult = resultByTeams.get(resultKey);
       const simResult = await simulateMatch(match.home, match.away, realResult);
 
       const homeIdx = teams.indexOf(match.home);
@@ -452,6 +463,16 @@ async function simulateKnockout(
   final: SimulatedMatch;
 }> {
   const winners = new Map<string, string>();
+
+  // Build team-name-based lookup for knockout real results
+  const { ALL_MATCHES: matches } = await import('./matches');
+  const resultByTeams = new Map<string, RealMatchResult>();
+  for (const m of matches) {
+    const r = realResults.get(m.id);
+    if (r) {
+      resultByTeams.set(`${m.homeTeam}_vs_${m.awayTeam}`, r);
+    }
+  }
 
   // Top 8 terceros lugares con FIFA tiebreakers
   const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
@@ -539,7 +560,10 @@ async function simulateKnockout(
       awayTeam = 'TBD';
     }
 
-    const m = await simulateMatch(homeTeam, awayTeam, undefined, true);
+    // Look up real result by team names
+    const resultKey = `${homeTeam}_vs_${awayTeam}`;
+    const realResult = resultByTeams.get(resultKey);
+    const m = await simulateMatch(homeTeam, awayTeam, realResult, true);
     m.id = `R32-${i + 1}`;
     m.roundLabel = '1/16 Final';
     roundOf32.push(m);
@@ -566,7 +590,7 @@ async function simulateKnockout(
     const [h, a] = r16def[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, undefined, true);
+    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true);
     m.id = `R16-${i + 1}`;
     m.roundLabel = 'Octavos de Final';
     roundOf16.push(m);
@@ -581,7 +605,7 @@ async function simulateKnockout(
     const [h, a] = qfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, undefined, true);
+    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true);
     m.id = `QF-${i + 1}`;
     m.roundLabel = 'Cuartos de Final';
     quarters.push(m);
@@ -596,7 +620,7 @@ async function simulateKnockout(
     const [h, a] = sfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, undefined, true);
+    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true);
     m.id = `SF-${i + 1}`;
     m.roundLabel = 'Semifinales';
     semis.push(m);
@@ -606,12 +630,16 @@ async function simulateKnockout(
 
   // Third place
   const losers = semis.map((m) => m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
-  const thirdPlace = await simulateMatch(losers[0] || 'TBD', losers[1] || 'TBD', undefined, true);
+  const tpHome = losers[0] || 'TBD';
+  const tpAway = losers[1] || 'TBD';
+  const thirdPlace = await simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true);
   thirdPlace.id = 'TP-1';
   thirdPlace.roundLabel = 'Tercer Puesto';
 
   // Final
-  const final = await simulateMatch(semis[0]?.winner || 'TBD', semis[1]?.winner || 'TBD', undefined, true);
+  const finHome = semis[0]?.winner || 'TBD';
+  const finAway = semis[1]?.winner || 'TBD';
+  const final = await simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true);
   final.id = 'FINAL';
   final.roundLabel = 'La Gran Final';
 
@@ -689,6 +717,17 @@ export interface MultiSimResult {
   top8: ChampionProbability[];
   totalSims: number;
   bracket: TournamentBracket;
+  // Per-team per-round advancement counts
+  roundCounts: {
+    r32: Map<string, number>;   // times team appeared in R32
+    r16: Map<string, number>;   // times team won R32 (reached R16)
+    qf: Map<string, number>;    // times team won R16 (reached QF)
+    sf: Map<string, number>;    // times team won QF (reached SF)
+    final: Map<string, number>; // times team won SF (reached Final)
+    champion: Map<string, number>; // times team won Final
+    runnerUp: Map<string, number>; // times team lost Final
+    third: Map<string, number>;    // times team won 3rd place match
+  };
 }
 
 export async function simulateTournamentMulti(
@@ -698,6 +737,15 @@ export async function simulateTournamentMulti(
 ): Promise<MultiSimResult> {
   const championCounts = new Map<string, number>();
   let lastBracket: TournamentBracket | null = null;
+
+  // Per-round tracking
+  const r32Counts = new Map<string, number>();
+  const r16Counts = new Map<string, number>();
+  const qfCounts = new Map<string, number>();
+  const sfCounts = new Map<string, number>();
+  const finalCounts = new Map<string, number>();
+  const runnerUpCounts = new Map<string, number>();
+  const thirdCounts = new Map<string, number>();
 
   const resultsMap = new Map<string, RealMatchResult>();
   for (const r of realResults) {
@@ -715,9 +763,37 @@ export async function simulateTournamentMulti(
       const { standings, matchResults } = await simulateGroups(resultsMap);
       const knockout = await simulateKnockout(standings, matchResults, resultsMap);
 
+      // Track per-round appearances
+      for (const m of knockout.roundOf32) {
+        if (m.homeTeam !== 'TBD') r32Counts.set(m.homeTeam, (r32Counts.get(m.homeTeam) || 0) + 1);
+        if (m.awayTeam !== 'TBD') r32Counts.set(m.awayTeam, (r32Counts.get(m.awayTeam) || 0) + 1);
+        if (m.winner && m.winner !== 'TBD') r16Counts.set(m.winner, (r16Counts.get(m.winner) || 0) + 1);
+      }
+      for (const m of knockout.roundOf16) {
+        if (m.winner && m.winner !== 'TBD') qfCounts.set(m.winner, (qfCounts.get(m.winner) || 0) + 1);
+      }
+      for (const m of knockout.quarters) {
+        if (m.winner && m.winner !== 'TBD') sfCounts.set(m.winner, (sfCounts.get(m.winner) || 0) + 1);
+      }
+      for (const m of knockout.semis) {
+        if (m.winner && m.winner !== 'TBD') finalCounts.set(m.winner, (finalCounts.get(m.winner) || 0) + 1);
+        const loser = m.winner === m.homeTeam ? m.awayTeam : m.homeTeam;
+        if (loser && loser !== 'TBD') {
+          // Loser of semi goes to 3rd place
+        }
+      }
+      // Third place
+      if (knockout.thirdPlace.winner && knockout.thirdPlace.winner !== 'TBD') {
+        thirdCounts.set(knockout.thirdPlace.winner, (thirdCounts.get(knockout.thirdPlace.winner) || 0) + 1);
+      }
+      // Final
       const champion = knockout.final.winner;
       if (champion && champion !== 'TBD') {
         championCounts.set(champion, (championCounts.get(champion) || 0) + 1);
+        const runnerUp = champion === knockout.final.homeTeam ? knockout.final.awayTeam : knockout.final.homeTeam;
+        if (runnerUp && runnerUp !== 'TBD') {
+          runnerUpCounts.set(runnerUp, (runnerUpCounts.get(runnerUp) || 0) + 1);
+        }
       }
 
       if (i === numSims - 1) {
@@ -776,5 +852,19 @@ export async function simulateTournamentMulti(
     onProgress(`🏆 ${leader?.team || 'N/A'} lidera con ${leader?.pct || 0}%`);
   }
 
-  return { top8, totalSims: numSims, bracket: lastBracket };
+  return {
+    top8,
+    totalSims: numSims,
+    bracket: lastBracket,
+    roundCounts: {
+      r32: r32Counts,
+      r16: r16Counts,
+      qf: qfCounts,
+      sf: sfCounts,
+      final: finalCounts,
+      champion: championCounts,
+      runnerUp: runnerUpCounts,
+      third: thirdCounts,
+    },
+  };
 }
