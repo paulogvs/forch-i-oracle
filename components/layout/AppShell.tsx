@@ -7,21 +7,24 @@ import { TopBar } from './TopBar';
 import { AutoSync } from '@/components/system/AutoSync';
 import { useTheme } from '@/lib/theme-context';
 import { useI18n, LanguageSelector } from '@/lib/i18n';
+import { useKeyboardShortcuts } from '@/lib/use-keyboard-shortcuts';
+import BackToTop from '@/components/BackToTop';
 
 const NAV = [
-  { href: '/',          label: 'nav.home',      icon: LayoutDashboard },
-  { href: '/fixture',   label: 'nav.fixture',   icon: Trophy },
-  { href: '/forecast',  label: 'nav.forecast',  icon: TrendingUp },
-  { href: '/stats',     label: 'nav.stats',     icon: BarChart2 },
-  { href: '/teams',     label: 'nav.teams',     icon: Users },
-  { href: '/live',      label: 'En Vivo',       icon: Radio },
-  { href: '/benchmark', label: 'Benchmark',     icon: BarChart3 },
+  { href: '/',          label: 'nav.home',      icon: LayoutDashboard, key: '1' },
+  { href: '/fixture',   label: 'nav.fixture',   icon: Trophy, key: '2' },
+  { href: '/forecast',  label: 'nav.forecast',  icon: TrendingUp, key: '3' },
+  { href: '/stats',     label: 'nav.stats',     icon: BarChart2, key: '4' },
+  { href: '/teams',     label: 'nav.teams',     icon: Users, key: '5' },
+  { href: '/live',      label: 'En Vivo',       icon: Radio, key: 'L' },
+  { href: '/benchmark', label: 'Benchmark',     icon: BarChart3, key: 'B' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { t } = useI18n();
+  useKeyboardShortcuts();
 
   return (
     <div className="min-h-screen">
@@ -47,23 +50,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const active = pathname === item.href;
             const Icon = item.icon;
             const label = item.label.startsWith('nav.') ? t(item.label as any) : item.label;
-            // Color accent per nav item
             const accentMap: Record<string, string> = {
-              '/': 'text-accent-primary bg-accent-primary/10',
-              '/fixture': 'text-accent-premium bg-accent-premium/10',
-              '/forecast': 'text-cyan-400 bg-cyan-500/10',
-              '/stats': 'text-emerald-400 bg-emerald-500/10',
-              '/teams': 'text-amber-400 bg-amber-500/10',
-              '/live': 'text-accent-emerald bg-accent-emerald/10',
-              '/benchmark': 'text-accent-secondary bg-accent-secondary/10',
+              '/': 'text-accent-primary bg-accent-primary/10 shadow-lg shadow-accent-primary/10',
+              '/fixture': 'text-accent-premium bg-accent-premium/10 shadow-lg shadow-accent-premium/10',
+              '/forecast': 'text-accent-primary bg-accent-primary/10 shadow-lg shadow-accent-primary/10',
+              '/stats': 'text-accent-emerald bg-accent-emerald/10 shadow-lg shadow-accent-emerald/10',
+              '/teams': 'text-accent-premium bg-accent-premium/10 shadow-lg shadow-accent-premium/10',
+              '/live': 'text-accent-emerald bg-accent-emerald/10 shadow-lg shadow-accent-emerald/10',
+              '/benchmark': 'text-accent-secondary bg-accent-secondary/10 shadow-lg shadow-accent-secondary/10',
             };
             const accentColor = accentMap[item.href] || 'text-accent-primary bg-accent-primary/10';
             const dotColor: Record<string, string> = {
               '/': 'bg-accent-primary',
               '/fixture': 'bg-accent-premium',
-              '/forecast': 'bg-cyan-400',
-              '/stats': 'bg-emerald-400',
-              '/teams': 'bg-amber-400',
+              '/forecast': 'bg-accent-primary',
+              '/stats': 'bg-accent-emerald',
+              '/teams': 'bg-accent-premium',
               '/live': 'bg-accent-emerald',
               '/benchmark': 'bg-accent-secondary',
             };
@@ -74,12 +76,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   'flex items-center gap-3 h-10 px-3 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200',
                   active
-                    ? `${accentColor}`
+                    ? `${accentColor} ring-1 ring-current/20`
                     : 'text-fg-secondary hover:text-fg-primary hover:bg-elevated/60',
                 )}
               >
-                <Icon className={cn('h-4 w-4')} />
+                <Icon className={cn('h-4 w-4', active && 'drop-shadow-sm')} />
                 <span>{label}</span>
+                <span className="ml-auto text-[10px] text-fg-tertiary opacity-0 group-hover:opacity-100">{item.key}</span>
                 {active && <span className={cn('ml-auto h-1.5 w-1.5 rounded-full', dotColor[item.href])} />}
               </Link>
             );
@@ -87,12 +90,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-border-subtle space-y-3">
-          {/* Theme toggle + Language selector */}
           <div className="flex items-center justify-between">
             <button
               onClick={toggleTheme}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-secondary hover:text-fg-primary hover:bg-elevated/60 transition-all"
-              title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+              title={theme === 'dark' ? 'Modo claro (T)' : 'Modo oscuro (T)'}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
               <span className="hidden xl:inline">{theme === 'dark' ? 'Claro' : 'Oscuro'}</span>
@@ -116,6 +118,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
+      {/* Back to top */}
+      <BackToTop />
+
       {/* BottomNav (mobile) — scrollable for 7 items */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/80 backdrop-blur-xl border-t border-border-subtle" role="navigation" aria-label="Navegación móvil">
         <ul className="flex overflow-x-auto h-16 hide-scrollbar">
@@ -125,20 +130,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const colorMap: Record<string, string> = {
               '/': 'text-accent-primary',
               '/fixture': 'text-accent-premium',
-              '/forecast': 'text-cyan-400',
-              '/stats': 'text-emerald-400',
-              '/teams': 'text-amber-400',
+              '/forecast': 'text-accent-primary',
+              '/stats': 'text-accent-emerald',
+              '/teams': 'text-accent-premium',
+              '/live': 'text-accent-emerald',
+              '/benchmark': 'text-accent-secondary',
             };
             return (
               <li key={item.href} className="shrink-0 w-[72px]">
                 <Link
                   href={item.href}
                   className={cn(
-                    'h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors',
+                    'h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors relative',
                     active ? colorMap[item.href] : 'text-fg-tertiary',
                   )}
                   aria-current={active ? 'page' : undefined}
                 >
+                  {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-current" />}
                   <Icon className="h-5 w-5" />
                   <span className="truncate w-full text-center">{item.label.startsWith('nav.') ? t(item.label as any) : item.label}</span>
                 </Link>
