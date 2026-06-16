@@ -23,14 +23,17 @@ API-Football (cada 6h) → Cron Ingest → Supabase/Store → Re-simulate → Pa
 
 ---
 
-## 📱 Pages (4 Panels)
+## 📱 Pages (8 Panels)
 
 | Route | Purpose |
 |---|---|
 | `/` | **📊 Dashboard** — Reordenado: Partido del Día → En Vivo → Próximos → Resultados por fecha → Campeón |
-| `/fixture` | **⚡ Predicción** — 4 tabs: Partidos, Tablas, Top 8, Bracket |
-| `/live` | **📈 En Vivo** — Real results vs predictions, live standings, live bracket |
-| `/benchmark` | **🤖 Benchmark** — 10 AI models comparison, champion consensus, ORACLE vs Modelos |
+| `/fixture` | **⚡ Predicción** — 4 tabs: Partidos, Tablas, Top 8, Bracket (aesthetic) |
+| `/forecast` | **🔮 Pronóstico** — Monte Carlo simulations (1-1000), per-team outcome table |
+| `/stats` | **📈 Estadísticas** — Live stats: overview, teams, matches, scorers |
+| `/teams` | **⚽ Equipos** — 48 enriched cards with ELO, power ratings, star players |
+| `/live` | **🔴 En Vivo** — Real results vs predictions, live standings, live bracket |
+| `/benchmark` | **🤖 Benchmark** — 10 AI models comparison, champion consensus |
 
 ### Dashboard — Reordenado (v2)
 El dashboard ahora sigue el flujo natural del usuario:
@@ -41,7 +44,7 @@ El dashboard ahora sigue el flujo natural del usuario:
 4. **⏰ Próximos Partidos** — Siguientes 4 partidos con predicción
 5. **✅ Resultados Reales** — Agrupados por fecha con separadores + badge de aciertos por día
 6. **🏆 Campeón del Mundo** — Top 8 probabilidades con barras animadas (auto-ajusta con resultados reales)
-7. **🧭 Navegación** — Links rápidos a /fixture, /live, /benchmark
+7. **🧭 Navegación** — Links rápidos a /fixture, /forecast, /stats, /teams
 
 #### Funcionalidades del Dashboard
 - **Auto-ajuste**: Cuando un resultado real se registra, las predicciones y el campeón se recalculan automáticamente
@@ -49,11 +52,30 @@ El dashboard ahora sigue el flujo natural del usuario:
 - **Animaciones**: Entrada suave con motion/react (Framer Motion) en cada sección
 - **Empty states**: Mensajes contextuales cuando no hay datos
 
+### Panel Pronóstico (Forecast) — Nuevo en v3
+- **Simulaciones Monte Carlo**: Slider 10-1000 simulaciones on-demand
+- **Top 8 Campeones**: Grid animado con probabilidades y barras
+- **Tabla de outcomes**: 48 equipos, ordenables por campeonato/avance/grupo
+- **Detalle por equipo**: Probabilidades por posición, ruta en eliminatorias
+- **Motor client-side**: `lib/forecast-engine.ts` ejecuta simulaciones en el navegador
+
+### Panel Estadísticas — Nuevo en v3
+- **Resumen**: Partidos, goles, promedio, vallas invictas, alta anotación
+- **Equipos**: Tabla clasificatoria sortable por puntos/goales/diferencia
+- **Partidos**: Todos los resultados, ordenables por fecha/goles/diferencia
+- **Goleadores**: Goles por equipo con barras y datos curiosos
+
+### Panel Equipos — Nuevo en v3
+- **48 tarjetas enriquecidas**: ELO, power ratings, jugadores estrella
+- **Filtros**: Por confederación (UEFA/CONMEBOL/etc), por grupo, búsqueda
+- **Modal de detalle**: Stats en vivo, ratings de poder, Elo details, estrellas
+- **Agrupación por confederación**: Visual organization with badges
+
 ### Panel Predicción — 4 Tabs
-- **⚽ Partidos**: All 128 matches with predicted scores. Phase filter (Todos/Grupos/1/16/1/8/1/4/Semis/Final). Tap any match → Detail Modal
+- **⚽ Partidos**: All 128 matches with predicted scores. Phase filter. Tap any match → Detail Modal
 - **📊 Tablas**: Live group standings from real-time data
 - **🏆 Top 8**: Champion probability ranking with progress bars
-- **📐 Bracket**: Full knockout bracket from 1/16 to Final with predicted scores
+- **📐 Bracket**: Full knockout bracket — aesthetic with champion reveal, color-coded rounds, winner highlighting
 
 ### Panel En Vivo — 3 Tabs
 - **🎮 Juego**: Currently playing matches with live scores
@@ -115,6 +137,38 @@ When predicted score is a draw in knockout stages:
 - Shows "Empate 90 min → Penales/Alargue"
 - Home team wins by default (advances to next round)
 - Third place match uses SF losers
+
+---
+
+## 🆕 v3 Features (Latest)
+
+### FIFA Official Tiebreakers
+Full implementation of FIFA tiebreaker procedure (a-h):
+- a) Points → b) Goal Difference → c) Goals Scored
+- d) H2H Points → e) H2H GD → f) H2H GF → g) Fair Play → h) Drawing of Lots
+- Backtracking algorithm for constraint-satisfying third-place bracket assignment
+
+### Client-Side Forecast Engine
+- `lib/forecast-engine.ts` — Runs 1-1000 Monte Carlo simulations in the browser
+- Per-team outcomes: group position probs, knockout round probs, championship odds
+- Visual knockout path with win probabilities per match
+- Always starts from current tournament state
+
+### Theme Toggle
+- Light/Dark mode with localStorage persistence
+- Respects system preference on first visit
+- `lib/theme-context.tsx` — React context provider
+
+### i18n (Internationalization)
+- 4 languages: Spanish (default), English, Portuguese, French
+- Context-based translations with `useI18n()` hook
+- Language selector in sidebar
+- `lib/i18n.tsx` — Lightweight translation system
+
+### Enriched Team Cards
+- 48 team cards with ELO, power ratings, star players
+- Filter by confederation, group, or search
+- Detail modal with live stats, power breakdown, ELO details
 
 ---
 
