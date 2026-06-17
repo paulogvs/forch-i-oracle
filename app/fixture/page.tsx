@@ -259,6 +259,46 @@ export default function FixturePage() {
       {/* PARTIDOS */}
       {!loading && !allFailed && mainTab === 'partidos' && (
         <div className="space-y-5">
+          {/* Champion banner — only shown when filtering final/semi phase */}
+          {(phaseFilter === 'final' || phaseFilter === 'semi') && bracket?.champion && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-accent-premium/5 to-transparent pointer-events-none" />
+              <div className="relative text-center">
+                <div className="text-3xl mb-1 animate-bounce">🏆</div>
+                <div className="text-xs text-[var(--match-gold-border)] uppercase tracking-[0.15em] font-semibold mb-1">
+                  Campeón Proyectado
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-2xl">{getFlag(bracket.champion)}</span>
+                  <span className="text-xl font-black text-accent-premium">{bracket.champion}</span>
+                </div>
+                {(bracket.runnerUp || bracket.thirdPlaceTeam) && (
+                  <div className="mt-2 flex items-center justify-center gap-3 text-[11px] flex-wrap">
+                    {bracket.runnerUp && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CBD5E1]/10 text-[#CBD5E1] font-semibold border border-[#CBD5E1]/20">
+                        <span>{getFlag(bracket.runnerUp)}</span>
+                        <span>🥈 {bracket.runnerUp}</span>
+                      </span>
+                    )}
+                    {bracket.thirdPlaceTeam && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CD7F32]/20 text-[#CD7F32] font-semibold border border-[#CD7F32]/30">
+                        <span>{getFlag(bracket.thirdPlaceTeam)}</span>
+                        <span>🥉 {bracket.thirdPlaceTeam}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="text-[9px] text-fg-tertiary mt-2">
+                  100 simulaciones Monte Carlo · Fuente única de verdad
+                </div>
+              </div>
+            </motion.div>
+          )}
           {Object.entries(groupedByDate).map(([date, matches]) => (
             <div key={date}>
               <div className="flex items-center gap-3 mb-2">
@@ -287,6 +327,7 @@ export default function FixturePage() {
           ))}
         </div>
       )}
+
 
       {!loading && !allFailed && mainTab === 'tablas' && <TablasTab liveStandings={liveStandings} getFlag={getFlag} />}
       {!loading && !allFailed && mainTab === 'top8' && <Top8Tab top8={top8} getFlag={getFlag} />}

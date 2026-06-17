@@ -102,6 +102,19 @@ export default function DashboardPage() {
     }));
   }, [simData]);
 
+  // ─── Projected Champion from Bracket (same source as simulation) ──
+  const projectedChampion = useMemo(() => {
+    if (simData?.success && simData.bracket?.champion) {
+      return {
+        name: simData.bracket.champion,
+        runnerUp: simData.bracket.runnerUp,
+        thirdPlace: simData.bracket.thirdPlaceTeam,
+        flag: simData.bracket.championFlag,
+      };
+    }
+    return null;
+  }, [simData]);
+
   // ─── Compute Stats ────────────────────────────────────────
   const stats = (() => {
     let correct = 0, wrong = 0, totalPlayed = 0;
@@ -357,7 +370,7 @@ export default function DashboardPage() {
           <Trophy className="h-3.5 w-3.5 text-accent-premium" />
           Campeón del Mundo
         </h2>
-        <ChampionWidget probs={championProbs} />
+        <ChampionWidget probs={championProbs} projectedChampion={projectedChampion} getFlag={getFlag} />
       </motion.section>
 
       {/* ═══ NAV ═══ */}
@@ -512,55 +525,99 @@ function ResultCard({ match, getFlag }: { match: MatchResultDetail; getFlag: (n:
   );
 }
 
-function ChampionWidget({ probs }: { probs: { teamId: string; championProb: number; simulationsCount: number; totalSimulations: number }[] }) {
+function ChampionWidget({ probs, projectedChampion, getFlag }: {
+  probs: { teamId: string; championProb: number; simulationsCount: number; totalSimulations: number }[];
+  projectedChampion?: { name: string; runnerUp?: string; thirdPlace?: string; flag?: string } | null;
+  getFlag: (n: string) => string;
+}) {
   const top = probs[0];
   const maxProb = Math.max(...probs.map(p => p.championProb), 1);
+  const isMonteCarlo = top?.totalSimulations >= 10;
 
   return (
     <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-premium/20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-accent-premium/5 via-transparent to-accent-premium/5 pointer-events-none" />
 
       {/* Leader highlight */}
-      <div className="relative text-center mb-3">
-        <div className="text-2xl mb-1">🏆</div>
-        <div className="text-base font-black text-accent-premium">{top.teamId}</div>
-        <div className="text-[10px] text-fg-tertiary">
-          {Number(top.championProb).toFixed(2)}% · {top.simulationsCount}/{top.totalSimulations} simulaciones
+      <div className="relative text-center mb-4">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, type: 'spring' }}
+          className="text-3xl mb-1"
+        >🏆</motion.div>
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-xl">{getFlag(top.teamId)}</span>
+          <div className="text-lg font-black text-accent-premium">{top.teamId}</div>
         </div>
+        <div className="text-[10px] text-fg-tertiary mt-0.5">
+          {Number(top.championProb).toFixed(2)}% probabilidad · {isMonteCarlo ? `${top.simulationsCount}/${top.totalSimulations} sim` : 'Elo Rating'}
+        </div>
+        {/* Podium row from bracket */}
+        {projectedChampion && projectedChampion.runnerUp && (
+          <div className="mt-2 flex items-center justify-center gap-3 text-[11px]">
+            {projectedChampion.thirdPlace && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CD7F32]/20 text-[#CD7F32] font-semibold border border-[#CD7F32]/30">
+                <span>{getFlag(projectedChampion.thirdPlace)}</span>
+                <span>🥉 {projectedChampion.thirdPlace}</span>
+              </span>
+            )}
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CBD5E1]/10 text-[#CBD5E1] font-semibold border border-[#CBD5E1]/20">
+              <span>{getFlag(projectedChampion.runnerUp)}</span>
+              <span>🥈 {projectedChampion.runnerUp}</span>
+            </span>
+          </div>
+        )}
       </div>
+
+      {/* Divider */}
+      <div className="w-full h-px bg-border-subtle mb-3" />
 
       {/* Top 8 bars */}
       <div className="relative space-y-1.5">
         {probs.map((p, i) => (
-          <div key={p.teamId} className="flex items-center gap-2">
+          <motion.div
+            key={p.teamId}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: i * 0.05 }}
+            className="flex items-center gap-2"
+          >
             <span className={cn(
               "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-              i === 0 ? "bg-[#E2B340] text-canvas font-bold" :
-              i === 1 ? "bg-[#CBD5E1] text-canvas font-bold" :
-              i === 2 ? "bg-[#CD7F32] text-canvas font-bold" :
+              i === 0 ? "bg-[#E2B340] text-[#1a1000] font-bold" :
+              i === 1 ? "bg-[#B0B8C4] text-[#0a0a0a] font-bold" :
+              i === 2 ? "bg-[#CD7F32] text-white font-bold" :
               "bg-white/[0.06] text-fg-disabled"
             )}>
               {i + 1}
             </span>
-            <span className="text-[11px] font-semibold text-fg-primary w-20 truncate shrink-0">{p.teamId}</span>
-            <div className="flex-1 h-3 bg-raised/50 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
+            <span className="text-[10px] shrink-0">{getFlag(p.teamId)}</span>
+            <span className="text-[11px] font-semibold text-fg-primary w-16 truncate shrink-0">{p.teamId}</span>
+            <div className="flex-1 h-2.5 bg-raised/50 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${(p.championProb / maxProb) * 100}%` }}
+                transition={{ duration: 0.7, delay: i * 0.05, ease: 'easeOut' }}
                 style={{
-                  width: `${(p.championProb / maxProb) * 100}%`,
-                  background: i === 0 ? 'var(--gradient-gold)' : i === 1 ? 'var(--text-secondary)' : i === 2 ? 'var(--state-warning)' : 'linear-gradient(to right, var(--text-disabled), var(--text-tertiary))',
+                  background:
+                    i === 0 ? 'linear-gradient(to right, #E2B340, #F5D06A)' :
+                    i === 1 ? 'linear-gradient(to right, #8C95A0, #B0B8C4)' :
+                    i === 2 ? 'linear-gradient(to right, #8B5C1E, #CD7F32)' :
+                    'linear-gradient(to right, var(--text-disabled), var(--text-tertiary))',
                 }}
               />
             </div>
             <span className="text-[11px] font-bold text-accent-premium w-12 text-right shrink-0 font-mono tabular-nums">
               {Number(p.championProb).toFixed(2)}%
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       <p className="text-[9px] text-fg-disabled text-center mt-3">
-        Basado en 100 simulaciones · Motor Poisson + Elo + xG · Se auto-ajusta con cada resultado real
+        {isMonteCarlo ? '100 simulaciones Monte Carlo' : 'Rating Elo Determinístico'} · Motor Poisson + Elo + xG · Auto-ajuste con resultados reales
       </p>
     </div>
   );
