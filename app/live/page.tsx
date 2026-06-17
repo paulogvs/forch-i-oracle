@@ -251,20 +251,20 @@ export default function LivePage() {
                   {/* Home */}
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <span className="text-base shrink-0">{getFlag(m.homeTeam)}</span>
-                    <span className={cn("text-xs truncate", rw === 'home' ? (exact ? "text-[#4ADE80] font-bold" : correct ? "text-[#4ADE80] font-bold" : "text-[#FCA5A5] font-bold") : (correct || exact ? "text-[#BBF7D0]" : "text-[#FECACA]"))}>{m.homeTeam}</span>
+                    <span className={cn("text-xs truncate", rw === 'home' ? (exact ? "text-[var(--match-correct-text)] font-bold" : correct ? "text-[var(--match-correct-text)] font-bold" : "text-[var(--match-wrong-text)] font-bold") : (correct || exact ? "text-state-success/70" : "text-state-danger/70"))}>{m.homeTeam}</span>
                   </div>
                   {/* Score: Real TOP, Pred BOTTOM */}
                   <div className="shrink-0 flex flex-col items-center gap-0.5">
-                    <div className={cn("px-2.5 py-0.5 rounded-[var(--r-sm)]", exact ? "bg-[#166534]" : correct ? "bg-[#1B6B3A]" : "bg-[#991B1B]")}>
-                      <span className={cn("font-mono font-bold text-sm tabular-nums", exact ? "text-[#4ADE80]" : correct ? "text-[#FACC15]" : "text-[#FCA5A5]")}>{m.realHome}-{m.realAway}</span>
+                    <div className={cn("px-2.5 py-0.5 rounded-[var(--r-sm)]", exact ? "bg-[var(--match-correct-score)]" : correct ? "bg-[var(--match-partial-score)]" : "bg-[var(--match-wrong-score)]")}>
+                      <span className={cn("font-mono font-bold text-sm tabular-nums", exact ? "text-[var(--match-correct-text)]" : correct ? "text-state-warning" : "text-[var(--match-wrong-text)]")}>{m.realHome}-{m.realAway}</span>
                     </div>
-                    {hasPred && <span className="text-[9px] text-[#6B7280] font-mono">Pred: {m.predHome}-{m.predAway}</span>}
+                    {hasPred && <span className="text-[9px] text-fg-tertiary font-mono">Pred: {m.predHome}-{m.predAway}</span>}
                   </div>
                   {/* Status icon */}
                   <span className="text-xs shrink-0">{exact ? '🎯' : correct ? '✅' : '❌'}</span>
                   {/* Away */}
                   <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                    <span className={cn("text-xs truncate text-right", rw === 'away' ? (exact ? "text-[#4ADE80] font-bold" : correct ? "text-[#4ADE80] font-bold" : "text-[#FCA5A5] font-bold") : (correct || exact ? "text-[#BBF7D0]" : "text-[#FECACA]"))}>{m.awayTeam}</span>
+                    <span className={cn("text-xs truncate text-right", rw === 'away' ? (exact ? "text-[var(--match-correct-text)] font-bold" : correct ? "text-[var(--match-correct-text)] font-bold" : "text-[var(--match-wrong-text)] font-bold") : (correct || exact ? "text-state-success/70" : "text-state-danger/70"))}>{m.awayTeam}</span>
                     <span className="text-base shrink-0">{getFlag(m.awayTeam)}</span>
                   </div>
                 </div>

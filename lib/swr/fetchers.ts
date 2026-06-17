@@ -1,5 +1,9 @@
 export async function jsonFetcher<T = unknown>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } });
+  const res = await fetch(url, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    signal: init?.signal ?? AbortSignal.timeout(30000),
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`[${res.status}] ${body || res.statusText}`);

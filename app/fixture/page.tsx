@@ -265,42 +265,42 @@ export default function FixturePage() {
 // ═══════════════════════════════════════════════════════════════
 // COLOR PALETTES BY STATUS
 // ═══════════════════════════════════════════════════════════════
-const PALETTES = {
+const PALETTES: Record<string, any> = {
   upcoming: {
-    card: 'bg-[#1A1D24] border-[#2A2D35]',
-    scoreBg: 'bg-[#2A2D35]',
-    scoreText: 'text-[#6B7280]',
-    predText: 'text-[#9CA3AF]',
-    teamText: 'text-[#9CA3AF]',
-    teamWinner: 'text-[#9CA3AF]',
-    icon: <AnimatedClock className="text-[#6B7280]" size={14} />,
+    card: 'bg-[var(--match-card-scheduled)] border-border-subtle',
+    scoreBg: 'bg-raised',
+    scoreText: 'text-fg-tertiary',
+    predText: 'text-fg-secondary',
+    teamText: 'text-fg-secondary',
+    teamWinner: 'text-fg-secondary',
+    icon: <AnimatedClock className="text-fg-tertiary" size={14} />,
   },
   exact: {
-    card: 'bg-[#052E16] border-[#166534]',
-    scoreBg: 'bg-[#166534]',
-    scoreText: 'text-[#4ADE80]',
-    predText: 'text-[#86EFAC]',
-    teamText: 'text-[#BBF7D0]',
-    teamWinner: 'text-[#4ADE80]',
-    icon: <AnimatedCheck className="text-[#4ADE80]" size={16} />,
+    card: 'bg-[var(--match-correct-bg)] border-[var(--match-correct-border)]',
+    scoreBg: 'bg-[var(--match-correct-score)]',
+    scoreText: 'text-[var(--match-correct-text)]',
+    predText: 'text-state-success/80',
+    teamText: 'text-state-success/70',
+    teamWinner: 'text-[var(--match-correct-text)]',
+    icon: <AnimatedCheck className="text-[var(--match-correct-text)]" size={16} />,
   },
   winner_ok: {
-    card: 'bg-[#14291E] border-[#1B6B3A]',
-    scoreBg: 'bg-[#1B6B3A]',
-    scoreText: 'text-[#FACC15]',  // YELLOW for score (wrong but winner correct)
-    predText: 'text-[#86EFAC]',
-    teamText: 'text-[#BBF7D0]',
-    teamWinner: 'text-[#4ADE80]',
-    icon: <AnimatedCheck className="text-[#4ADE80]" size={16} />,
+    card: 'bg-[var(--match-partial-bg)] border-[var(--match-partial-border)]',
+    scoreBg: 'bg-[var(--match-partial-score)]',
+    scoreText: 'text-state-warning',
+    predText: 'text-state-success/80',
+    teamText: 'text-state-success/70',
+    teamWinner: 'text-[var(--match-correct-text)]',
+    icon: <AnimatedCheck className="text-[var(--match-correct-text)]" size={16} />,
   },
   wrong: {
-    card: 'bg-[#2A0A0A] border-[#991B1B]',
-    scoreBg: 'bg-[#991B1B]',
-    scoreText: 'text-[#FCA5A5]',
-    predText: 'text-[#FCA5A5]',
-    teamText: 'text-[#FECACA]',
-    teamWinner: 'text-[#FCA5A5]',
-    icon: <AnimatedX className="text-[#FCA5A5]" size={16} />,
+    card: 'bg-[var(--match-wrong-bg)] border-[var(--match-wrong-border)]',
+    scoreBg: 'bg-[var(--match-wrong-score)]',
+    scoreText: 'text-[var(--match-wrong-text)]',
+    predText: 'text-[var(--match-wrong-text)]',
+    teamText: 'text-state-danger/70',
+    teamWinner: 'text-[var(--match-wrong-text)]',
+    icon: <AnimatedX className="text-[var(--match-wrong-text)]" size={16} />,
   },
 };
 
@@ -334,8 +334,8 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
               </span>
             </div>
           ) : (
-            <div className="px-3 py-1 rounded-[var(--r-md)] bg-[#2A2D35]">
-              <span className="font-mono font-bold text-base tabular-nums text-[#4B5563]">TBD</span>
+            <div className="px-3 py-1 rounded-[var(--r-md)] bg-raised">
+              <span className="font-mono font-bold text-base tabular-nums text-fg-disabled">TBD</span>
             </div>
           )}
           {/* PREDICTED SCORE — smaller, below */}
@@ -367,8 +367,8 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
           </span>
         )}
         {!isPlayed && match.confidence && (
-          <span className="text-[10px] text-[#6B7280] flex items-center gap-1">
-            <AnimatedZap size={10} className="text-[#9CA3AF]" />
+          <span className="text-[10px] text-fg-tertiary flex items-center gap-1">
+            <AnimatedZap size={10} className="text-fg-secondary" />
             {match.confidence}
           </span>
         )}
@@ -382,7 +382,7 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
 // ═══════════════════════════════════════════════════════════════
 function TablasTab({ liveStandings, getFlag }: { liveStandings: Record<string, any[]>; getFlag: (n: string) => string }) {
   const hasGroups = Object.keys(liveStandings).length > 0;
-  if (!hasGroups) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">🏆 Las tablas de posiciones se cargarán pronto</p></div>;
+  if (!hasGroups) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[var(--match-card-scheduled)] border border-border-subtle"><p className="text-xs text-fg-tertiary">🏆 Las tablas de posiciones se cargarán pronto</p></div>;
 
   // Check if any match has been played
   const hasResults = Object.values(liveStandings).some((g: any) => g.some((t: any) => t.played > 0));
@@ -390,21 +390,21 @@ function TablasTab({ liveStandings, getFlag }: { liveStandings: Record<string, a
   return (
     <div className="space-y-3">
       {!hasResults && (
-        <div className="p-3 text-center rounded-[var(--r-lg)] bg-[#1A1705] border border-[#854D0E]/30">
-          <p className="text-[11px] text-[#E2B340]">⚽ Fase de grupos — Los resultados actualizarán estas tablas</p>
+        <div className="p-3 text-center rounded-[var(--r-lg)] bg-[var(--match-gold-bg)] border border-[var(--match-gold-border)]">
+          <p className="text-[11px] text-accent-premium">⚽ Fase de grupos — Los resultados actualizarán estas tablas</p>
         </div>
       )}
       {Object.entries(liveStandings).map(([group, teams]) => (
-        <div key={group} className="p-4 rounded-[var(--r-lg)] bg-[#0C1017] border border-[#2A2D35]">
+        <div key={group} className="p-4 rounded-[var(--r-lg)] bg-[var(--match-standings-bg)] border border-[var(--match-standings-border)]">
           <h4 className="text-xs font-bold text-accent-premium uppercase mb-2">Grupo {group}</h4>
           <table className="w-full text-xs">
-            <thead><tr className="text-[#6B7280] text-[10px]"><th className="text-left pb-1.5 w-5">#</th><th className="text-left pb-1.5">Equipo</th><th className="text-center pb-1.5">PJ</th><th className="text-center pb-1.5">DG</th><th className="text-center pb-1.5">Pts</th></tr></thead>
+            <thead><tr className="text-fg-tertiary text-[10px]"><th className="text-left pb-1.5 w-5">#</th><th className="text-left pb-1.5">Equipo</th><th className="text-center pb-1.5">PJ</th><th className="text-center pb-1.5">DG</th><th className="text-center pb-1.5">Pts</th></tr></thead>
             <tbody>{(teams as any[]).map((t: any, i: number) => (
-              <tr key={t.name} className={cn(i < 2 && t.played > 0 ? 'bg-[#052E16]/40' : '', 'border-t border-[#2A2D35]')}>
-                <td className="py-1.5 text-[#6B7280]">{i + 1}</td>
-                <td className="py-1.5"><div className="flex items-center gap-1.5"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[70px]", i < 2 && t.played > 0 ? "font-semibold text-[#BBF7D0]" : "text-[#9CA3AF]")}>{t.name}</span></div></td>
-                <td className="py-1.5 text-center text-[#6B7280]">{t.played}</td>
-                <td className={cn("py-1.5 text-center font-mono text-[11px]", t.gd > 0 ? "text-[#4ADE80]" : t.gd < 0 ? "text-[#FCA5A5]" : "text-[#6B7280]")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
+              <tr key={t.name} className={cn(i < 2 && t.played > 0 ? 'bg-[var(--match-correct-bg)]/50' : '', 'border-t border-[var(--match-standings-border)]')}>
+                <td className="py-1.5 text-fg-tertiary">{i + 1}</td>
+                <td className="py-1.5"><div className="flex items-center gap-1.5"><span className="text-sm">{getFlag(t.name)}</span><span className={cn("truncate max-w-[70px]", i < 2 && t.played > 0 ? "font-semibold text-state-success/70" : "text-fg-secondary")}>{t.name}</span></div></td>
+                <td className="py-1.5 text-center text-fg-tertiary">{t.played}</td>
+                <td className={cn("py-1.5 text-center font-mono text-[11px]", t.gd > 0 ? "text-[var(--match-correct-text)]" : t.gd < 0 ? "text-[var(--match-wrong-text)]" : "text-fg-tertiary")}>{t.gd > 0 ? '+' : ''}{t.gd}</td>
                 <td className="py-1.5 text-center font-bold text-fg-primary">{t.points}</td>
               </tr>
             ))}</tbody>
@@ -416,15 +416,15 @@ function TablasTab({ liveStandings, getFlag }: { liveStandings: Record<string, a
 }
 
 function Top8Tab({ top8, getFlag }: { top8: any[]; getFlag: (n: string) => string }) {
-  if (!top8?.length) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">🏆 Top 8 se calculará con las simulaciones del torneo</p></div>;
+  if (!top8?.length) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[var(--match-card-scheduled)] border border-border-subtle"><p className="text-xs text-fg-tertiary">🏆 Top 8 se calculará con las simulaciones del torneo</p></div>;
   return (
     <div className="space-y-2">
       {top8.slice(0, 8).map((team: any, i: number) => (
-        <div key={team.name || team} className={cn("flex items-center gap-3 p-3 rounded-[var(--r-lg)] border", i < 4 ? "bg-[#1A1705] border-[#854D0E]" : "bg-[#1A1D24] border-[#2A2D35]")}>
-          <span className={cn("w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0", i === 0 ? "bg-[#854D0E]/30 text-[#E2B340]" : "bg-[#2A2D35] text-[#6B7280]")}>{i + 1}</span>
+        <div key={team.name || team} className={cn("flex items-center gap-3 p-3 rounded-[var(--r-lg)] border", i < 4 ? "bg-[var(--match-gold-bg)] border-[var(--match-gold-border)]" : "bg-[var(--match-card-scheduled)] border-border-subtle")}>
+          <span className={cn("w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0", i === 0 ? "bg-[var(--match-gold-border)]/30 text-accent-premium" : "bg-raised text-fg-tertiary")}>{i + 1}</span>
           <span className="text-lg shrink-0">{getFlag(team.name || team)}</span>
           <span className="text-sm font-bold text-fg-primary flex-1">{team.name || team}</span>
-          {team.probability !== undefined && <span className="text-[10px] text-[#6B7280] font-mono">{team.probability}%</span>}
+          {team.probability !== undefined && <span className="text-[10px] text-fg-tertiary font-mono">{team.probability}%</span>}
         </div>
       ))}
     </div>
@@ -432,7 +432,7 @@ function Top8Tab({ top8, getFlag }: { top8: any[]; getFlag: (n: string) => strin
 }
 
 function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) => string }) {
-  if (!bracket) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[#1A1D24] border border-[#2A2D35]"><p className="text-xs text-[#6B7280]">📐 El bracket se generará con las simulaciones del torneo</p></div>;
+  if (!bracket) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[var(--match-card-scheduled)] border border-border-subtle"><p className="text-xs text-fg-tertiary">📐 El bracket se generará con las simulaciones del torneo</p></div>;
 
   const isPlayed = (m: any) => m?.isPlayed || m?.homeScore != null;
 
@@ -440,15 +440,15 @@ function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) =
     <div className="space-y-6">
       {/* Champion reveal */}
       {bracket.champion && (
-        <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-[#1A1705] via-[#0C1017] to-[#1A1705] border border-[#854D0E]/50">
+        <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9MSBmaWxsPSIjODU0RDBFIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgZmlsbD0idXJsKCNnKSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==')] opacity-50" />
           <div className="relative text-center">
             <div className="text-5xl mb-2 animate-bounce">{bracket.championFlag || '🏆'}</div>
-            <div className="text-2xl font-black text-[#E2B340] tracking-wide">{bracket.champion}</div>
-            <div className="text-[10px] text-[#854D0E] uppercase tracking-[0.2em] mt-1">Campeón Mundial 2026</div>
+            <div className="text-2xl font-black text-accent-premium tracking-wide">{bracket.champion}</div>
+            <div className="text-[10px] text-[var(--match-gold-border)] uppercase tracking-[0.2em] mt-1">Campeón Mundial 2026</div>
             {bracket.runnerUp && (
               <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-                <span className="text-[#9CA3AF]">🥈 {bracket.runnerUp}</span>
+                <span className="text-fg-secondary">🥈 {bracket.runnerUp}</span>
                 {bracket.thirdPlaceTeam && <span className="text-[#CD7F32]">🥉 {bracket.thirdPlaceTeam}</span>}
               </div>
             )}
@@ -498,9 +498,9 @@ function BracketRoundAesthetic({ title, subtitle, matches, getFlag, roundColor }
       <div className="flex items-center justify-between mb-3">
         <div>
           <h4 className="text-xs font-bold text-fg-primary">{title}</h4>
-          <span className="text-[10px] text-[#6B7280]">{subtitle}</span>
+          <span className="text-[10px] text-fg-tertiary">{subtitle}</span>
         </div>
-        <span className="text-[10px] text-[#6B7280] font-mono">{matches.length} partidos</span>
+        <span className="text-[10px] text-fg-tertiary font-mono">{matches.length} partidos</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {matches.map((m: any) => m && <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />)}
@@ -517,31 +517,31 @@ function BracketMatchCard({ match: m, getFlag, isFinal = false }: { match: any; 
 
   return (
     <div className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${
-      isFinal ? 'bg-[#1A1705]/80 border-[#854D0E]/40' :
-      played ? 'bg-[#0C1017]/80 border-[#2A2D35]' : 'bg-[#1A1D24]/60 border-[#2A2D35]/60'
+      isFinal ? 'bg-[var(--match-gold-bg)]/80 border-[var(--match-gold-border)]/40' :
+      played ? 'bg-surface/80 border-border-subtle' : 'bg-[var(--match-card-scheduled)]/60 border-border-subtle/60'
     }`}>
       <div className="flex items-center gap-1.5 min-w-0 w-[40%]">
         <span className="text-base shrink-0">{getFlag(m.homeTeam)}</span>
-        <span className={`truncate ${homeWin ? 'font-bold text-[#4ADE80]' : played && !homeWin ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+        <span className={`truncate ${homeWin ? 'font-bold text-[var(--match-correct-text)]' : played && !homeWin ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
           {m.homeTeam}
         </span>
       </div>
       <div className="shrink-0 px-2 text-center">
         {played ? (
-          <span className={`font-mono font-bold ${isFinal ? 'text-lg text-[#E2B340]' : 'text-sm'} ${
-            homeWin ? 'text-[#4ADE80]' : awayWin ? 'text-[#4ADE80]' : 'text-[#FACC15]'
+          <span className={`font-mono font-bold ${isFinal ? 'text-lg text-accent-premium' : 'text-sm'} ${
+            homeWin ? 'text-[var(--match-correct-text)]' : awayWin ? 'text-[var(--match-correct-text)]' : 'text-state-warning'
           }`}>
             {m.homeScore} - {m.awayScore}
           </span>
         ) : (
-          <span className="text-[#4B5563] font-mono">vs</span>
+          <span className="text-fg-disabled font-mono">vs</span>
         )}
         {!played && m.homeWinProb != null && (
-          <div className="text-[9px] text-[#6B7280] mt-0.5">{m.homeWinProb}%</div>
+          <div className="text-[9px] text-fg-tertiary mt-0.5">{m.homeWinProb}%</div>
         )}
       </div>
       <div className="flex items-center gap-1.5 min-w-0 w-[40%] justify-end">
-        <span className={`truncate text-right ${awayWin ? 'font-bold text-[#4ADE80]' : played && !awayWin ? 'text-[#6B7280]' : 'text-[#9CA3AF]'}`}>
+        <span className={`truncate text-right ${awayWin ? 'font-bold text-[var(--match-correct-text)]' : played && !awayWin ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
           {m.awayTeam}
         </span>
         <span className="text-base shrink-0">{getFlag(m.awayTeam)}</span>
@@ -573,10 +573,13 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
-        className="relative w-full sm:max-w-md bg-[#0C1017] border border-[#2A2D35] rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
+        className="relative w-full sm:max-w-md bg-[var(--match-modal-bg)] border border-border-subtle rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${match.homeTeam} vs ${match.awayTeam}`}
       >
-        <button onClick={onClose} className="absolute top-3 right-3 z-10 p-1.5 rounded-[var(--r-md)] bg-[#2A2D35] text-[#6B7280]"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        <button onClick={onClose} className="absolute top-3 right-3 z-10 p-1.5 rounded-[var(--r-md)] bg-raised text-fg-tertiary hover:text-fg-primary transition-colors" aria-label="Cerrar"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
 
         <div className="p-5">
           <div className="text-[10px] text-accent-primary font-semibold uppercase tracking-wider mb-4">
@@ -588,7 +591,7 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
             <div className="flex-1 text-center">
               <div className="text-2xl mb-1">{getFlag(match.homeTeam)}</div>
               <div className={cn("text-xs font-bold", isPlayed && realWinner === 'home' ? pal.teamWinner : "text-fg-primary")}>{match.homeTeam}</div>
-              <div className="text-[10px] text-[#6B7280]">Elo {homeElo}</div>
+              <div className="text-[10px] text-fg-tertiary">Elo {homeElo}</div>
             </div>
 
             <div className="text-center">
@@ -600,7 +603,7 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
                   </div>
                   {/* Predicted — BOTTOM, small */}
                   {match.homeGoals !== null && match.awayGoals !== null && (
-                    <div className="text-[11px] text-[#6B7280] font-mono mt-1">Pred: <span className={pal.predText}>{match.homeGoals}-{match.awayGoals}</span></div>
+                    <div className="text-[11px] text-fg-tertiary font-mono mt-1">Pred: <span className={pal.predText}>{match.homeGoals}-{match.awayGoals}</span></div>
                   )}
                   {/* Status badge */}
                   <span className="mt-1">{pal.icon}</span>
@@ -608,12 +611,12 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
               ) : (
                 <div className="flex flex-col items-center gap-1">
                   {/* TBD — big */}
-                  <div className="px-4 py-2 rounded-[var(--r-md)] bg-[#2A2D35]">
-                    <div className="text-2xl font-bold font-mono tabular-nums text-[#4B5563]">TBD</div>
+                  <div className="px-4 py-2 rounded-[var(--r-md)] bg-raised">
+                    <div className="text-2xl font-bold font-mono tabular-nums text-fg-disabled">TBD</div>
                   </div>
                   {/* Predicted — small */}
                   {match.homeGoals !== null && match.awayGoals !== null && (
-                    <div className="text-[11px] text-[#9CA3AF] font-mono mt-1">Pred: <span className="text-accent-primary">{match.homeGoals}-{match.awayGoals}</span></div>
+                    <div className="text-[11px] text-fg-secondary font-mono mt-1">Pred: <span className="text-accent-primary">{match.homeGoals}-{match.awayGoals}</span></div>
                   )}
                 </div>
               )}
@@ -622,7 +625,7 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
             <div className="flex-1 text-center">
               <div className="text-2xl mb-1">{getFlag(match.awayTeam)}</div>
               <div className={cn("text-xs font-bold", isPlayed && realWinner === 'away' ? pal.teamWinner : "text-fg-primary")}>{match.awayTeam}</div>
-              <div className="text-[10px] text-[#6B7280]">Elo {awayElo}</div>
+              <div className="text-[10px] text-fg-tertiary">Elo {awayElo}</div>
             </div>
           </div>
 
@@ -630,16 +633,16 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
 
           {/* Probabilities */}
           {match.homeWin !== null && (
-            <div className="pt-3 border-t border-[#2A2D35]">
-              <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-2">Probabilidades</div>
+            <div className="pt-3 border-t border-border-subtle">
+              <div className="text-[10px] text-fg-tertiary uppercase tracking-wider font-semibold mb-2">Probabilidades</div>
               <div className="flex gap-0.5 h-2 rounded-full overflow-hidden mb-1">
                 <div style={{ width: `${match.homeWin}%` }} className="bg-accent-primary/70" />
-                <div style={{ width: `${match.draw}%` }} className="bg-[#6B7280]/30" />
+                <div style={{ width: `${match.draw}%` }} className="bg-fg-tertiary/30" />
                 <div style={{ width: `${match.awayWin}%` }} className="bg-state-danger/70" />
               </div>
               <div className="flex justify-between text-[10px]">
                 <span className="text-accent-primary font-semibold">{match.homeWin}%</span>
-                <span className="text-[#6B7280]">{match.draw}%</span>
+                <span className="text-fg-tertiary">{match.draw}%</span>
                 <span className="text-state-danger font-semibold">{match.awayWin}%</span>
               </div>
             </div>
@@ -650,26 +653,26 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
             const maeHome = Math.abs(match.homeGoals - realResult.homeScore);
             const maeAway = Math.abs(match.awayGoals - realResult.awayScore);
             const totalMae = (maeHome + maeAway) / 2;
-            const driftColor = totalMae < 0.5 ? 'bg-[#166534] text-[#4ADE80]' : totalMae <= 1 ? 'bg-[#854D0E] text-[#FACC15]' : 'bg-[#991B1B] text-[#FCA5A5]';
+            const driftColor = totalMae < 0.5 ? 'bg-[var(--match-correct-score)] text-[var(--match-correct-text)]' : totalMae <= 1 ? 'bg-[var(--match-gold-border)] text-state-warning' : 'bg-[var(--match-wrong-score)] text-[var(--match-wrong-text)]';
             const driftLabel = totalMae < 0.5 ? 'Muy cercana' : totalMae <= 1 ? 'Cercana' : 'Lejana';
             return (
-              <div className="pt-3 mt-3 border-t border-[#2A2D35]">
-                <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-2">Drift de Predicción</div>
+              <div className="pt-3 mt-3 border-t border-border-subtle">
+                <div className="text-[10px] text-fg-tertiary uppercase tracking-wider font-semibold mb-2">Drift de Predicción</div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 text-center">
-                    <div className="text-[10px] text-[#6B7280] mb-1">Predicción</div>
-                    <div className="px-3 py-1.5 bg-[#2A2D35] rounded-[var(--r-md)]">
-                      <span className="font-mono font-bold text-sm text-[#9CA3AF]">{match.homeGoals}-{match.awayGoals}</span>
+                    <div className="text-[10px] text-fg-tertiary mb-1">Predicción</div>
+                    <div className="px-3 py-1.5 bg-raised rounded-[var(--r-md)]">
+                      <span className="font-mono font-bold text-sm text-fg-secondary">{match.homeGoals}-{match.awayGoals}</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <span className="text-lg">→</span>
                     <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-bold", driftColor)}>{driftLabel}</span>
-                    <span className="text-[9px] text-[#6B7280] font-mono">MAE {totalMae.toFixed(1)}</span>
+                    <span className="text-[9px] text-fg-tertiary font-mono">MAE {totalMae.toFixed(1)}</span>
                   </div>
                   <div className="flex-1 text-center">
-                    <div className="text-[10px] text-[#6B7280] mb-1">Real</div>
-                    <div className="px-3 py-1.5 bg-[#2A2D35] rounded-[var(--r-md)]">
+                    <div className="text-[10px] text-fg-tertiary mb-1">Real</div>
+                    <div className="px-3 py-1.5 bg-raised rounded-[var(--r-md)]">
                       <span className={cn("font-mono font-bold text-sm", pal.scoreText)}>{realResult.homeScore}-{realResult.awayScore}</span>
                     </div>
                   </div>
@@ -679,14 +682,14 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
           })()}
 
           {/* Stats */}
-          <div className="pt-3 mt-3 border-t border-[#2A2D35]">
-            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-2">Comparación</div>
+          <div className="pt-3 mt-3 border-t border-border-subtle">
+            <div className="text-[10px] text-fg-tertiary uppercase tracking-wider font-semibold mb-2">Comparación</div>
             {['attack', 'midfield', 'defense'].map(stat => {
               const h = homePower[stat as keyof typeof homePower]; const a = awayPower[stat as keyof typeof awayPower];
               const l: Record<string, string> = { attack: 'Ataque', midfield: 'Medio', defense: 'Defensa' };
               return (
                 <div key={stat} className="mb-1.5">
-                  <div className="flex justify-between text-[10px] mb-0.5"><span className="text-accent-primary">{h}</span><span className="text-[#6B7280]">{l[stat]}</span><span className="text-state-danger">{a}</span></div>
+                  <div className="flex justify-between text-[10px] mb-0.5"><span className="text-accent-primary">{h}</span><span className="text-fg-tertiary">{l[stat]}</span><span className="text-state-danger">{a}</span></div>
                   <div className="flex h-1.5 rounded-full overflow-hidden"><div className="bg-accent-primary/60" style={{ width: `${(h/(h+a))*100}%` }} /><div className="bg-state-danger/60" style={{ width: `${(a/(h+a))*100}%` }} /></div>
                 </div>
               );
@@ -695,15 +698,15 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
 
           {/* Likely scores */}
           {match.topScores?.length && (
-            <div className="pt-3 mt-3 border-t border-[#2A2D35]">
-              <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-semibold mb-2">Marcadores Probables</div>
+            <div className="pt-3 mt-3 border-t border-border-subtle">
+              <div className="text-[10px] text-fg-tertiary uppercase tracking-wider font-semibold mb-2">Marcadores Probables</div>
               <div className="space-y-1">
                 {match.topScores.slice(0, 4).map((s, i) => (
                   <div key={i} className="flex items-center gap-2 text-[11px]">
-                    <span className="text-[#6B7280] w-3">{i+1}</span>
+                    <span className="text-fg-tertiary w-3">{i+1}</span>
                     <span className="font-mono font-bold text-fg-primary w-7">{s.home}-{s.away}</span>
-                    <div className="flex-1 h-1.5 bg-[#2A2D35] rounded-full overflow-hidden"><div className="h-full bg-accent-premium/40 rounded-full" style={{ width: `${Math.min(100, s.probability*3)}%` }} /></div>
-                    <span className="text-[#6B7280] w-8 text-right">{s.probability}%</span>
+                    <div className="flex-1 h-1.5 bg-raised rounded-full overflow-hidden"><div className="h-full bg-accent-premium/40 rounded-full" style={{ width: `${Math.min(100, s.probability*3)}%` }} /></div>
+                    <span className="text-fg-tertiary w-8 text-right">{s.probability}%</span>
                   </div>
                 ))}
               </div>

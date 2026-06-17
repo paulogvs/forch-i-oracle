@@ -17,6 +17,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'FORCH.i ORACLE — Predicciones IA · Mundial 2026',
   description: 'Predicciones deportivas con IA. Poisson + Dixon-Coles + Elo + xG para el Mundial FIFA 2026.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://forch-i-oracle.vercel.app'),
   icons: { icon: '/favicon.svg' },
   openGraph: {
     title: 'FORCH.i ORACLE',

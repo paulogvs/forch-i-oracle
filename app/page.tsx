@@ -326,9 +326,9 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-1.5">
                   <span className={cn(
                     "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                    group.accuracyPct >= 60 ? "bg-[#052E16] text-[#4ADE80]"
-                    : group.accuracyPct >= 40 ? "bg-[#854D0E]/30 text-[#FACC15]"
-                    : "bg-[#2A0A0A] text-[#FCA5A5]"
+                    group.accuracyPct >= 60 ? "bg-[var(--match-correct-bg)] text-[var(--match-correct-text)]"
+                    : group.accuracyPct >= 40 ? "bg-[var(--match-gold-border)]/30 text-state-warning"
+                    : "bg-[var(--match-wrong-bg)] text-[var(--match-wrong-text)]"
                   )}>
                     {group.correctCount}/{group.totalCount}
                   </span>
@@ -477,10 +477,10 @@ function UpcomingMatchCard({ match, getFlag }: { match: any; getFlag: (n: string
 
 function ResultCard({ match, getFlag }: { match: MatchResultDetail; getFlag: (n: string) => string }) {
   const palette = match.exact
-    ? { card: 'bg-[#052E16] border-[#166534]', scoreBg: 'bg-[#166534]', scoreText: 'text-[#4ADE80]', teamText: 'text-[#BBF7D0]' }
+    ? { card: 'bg-[var(--match-correct-bg)] border-[var(--match-correct-border)]', scoreBg: 'bg-[var(--match-correct-score)]', scoreText: 'text-[var(--match-correct-text)]', teamText: 'text-state-success/70' }
     : match.correct
-    ? { card: 'bg-[#14291E] border-[#1B6B3A]', scoreBg: 'bg-[#1B6B3A]', scoreText: 'text-[#FACC15]', teamText: 'text-[#BBF7D0]' }
-    : { card: 'bg-[#2A0A0A] border-[#991B1B]', scoreBg: 'bg-[#991B1B]', scoreText: 'text-[#FCA5A5]', teamText: 'text-[#FECACA]' };
+    ? { card: 'bg-[var(--match-partial-bg)] border-[var(--match-partial-border)]', scoreBg: 'bg-[var(--match-partial-score)]', scoreText: 'text-state-warning', teamText: 'text-state-success/70' }
+    : { card: 'bg-[var(--match-wrong-bg)] border-[var(--match-wrong-border)]', scoreBg: 'bg-[var(--match-wrong-score)]', scoreText: 'text-[var(--match-wrong-text)]', teamText: 'text-state-danger/70' };
 
   return (
     <div className={cn("flex items-center gap-2 p-3 rounded-[var(--r-lg)] border transition-all", palette.card)}>
@@ -497,7 +497,7 @@ function ResultCard({ match, getFlag }: { match: MatchResultDetail; getFlag: (n:
             {match.real[0]}-{match.real[1]}
           </span>
         </div>
-        <span className="text-[9px] text-[#6B7280] font-mono">Pred: {match.pred[0]}-{match.pred[1]}</span>
+        <span className="text-[9px] text-fg-tertiary font-mono">Pred: {match.pred[0]}-{match.pred[1]}</span>
       </div>
 
       {/* Status icon */}
@@ -545,7 +545,7 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
                 className="h-full rounded-full transition-all duration-700"
                 style={{
                   width: `${(p.championProb / maxProb) * 100}%`,
-                  background: i === 0 ? 'var(--gradient-gold)' : i === 1 ? 'linear-gradient(to right, #94A3B8cc, #94A3B8)' : i === 2 ? 'linear-gradient(to right, #F59E0Bcc, #F59E0B)' : 'linear-gradient(to right, var(--text-disabled), var(--text-tertiary))',
+                  background: i === 0 ? 'var(--gradient-gold)' : i === 1 ? 'var(--text-secondary)' : i === 2 ? 'var(--state-warning)' : 'linear-gradient(to right, var(--text-disabled), var(--text-tertiary))',
                 }}
               />
             </div>

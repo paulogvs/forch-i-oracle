@@ -7,6 +7,7 @@
 // 4. Re-simulate tournament (if group stage)
 //
 // Trigger: POST /api/match-result
+// Auth: Requires CRON_SECRET as Bearer token
 
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
@@ -22,8 +23,13 @@ import { calculateEnhancedPrediction } from '@/lib/enhanced-engine';
 import { addMatchResult, getDynamicStats } from '@/lib/prediction-store';
 import { getKeyFactors } from '@/lib/predictor-engine';
 import { batchProcess } from '@/lib/utils';
+import { validateCronAuth } from '@/lib/cron-auth';
 
 export async function POST(request: NextRequest) {
+  // Authentication required
+  const unauthorized = validateCronAuth(request);
+  if (unauthorized) return unauthorized;
+
   try {
     const body = await request.json();
     const {

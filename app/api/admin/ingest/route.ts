@@ -1,35 +1,24 @@
 // FORCH.i ORACLE — Admin: Manual Ingest Trigger
 // POST /api/admin/ingest — Trigger data ingestion manually
-// GET /api/admin/ingest — Also works (for easy browser testing)
-// Requires CRON_SECRET as query param or Authorization header
+// Requires CRON_SECRET as Bearer token in Authorization header
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateCronAuth } from '@/lib/cron-auth';
 
 export async function POST(request: NextRequest) {
-  return handleIngest(request);
-}
-
-export async function GET(request: NextRequest) {
-  return handleIngest(request);
-}
-
-async function handleIngest(request: NextRequest) {
-  // Reuse the same auth as cron jobs
   const unauthorized = validateCronAuth(request);
   if (unauthorized) return unauthorized;
 
-  // Forward to the cron ingest endpoint
   const url = new URL(request.url);
-  const secret = url.searchParams.get('secret') || '';
-
-  const ingestUrl = `${url.origin}/api/cron/ingest?secret=${secret}`;
+  const crs = process.env.CRON_SECRET || '';
+  const ingestUrl = `${url.origin}/api/cron/ingest`;
 
   try {
     const response = await fetch(ingestUrl, {
       method: 'GET',
       headers: {
         'User-Agent': 'FORCH-i-Oracle-Admin/1.0',
+        Authorization: `Bearer ${crs}`,
       },
     });
 

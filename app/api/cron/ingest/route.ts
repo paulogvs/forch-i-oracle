@@ -253,7 +253,7 @@ export async function GET(request: Request) {
     diagnostics.push({
       step: 'config',
       status: apiKey ? 'ok' : 'error',
-      message: apiKey ? `API key present (${apiKey.slice(0, 6)}...)` : 'FOOTBALL_API_KEY not set',
+      message: apiKey ? 'API key configured' : 'FOOTBALL_API_KEY not set',
     });
 
     // Step 2: Check data layer connection
@@ -353,10 +353,13 @@ export async function GET(request: Request) {
 
       // Trigger recalculate automatically
       try {
+        const crs = process.env.CRON_SECRET || '';
         const recalcUrl = new URL(request.url);
         recalcUrl.pathname = '/api/cron/recalculate';
-        recalcUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
-        const recalcRes = await fetch(recalcUrl.toString(), { signal: AbortSignal.timeout(120000) });
+        const recalcRes = await fetch(recalcUrl.toString(), {
+          headers: { Authorization: `Bearer ${crs}` },
+          signal: AbortSignal.timeout(120000),
+        });
         const recalcData = await recalcRes.json().catch(() => ({}));
         diagnostics.push({
           step: 'auto_recalculate',
@@ -375,10 +378,13 @@ export async function GET(request: Request) {
 
       // Trigger simulate automatically
       try {
+        const crs = process.env.CRON_SECRET || '';
         const simUrl = new URL(request.url);
         simUrl.pathname = '/api/cron/simulate';
-        simUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
-        const simRes = await fetch(simUrl.toString(), { signal: AbortSignal.timeout(120000) });
+        const simRes = await fetch(simUrl.toString(), {
+          headers: { Authorization: `Bearer ${crs}` },
+          signal: AbortSignal.timeout(120000),
+        });
         const simData = await simRes.json().catch(() => ({}));
         diagnostics.push({
           step: 'auto_simulate',

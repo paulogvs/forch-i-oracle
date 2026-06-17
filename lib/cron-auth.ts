@@ -1,30 +1,31 @@
 // FORCH.i ORACLE — Cron Authentication
 // Shared CRON_SECRET validation for all cron endpoints.
-// Requires CRON_SECRET env var — no hardcoded fallback (security).
+// Only accepts Bearer token via Authorization header (NO URL params — security).
+// Requires CRON_SECRET env var — no hardcoded fallback.
 
 import { NextResponse } from 'next/server';
 
 /**
- * Validates cron job authorization via Bearer token or URL param.
- * Returns null if authorized, or a NextResponse 401 if unauthorized.
+ * Validates cron job authorization via Bearer token ONLY.
+ * URL query params are NOT accepted (prevents secret leakage in logs/history).
+ * Returns null if authorized, or a NextResponse if unauthorized/not configured.
  *
  * @param request - The incoming Request object
- * @returns null (authorized) or NextResponse (401 unauthorized)
+ * @returns null (authorized) or NextResponse
  */
 export function validateCronAuth(request: Request): NextResponse | null {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    console.error('[cron-auth] CRON_SECRET env var not set — cron jobs disabled');
+    console.warn('[cron-auth] CRON_SECRET env var not set — cron jobs disabled');
     return NextResponse.json(
-      { error: 'Cron not configured' },
-      { status: 503 }
+      { error: 'Unauthorized' },
+      { status: 401 }
     );
   }
 
   const authHeader = request.headers.get('authorization');
-  const urlParam = new URL(request.url).searchParams.get('secret');
 
-  if (authHeader === `Bearer ${secret}` || urlParam === secret) {
+  if (authHeader === `Bearer ${secret}`) {
     return null; // authorized
   }
 

@@ -140,19 +140,8 @@ export async function GET(request: Request) {
 
     console.log(`[cron:recalculate] Completed in ${duration}ms: ${results.predictionsSaved} predictions saved`);
 
-    // AUTO-SIMULATE: After recalculating, re-simulate tournament
-    if (results.predictionsSaved > 0) {
-      try {
-        const simUrl = new URL(request.url);
-        simUrl.pathname = '/api/cron/simulate';
-        simUrl.searchParams.set('secret', new URL(request.url).searchParams.get('secret') || '');
-        const simRes = await fetch(simUrl.toString(), { signal: AbortSignal.timeout(120000) });
-        const simData = await simRes.json().catch(() => ({}));
-        console.log(`[cron:recalculate] Auto-simulate: ${simRes.ok ? 'ok' : 'failed'} — top: ${simData.topTeam ?? '?'}`);
-      } catch (err) {
-        console.warn(`[cron:recalculate] Auto-simulate error: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
+    // Ingest now triggers simulate separately after recalculate completes.
+    // No redundant simulate call here — avoids double simulation per ingest cycle.
 
     return NextResponse.json({
       success: true,

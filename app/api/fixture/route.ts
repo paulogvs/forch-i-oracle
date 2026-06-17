@@ -3,6 +3,7 @@
 // Response is cached for 5 minutes to avoid redundant recomputation.
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
 import { predictMatchDynamic, addMatchResult, getResultsCount, seedFromResults } from '@/lib/prediction-store';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
@@ -26,6 +27,12 @@ function setFixtureCache(key: string, data: unknown): void {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 20 req/min per IP
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  if (!checkRateLimit(ip, 20, 60000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const { useDynamic = true, useEnhanced: useEnhancedFlag = true, realResults = [] } = body;
