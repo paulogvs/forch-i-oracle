@@ -280,13 +280,12 @@ export async function POST(request: NextRequest) {
 
     // AUTO-SIMULATE: After match result, re-simulate tournament directly (no HTTP)
     try {
-      const { simulateTournamentMulti, buildConsensusBracket } = await import('@/lib/tournament-sim');
+      const { simulateTournamentMulti } = await import('@/lib/tournament-sim');
       const allResults = await db.getMatchResults();
       const simResult = await simulateTournamentMulti(100, allResults);
 
-      // Build and store consensus bracket (same source as championProbs)
-      const consensusBracket = buildConsensusBracket(simResult.roundCounts, simResult.totalSims, simResult.top8);
-      await db.setKeyValue('consensusBracket', consensusBracket);
+      // Use bracket from the simulation that produced the most frequent champion
+      await db.setKeyValue('consensusBracket', simResult.bracket);
 
       // Store champion probabilities
       await db.saveTournamentProbs(simResult.top8.map(c => ({

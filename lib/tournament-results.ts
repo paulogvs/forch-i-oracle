@@ -3,7 +3,7 @@
 // Used by /api/simulate-tournament AND /api/fixture.
 
 import { getDataLayerAsync } from './data-layer';
-import { simulateTournamentMulti, buildConsensusBracket } from './tournament-sim';
+import { simulateTournamentMulti } from './tournament-sim';
 
 // ═══ IN-MEMORY CACHE ═══
 interface CachedResult {
@@ -60,7 +60,9 @@ export async function getOrComputeTournamentResults() {
   }));
 
   const multiResult = await simulateTournamentMulti(100, simResults, () => {});
-  const consensusBracket = buildConsensusBracket(multiResult.roundCounts, multiResult.totalSims, multiResult.top8);
+  // Use bracket from the simulation that produced the most frequent champion
+  // (lastBracket is updated in simulateTournamentMulti to track the leader's bracket)
+  const bracket = multiResult.bracket;
 
   // Store for next time
   const probs = multiResult.top8.map((c: any) => ({
@@ -70,14 +72,14 @@ export async function getOrComputeTournamentResults() {
     totalSimulations: 100,
   }));
   await db.saveTournamentProbs(probs);
-  await db.setKeyValue('consensusBracket', consensusBracket);
+  await db.setKeyValue('consensusBracket', bracket);
 
   const result: CachedResult = {
     championProbs: probs,
     top8: multiResult.top8.slice(0, 8).map((e: any) => ({
       team: e.team, flag: '', wins: e.wins, pct: e.pct,
     })),
-    bracket: consensusBracket,
+    bracket,
     expiresAt: Date.now() + CACHE_TTL_MS,
   };
   cachedResult = result;

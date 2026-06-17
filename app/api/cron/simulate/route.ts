@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
-import { simulateTournamentMulti, buildConsensusBracket, type RealMatchResult } from '@/lib/tournament-sim';
+import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
 import { validateCronAuth } from '@/lib/cron-auth';
 
 const NUM_SIMULATIONS = 100;
@@ -47,7 +47,8 @@ export async function GET(request: Request) {
 
     const multiResult = await simulateTournamentMulti(NUM_SIMULATIONS, simResults, onProgress);
 
-    const consensusBracket = buildConsensusBracket(multiResult.roundCounts, multiResult.totalSims, multiResult.top8);
+    // Use bracket from the simulation that produced the most frequent champion
+    const bracket = multiResult.bracket;
 
     results.simulationsCompleted = multiResult.totalSims;
 
@@ -61,8 +62,8 @@ export async function GET(request: Request) {
     await db.saveTournamentProbs(probs);
     results.teamsRanked = probs.length;
 
-    // Store consensus bracket so API can return it without re-simulating
-    await db.setKeyValue('consensusBracket', consensusBracket);
+    // Store bracket so API can return it without re-simulating
+    await db.setKeyValue('consensusBracket', bracket);
 
     if (probs.length > 0) {
       results.topTeam = probs[0].teamId;
@@ -89,7 +90,7 @@ export async function GET(request: Request) {
       topTeam: results.topTeam,
       topProb: results.topProb,
       top8: multiResult.top8.slice(0, 8),
-      bracket: consensusBracket,
+      bracket,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

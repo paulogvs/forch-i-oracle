@@ -823,7 +823,9 @@ export async function simulateTournamentMulti(
         }
       }
 
-      if (i === numSims - 1) {
+      // Track the bracket from the simulation that produced the current champion leader
+      const currentLeader = Array.from(championCounts.entries()).sort((a, b) => b[1] - a[1])[0];
+      if (champion && champion === currentLeader?.[0]) {
         const groupStandings: GroupStandings[] = [];
         for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
           groupStandings.push({ group: letter, teams: standings.get(letter) || [] });
