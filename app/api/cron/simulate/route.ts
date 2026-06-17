@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
 import { validateCronAuth } from '@/lib/cron-auth';
+import { saveBracketAndPredictions } from '@/lib/tournament-results';
 
 const NUM_SIMULATIONS = 100;
 
@@ -62,12 +63,13 @@ export async function GET(request: Request) {
     await db.saveTournamentProbs(probs);
     results.teamsRanked = probs.length;
 
-    // Store bracket so API can return it without re-simulating
-    await db.setKeyValue('consensusBracket', bracket);
+    // Store bracket + persist all knockout match predictions from the consensus bracket
+    await saveBracketAndPredictions(db, bracket);
 
     // Save consensusBracketHash to prevent redundant re-computation
     const resultsHash = realResults.map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`).join('|');
     await db.setKeyValue('consensusBracketHash', resultsHash);
+
 
     if (probs.length > 0) {
       results.topTeam = probs[0].teamId;

@@ -24,6 +24,8 @@ import { addMatchResult, getDynamicStats } from '@/lib/prediction-store';
 import { getKeyFactors } from '@/lib/predictor-engine';
 import { batchProcess } from '@/lib/utils';
 import { validateCronAuth } from '@/lib/cron-auth';
+import { saveBracketAndPredictions } from '@/lib/tournament-results';
+
 
 export async function POST(request: NextRequest) {
   // Authentication required
@@ -284,8 +286,8 @@ export async function POST(request: NextRequest) {
       const allResults = await db.getMatchResults();
       const simResult = await simulateTournamentMulti(100, allResults);
 
-      // Use bracket from the simulation that produced the most frequent champion
-      await db.setKeyValue('consensusBracket', simResult.bracket);
+      // Persist bracket + all knockout match predictions (single source of truth)
+      await saveBracketAndPredictions(db, simResult.bracket);
 
       // Store champion probabilities
       await db.saveTournamentProbs(simResult.top8.map(c => ({
