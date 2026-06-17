@@ -65,6 +65,10 @@ export async function GET(request: Request) {
     // Store bracket so API can return it without re-simulating
     await db.setKeyValue('consensusBracket', bracket);
 
+    // Save consensusBracketHash to prevent redundant re-computation
+    const resultsHash = realResults.map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`).join('|');
+    await db.setKeyValue('consensusBracketHash', resultsHash);
+
     if (probs.length > 0) {
       results.topTeam = probs[0].teamId;
       results.topProb = probs[0].championProb;

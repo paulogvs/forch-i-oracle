@@ -38,21 +38,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { useDynamic = true, useEnhanced: useEnhancedFlag = true, realResults = [] } = body;
 
+    const db = await getDataLayerAsync();
+    const storedResults = await db.getMatchResults();
+    const resultsHash = storedResults
+      .map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`)
+      .join('|');
+
     // Check cache (skip if real results submitted)
     const cacheKey = `fixture-${useEnhancedFlag}-${useDynamic}`;
     if (realResults.length === 0) {
-      const cached = getFixtureCache(cacheKey);
-      if (cached) {
+      const cached = getFixtureCache(cacheKey) as any;
+      if (cached && cached.resultsHash === resultsHash) {
         return NextResponse.json(cached);
       }
     }
 
-    const db = await getDataLayerAsync();
-
     // ─── Seed Bayesian engine with stored results on cold start ───
     // On Vercel serverless, in-memory state resets each invocation.
     // Seed from persisted results so predictions reflect real data immediately.
-    const storedResults = await db.getMatchResults();
     if (storedResults.length > 0 && getResultsCount() < storedResults.length) {
       const ALL_MATCHES_STATIC = ALL_MATCHES;
       seedFromResults(storedResults.map(r => {
@@ -237,26 +240,37 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════
-    // PHASE 2: Predict knockout (resolve group stage placeholders first)
+    // PHASE 2: Knockout Stage from the Consensus Bracket (Single Source of Truth)
     // ═══════════════════════════════════════════════════
-
-    // Build resolved knockout teams from simulated group standings
     const knockoutMatches = ALL_MATCHES.filter(m => m.round !== 'group');
 
-    // Resolve group stage to get qualified teams
-    const groupQualified = resolveGroupQualifiers(groupStandings);
+    // Retrieve consensus bracket (it auto-calculates and heals if out-of-sync in getOrComputeTournamentResults)
+    const tournamentData = await getOrComputeTournamentResults();
+    const bracket = tournamentData.bracket;
 
-    // Simulate knockout bracket to resolve all placeholders
-    const knockoutResults = await simulateKnockoutPhase(groupQualified, getTeamFormCached, useEnhancedFlag);
-
-    // Map knockout results back to fixture entries
     const knockoutMap = new Map<string, any>();
-    for (const result of knockoutResults) {
-      knockoutMap.set(result.id, result);
+    if (bracket) {
+      const allBracketMatches = [
+        ...(bracket.roundOf32 || []),
+        ...(bracket.roundOf16 || []),
+        ...(bracket.quarters || []),
+        ...(bracket.semis || []),
+        bracket.thirdPlace,
+        bracket.final,
+      ].filter(Boolean);
+
+      for (const bm of allBracketMatches) {
+        // Map TP-1 to 3rd and FINAL to Final for matching matching ID
+        const id = bm.id === 'TP-1' ? '3rd' : bm.id === 'FINAL' ? 'Final' : bm.id;
+        knockoutMap.set(id, bm);
+      }
     }
 
     for (const match of knockoutMatches) {
       const koResult = knockoutMap.get(match.id);
+      const homeGoals = koResult ? koResult.homeScore : null;
+      const awayGoals = koResult ? koResult.awayScore : null;
+
       fixture.push({
         id: match.id,
         group: match.group,
@@ -267,48 +281,13 @@ export async function POST(request: NextRequest) {
         homeTeam: koResult?.homeTeam || match.homeTeam,
         awayTeam: koResult?.awayTeam || match.awayTeam,
         round: match.round,
-        predictedScore: koResult?.predictedScore || null,
-        confidence: koResult?.confidence || null,
-        homeWinPct: koResult?.homeWinPct || null,
-        drawPct: koResult?.drawPct || null,
-        awayWinPct: koResult?.awayWinPct || null,
-        xG: koResult?.xG || null,
+        predictedScore: koResult && koResult.homeTeam !== 'TBD' && homeGoals !== null ? [homeGoals, awayGoals] : null,
+        confidence: koResult && koResult.homeWinProb != null ? (koResult.homeWinProb > 55 ? 'alta' : koResult.homeWinProb > 40 ? 'media' : 'baja') : null,
+        homeWinPct: koResult ? koResult.homeWinProb : null,
+        drawPct: koResult ? koResult.drawProb : null,
+        awayWinPct: koResult ? koResult.awayWinProb : null,
+        xG: koResult && koResult.xGHome != null && koResult.xGAway != null ? [koResult.xGHome, koResult.xGAway] : null,
       });
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // OVERRIDE KNOCKOUT TEAMS WITH CONSENSUS BRACKET
-    // Uses same source as championProbs (single source of truth)
-    // ═══════════════════════════════════════════════════════════
-    try {
-      const tournamentData = await getOrComputeTournamentResults();
-      const bracket = tournamentData.bracket;
-      if (bracket) {
-        const bracketRoundMap: Record<string, any[]> = {
-          'round-32': bracket.roundOf32 || [],
-          'round-16': bracket.roundOf16 || [],
-          'quarter': bracket.quarters || [],
-          'semi': bracket.semis || [],
-          'final': bracket.final ? [bracket.final] : [],
-          'third': bracket.thirdPlace ? [bracket.thirdPlace] : [],
-        };
-        const usedBracketIndices: Record<string, number> = {};
-        for (const m of fixture) {
-          const bracketMatches = bracketRoundMap[m.round];
-          if (!bracketMatches || bracketMatches.length === 0) continue;
-          const idx = usedBracketIndices[m.round] || 0;
-          if (idx < bracketMatches.length) {
-            const bMatch = bracketMatches[idx];
-            if (bMatch && bMatch.homeTeam !== 'TBD') {
-              m.homeTeam = bMatch.homeTeam;
-              m.awayTeam = bMatch.awayTeam;
-            }
-            usedBracketIndices[m.round] = idx + 1;
-          }
-        }
-      }
-    } catch {
-      // Non-critical — bracket override is best-effort
     }
 
     // ═══════════════════════════════════════════════════
@@ -354,7 +333,8 @@ export async function POST(request: NextRequest) {
       useDynamic,
       useEnhanced: useEnhancedFlag,
       realResultsIngested: realResults.length,
-      totalRealResults: getResultsCount(),
+      totalRealResults: storedResults.length,
+      resultsHash,
     };
 
     // Cache the response (skip if real results were submitted)

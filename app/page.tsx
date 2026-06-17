@@ -97,7 +97,7 @@ export default function DashboardPage() {
     return eloProbs.slice(0, 8).map(c => ({
       teamId: c.teamName,
       championProb: c.championProb,
-      simulationsCount: Math.round(c.championProb * 100),
+      simulationsCount: Math.round(c.championProb),
       totalSimulations: 100,
     }));
   }, [simData]);
@@ -525,7 +525,7 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
         <div className="text-2xl mb-1">🏆</div>
         <div className="text-base font-black text-accent-premium">{top.teamId}</div>
         <div className="text-[10px] text-fg-tertiary">
-          {top.championProb.toFixed(2)}% · {top.simulationsCount}/{top.totalSimulations} simulaciones
+          {Number(top.championProb).toFixed(2)}% · {top.simulationsCount}/{top.totalSimulations} simulaciones
         </div>
       </div>
 
@@ -535,7 +535,10 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
           <div key={p.teamId} className="flex items-center gap-2">
             <span className={cn(
               "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-              i === 0 ? "bg-accent-premium text-canvas" : i === 1 ? "bg-fg-secondary text-canvas" : i === 2 ? "bg-accent-premium/50 text-canvas" : "bg-white/[0.06] text-fg-disabled"
+              i === 0 ? "bg-[#E2B340] text-canvas font-bold" :
+              i === 1 ? "bg-[#CBD5E1] text-canvas font-bold" :
+              i === 2 ? "bg-[#CD7F32] text-canvas font-bold" :
+              "bg-white/[0.06] text-fg-disabled"
             )}>
               {i + 1}
             </span>
@@ -550,7 +553,7 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
               />
             </div>
             <span className="text-[11px] font-bold text-accent-premium w-12 text-right shrink-0 font-mono tabular-nums">
-              {p.championProb.toFixed(2)}%
+              {Number(p.championProb).toFixed(2)}%
             </span>
           </div>
         ))}

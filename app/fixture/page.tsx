@@ -83,6 +83,13 @@ export default function FixturePage() {
           if (bMatch && bMatch.homeTeam !== 'TBD') {
             m.homeTeam = bMatch.homeTeam;
             m.awayTeam = bMatch.awayTeam;
+            m.homeGoals = bMatch.homeScore;
+            m.awayGoals = bMatch.awayScore;
+            m.homeWin = bMatch.homeWinProb;
+            m.draw = bMatch.drawProb;
+            m.awayWin = bMatch.awayWinProb;
+            m.isPredicted = bMatch.homeScore !== null;
+            m.confidence = bMatch.homeWinProb != null ? (bMatch.homeWinProb > 55 ? 'alta' : bMatch.homeWinProb > 40 ? 'media' : 'baja') : null;
           }
           usedBracketIndices[m.round] = idx + 1;
         }

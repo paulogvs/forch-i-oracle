@@ -13,27 +13,35 @@ interface CachedResult {
   expiresAt: number;
 }
 let cachedResult: CachedResult | null = null;
+let cachedResultsHash: string | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Get or compute tournament results — SINGLE SOURCE OF TRUTH.
  * Both championProbs and bracket come from the SAME simulateTournamentMulti(100) call.
- * Cached in-memory for 5 minutes.
+ * Cached in-memory and in DB, auto-invalidated when realResults change.
  */
 export async function getOrComputeTournamentResults() {
-  // Return cached if fresh
-  if (cachedResult && Date.now() < cachedResult.expiresAt) {
+  const db = await getDataLayerAsync();
+
+  const realResults = await db.getMatchResults();
+  const resultsHash = realResults
+    .map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`)
+    .join('|');
+
+  // Return cached if fresh and results hash matches
+  if (cachedResult && cachedResultsHash === resultsHash && Date.now() < cachedResult.expiresAt) {
     return cachedResult;
   }
-
-  const db = await getDataLayerAsync();
 
   // Try stored data first (from cron or match-result)
   const storedProbs = await db.getTournamentProbs();
   const kvEntry = await db.getKeyValue('consensusBracket');
   const storedBracket = kvEntry?.value || null;
+  const hashEntry = await db.getKeyValue('consensusBracketHash');
+  const storedHash = hashEntry?.value || '';
 
-  if (storedProbs.length > 0 && storedBracket) {
+  if (storedProbs.length > 0 && storedBracket && storedHash === resultsHash) {
     const result: CachedResult = {
       championProbs: storedProbs,
       top8: storedProbs.slice(0, 8).map((p: any) => ({
@@ -46,12 +54,12 @@ export async function getOrComputeTournamentResults() {
       expiresAt: Date.now() + CACHE_TTL_MS,
     };
     cachedResult = result;
+    cachedResultsHash = resultsHash;
     return result;
   }
 
-  // No stored data — compute fresh
-  console.log('[tournament-results] No stored data, computing fresh...');
-  const realResults = await db.getMatchResults();
+  // No stored data or hash mismatch — compute fresh
+  console.log('[tournament-results] Tournament simulation data out of sync or missing in DB, computing fresh...');
   const simResults = realResults.map((r: any) => ({
     matchId: r.matchId,
     homeScore: r.homeScore,
@@ -73,6 +81,7 @@ export async function getOrComputeTournamentResults() {
   }));
   await db.saveTournamentProbs(probs);
   await db.setKeyValue('consensusBracket', bracket);
+  await db.setKeyValue('consensusBracketHash', resultsHash);
 
   const result: CachedResult = {
     championProbs: probs,
@@ -83,5 +92,6 @@ export async function getOrComputeTournamentResults() {
     expiresAt: Date.now() + CACHE_TTL_MS,
   };
   cachedResult = result;
+  cachedResultsHash = resultsHash;
   return result;
 }

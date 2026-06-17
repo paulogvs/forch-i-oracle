@@ -295,6 +295,12 @@ export async function POST(request: NextRequest) {
         totalSimulations: 100,
       })));
 
+      // Store consensus bracket hash to avoid redundant computation
+      const resultsHash = allResults
+        .map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`)
+        .join('|');
+      await db.setKeyValue('consensusBracketHash', resultsHash);
+
       console.log(`[match-result] Auto-simulate complete: champion=${simResult.top8[0]?.team} (${simResult.top8[0]?.pct}%)`);
     } catch (err) {
       console.warn('[match-result] Auto-simulate error:', err);
