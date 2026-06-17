@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
@@ -13,7 +13,7 @@ import { useSimulation } from '@/lib/swr/hooks';
 import { groupResultsByDate, getUpcomingMatches, getFlag, getRoundLabel } from '@/lib/dashboard-utils';
 import type { MatchResultDetail } from '@/lib/dashboard-utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { simulateTournamentMulti, type ChampionProbability } from '@/lib/tournament-sim';
+import { computeChampionProbsFromElo, type EloChampionProb } from '@/lib/elo-champion';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -86,59 +86,21 @@ export default function DashboardPage() {
     return resultMap;
   }, [simData]);
 
-  // ─── Champion Probabilities from simulation ───────────────
-  const [fallbackChampionProbs, setFallbackChampionProbs] = useState<ChampionProbability[] | null>(null);
-  const [championTimedOut, setChampionTimedOut] = useState(false);
-
+  // ─── Champion Probabilities — Instant Elo-based (no async simulation needed) ──
   const championProbs = useMemo(() => {
-    // Try server championProbs first (from cron simulation)
+    // Use server data if available (from cron Monte Carlo simulation)
     if (simData?.success && simData.championProbs && simData.championProbs.length > 0) {
       return simData.championProbs.slice(0, 8);
     }
-    // Use fallback client-side simulation results if available
-    if (fallbackChampionProbs && fallbackChampionProbs.length > 0) {
-      return fallbackChampionProbs.map(c => ({
-        teamId: c.team,
-        championProb: c.pct,
-        simulationsCount: c.wins,
-        totalSimulations: c.wins / (c.pct / 100) || 100,
-      }));
-    }
-    return null;
-  }, [simData, fallbackChampionProbs]);
-
-  // Client-side fallback: run simulation if no server data or after timeout
-  useEffect(() => {
-    const needsFallback = !championProbs && !fallbackChampionProbs;
-    if (!needsFallback) return;
-
-    // 8-second timeout: if no champion data arrives, force client-side simulation
-    const timeout = setTimeout(() => {
-      setChampionTimedOut(true);
-      simulateTournamentMulti(50, [])
-        .then(result => setFallbackChampionProbs(result.top8))
-        .catch(() => {});
-    }, 8000);
-
-    // Also try fetching from server and running local simulation
-    fetch('/api/simulate-tournament')
-      .then(r => r.json())
-      .then(async (data) => {
-        clearTimeout(timeout);
-        if (data.championProbs && data.championProbs.length > 0) {
-          // Server has data — use it directly
-          return;
-        }
-        const realResults = data.results || [];
-        const result = await simulateTournamentMulti(50, realResults);
-        setFallbackChampionProbs(result.top8);
-      })
-      .catch(() => {
-        // On fetch failure, rely on timeout fallback
-      });
-
-    return () => clearTimeout(timeout);
-  }, [championProbs, fallbackChampionProbs]);
+    // Fallback: deterministic Elo-based ranking (instant, <1ms)
+    const eloProbs = computeChampionProbsFromElo();
+    return eloProbs.slice(0, 8).map(c => ({
+      teamId: c.teamName,
+      championProb: c.championProb,
+      simulationsCount: Math.round(c.championProb * 100),
+      totalSimulations: 100,
+    }));
+  }, [simData]);
 
   // ─── Compute Stats ────────────────────────────────────────
   const stats = (() => {
@@ -395,24 +357,7 @@ export default function DashboardPage() {
           <Trophy className="h-3.5 w-3.5 text-accent-premium" />
           Campeón del Mundo
         </h2>
-        {championProbs && championProbs.length > 0 ? (
-          <ChampionWidget probs={championProbs} />
-        ) : (
-          <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-premium/20 text-center">
-            <div className="flex items-center justify-center gap-2 text-xs">
-              <div className="h-3 w-3 rounded-full bg-accent-premium/40 animate-pulse" />
-              <span className="text-fg-secondary">{championTimedOut ? 'Generando predicciones locales...' : 'Cargando campeones...'}</span>
-            </div>
-            <div className="mt-3 space-y-1.5">
-              {[1,2,3].map(i => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full bg-raised animate-pulse" />
-                  <div className="flex-1 h-3 rounded bg-raised/60 animate-pulse" style={{ width: `${80 - i * 15}%`, marginLeft: 'auto', marginRight: 'auto' }} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <ChampionWidget probs={championProbs} />
       </motion.section>
 
       {/* ═══ NAV ═══ */}
