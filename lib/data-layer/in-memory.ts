@@ -25,6 +25,12 @@ import {
   getPredictions as getFilePredictions,
   savePrediction as saveFilePrediction,
   clearPredictions as clearFilePredictions,
+  getTournamentProbs as getFileTournamentProbs,
+  saveTournamentProbs as saveFileTournamentProbs,
+  getConsensusBracket as getFileConsensusBracket,
+  saveConsensusBracket as saveFileConsensusBracket,
+  getKV as getFileKV,
+  setKV as setFileKV,
 } from '../file-store';
 
 // ═══════════════════════════════════════════════════════════════
@@ -323,6 +329,17 @@ async function getAllTeamForms(): Promise<DBTeamForm[]> {
 
 async function getTournamentProbs(): Promise<DBTournamentProbs[]> {
   ensureInitialized();
+  // Load from file if in-memory is empty (Vercel cold start)
+  if (tournamentProbsStore.size === 0) {
+    const fileProbs = getFileTournamentProbs();
+    for (const p of fileProbs) {
+      tournamentProbsStore.set(p.teamId, {
+        ...p,
+        id: p.teamId,
+        calculatedAt: new Date().toISOString(),
+      });
+    }
+  }
   return Array.from(tournamentProbsStore.values())
     .sort((a, b) => b.championProb - a.championProb);
 }
@@ -345,6 +362,15 @@ async function saveTournamentProbs(
   for (const s of saved) {
     tournamentProbsStore.set(s.teamId, s);
   }
+  // Persist to file (survives Vercel cold starts)
+  saveFileTournamentProbs(saved.map(s => ({
+    teamId: s.teamId,
+    championProb: s.championProb,
+    semifinalistProb: s.semifinalistProb,
+    runnerUpProb: s.runnerUpProb,
+    simulationsCount: s.simulationsCount,
+    totalSimulations: s.totalSimulations,
+  })));
   return saved;
 }
 
@@ -472,17 +498,29 @@ async function seedMatches(matches: Omit<DBMatch, 'createdAt'>[]): Promise<void>
 }
 
 // ═══════════════════════════════════════════════════════════════
-// KEY-VALUE STORE
+// KEY-VALUE STORE (persisted to file)
 // ═══════════════════════════════════════════════════════════════
 
 const kvStore = new Map<string, DBKeyValue>();
 
 async function getKeyValue(key: string): Promise<DBKeyValue | null> {
-  return kvStore.get(key) || null;
+  // Check in-memory first
+  const memVal = kvStore.get(key);
+  if (memVal) return memVal;
+  // Load from file (Vercel cold start)
+  const fileVal = getFileKV(key);
+  if (fileVal !== null) {
+    const entry: DBKeyValue = { key, value: fileVal, updatedAt: new Date().toISOString() };
+    kvStore.set(key, entry);
+    return entry;
+  }
+  return null;
 }
 
 async function setKeyValue(key: string, value: unknown): Promise<void> {
   kvStore.set(key, { key, value, updatedAt: new Date().toISOString() });
+  // Persist to file (survives Vercel cold starts)
+  setFileKV(key, value);
 }
 
 // ═══════════════════════════════════════════════════════════════

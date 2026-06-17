@@ -121,3 +121,57 @@ export function savePrediction(pred: PersistedPrediction): void {
 export function clearPredictions(): void {
   writeJson(PREDICTIONS_FILE, {});
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TOURNAMENT PROBABILITIES (champion probs)
+// ═══════════════════════════════════════════════════════════════
+
+const TOURNAMENT_PROBS_FILE = path.join(DATA_DIR, 'tournament-probs.json');
+
+export interface PersistedTournamentProb {
+  teamId: string;
+  championProb: number;
+  semifinalistProb?: number;
+  runnerUpProb?: number;
+  simulationsCount: number;
+  totalSimulations: number;
+}
+
+export function getTournamentProbs(): PersistedTournamentProb[] {
+  return readJson<PersistedTournamentProb[]>(TOURNAMENT_PROBS_FILE, []);
+}
+
+export function saveTournamentProbs(probs: PersistedTournamentProb[]): void {
+  writeJson(TOURNAMENT_PROBS_FILE, probs);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONSENSUS BRACKET
+// ═══════════════════════════════════════════════════════════════
+
+const BRACKET_FILE = path.join(DATA_DIR, 'consensus-bracket.json');
+
+export function getConsensusBracket(): unknown | null {
+  return readJson<unknown | null>(BRACKET_FILE, null);
+}
+
+export function saveConsensusBracket(bracket: unknown): void {
+  writeJson(BRACKET_FILE, bracket);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// KEY-VALUE STORE (generic)
+// ═══════════════════════════════════════════════════════════════
+
+const KV_FILE = path.join(DATA_DIR, 'kv-store.json');
+
+export function getKV(key: string): unknown | null {
+  const store = readJson<Record<string, unknown>>(KV_FILE, {});
+  return store[key] ?? null;
+}
+
+export function setKV(key: string, value: unknown): void {
+  const store = readJson<Record<string, unknown>>(KV_FILE, {});
+  store[key] = value;
+  writeJson(KV_FILE, store);
+}

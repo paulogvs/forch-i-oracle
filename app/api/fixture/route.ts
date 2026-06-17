@@ -9,6 +9,7 @@ import { predictMatchDynamic, addMatchResult, getResultsCount, seedFromResults }
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
+import { getOrComputeTournamentResults } from '@/lib/tournament-results';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
 interface FixtureCacheEntry { data: unknown; expiresAt: number; }
@@ -277,11 +278,11 @@ export async function POST(request: NextRequest) {
 
     // ═══════════════════════════════════════════════════════════
     // OVERRIDE KNOCKOUT TEAMS WITH CONSENSUS BRACKET
-    // Ensures fixture knockout matches match championProbs (single source of truth)
+    // Uses same source as championProbs (single source of truth)
     // ═══════════════════════════════════════════════════════════
     try {
-      const kvEntry = await db.getKeyValue('consensusBracket');
-      const bracket = kvEntry?.value as any;
+      const tournamentData = await getOrComputeTournamentResults();
+      const bracket = tournamentData.bracket;
       if (bracket) {
         const bracketRoundMap: Record<string, any[]> = {
           'round-32': bracket.roundOf32 || [],

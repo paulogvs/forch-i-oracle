@@ -285,11 +285,10 @@ export async function getLiveStandings(): Promise<Record<string, Array<{
 
 /**
  * Get live knockout bracket — SINGLE SOURCE OF TRUTH.
- * Returns the stored consensus bracket (same data as championProbs).
- * No re-simulation — bracket is built by cron/match-result and stored in KV store.
+ * Returns bracket from the same computation as championProbs.
  */
 export async function getLiveBracket(): Promise<any> {
-  const db = getDataLayer();
-  const kvEntry = await db.getKeyValue('consensusBracket');
-  return kvEntry?.value || null;
+  const { getOrComputeTournamentResults } = await import('./tournament-results');
+  const data = await getOrComputeTournamentResults();
+  return data.bracket;
 }
