@@ -299,6 +299,6 @@ export async function getLiveBracket(): Promise<any> {
 
   if (simResults.length === 0) return null;
 
-  const multiResult = await simulateTournamentMulti(10, simResults, () => {});
+  const multiResult = await simulateTournamentMulti(100, simResults, () => {});
   return multiResult.bracket;
 }

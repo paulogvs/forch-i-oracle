@@ -47,9 +47,12 @@ export default function FixturePage() {
 
   useEffect(() => { setTzOffset(getUserTimezoneOffset()); }, []);
 
+  const top8 = useMemo(() => simData?.success ? simData.top8 || [] : [], [simData]);
+  const bracket = useMemo(() => simData?.success ? simData.bracket : null, [simData]);
+
   const fixtures = useMemo(() => {
     if (!fixtureData?.success) return [];
-    return (fixtureData.fixture || []).map((m: any) => ({
+    const base = (fixtureData.fixture || []).map((m: any) => ({
       id: m.id, group: m.group || 'KO', date: m.date, time: m.time || '',
       homeTeam: m.homeTeam, awayTeam: m.awayTeam, venue: m.venue || '', city: m.city || '',
       round: m.round, homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null,
@@ -58,7 +61,30 @@ export default function FixturePage() {
       isPredicted: m.predictedScore !== null, extraTime: false, penalties: false,
       analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
     }));
-  }, [fixtureData]);
+
+    // Override knockout match teams with consensus bracket (same source as championProbs)
+    if (bracket) {
+      const bracketRoundMap: Record<string, any[]> = {
+        'round-32': bracket.roundOf32 || [],
+        'round-16': bracket.roundOf16 || [],
+        'quarter': bracket.quarters || [],
+        'semi': bracket.semis || [],
+        'final': bracket.final ? [bracket.final] : [],
+        'third': bracket.thirdPlace ? [bracket.thirdPlace] : [],
+      };
+      for (const m of base) {
+        const bracketMatches = bracketRoundMap[m.round];
+        if (!bracketMatches) continue;
+        const bMatch = bracketMatches.find((bm: any) => bm.id === m.id || bm.homeTeam === m.homeTeam || bm.homeTeam === m.awayTeam);
+        if (bMatch && bMatch.homeTeam !== 'TBD') {
+          m.homeTeam = bMatch.homeTeam;
+          m.awayTeam = bMatch.awayTeam;
+        }
+      }
+    }
+
+    return base;
+  }, [fixtureData, bracket]);
 
   const realResults = useMemo(() => {
     const resultsMap = new Map<string, RealResult>();
@@ -71,9 +97,6 @@ export default function FixturePage() {
     }
     return resultsMap;
   }, [simData, liveData]);
-
-  const top8 = useMemo(() => simData?.success ? simData.top8 || [] : [], [simData]);
-  const bracket = useMemo(() => simData?.success ? simData.bracket : null, [simData]);
 
   // Compute standings from live-scores data (real-time, no cron dependency)
   const liveStandings = useMemo(() => {
