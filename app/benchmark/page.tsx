@@ -6,6 +6,7 @@ import ConsensusTable from '@/components/ConsensusTable';
 import { ALL_MODELS, getModelInfo, validate, getTeamStageConsensus } from '@/lib/worldcup-bench-data';
 import type { ModelInfo } from '@/lib/worldcup-bench-data';
 import { cn } from '@/lib/utils';
+import { Sparkles, Trophy, Activity, BarChart3, Zap, ChevronRight, CheckCircle2, ArrowRight } from 'lucide-react';
 
 interface OraclePrediction {
   id: string; homeTeam: string; awayTeam: string;
@@ -63,7 +64,7 @@ export default function BenchmarkPage() {
       {/* Hero */}
       <div className="text-center">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-secondary/10 border border-accent-secondary/20 text-[10px] font-semibold text-accent-secondary mb-2">
-          🤖 WorldCupBench
+          <Sparkles className="w-3.5 h-3.5" /> WorldCupBench
         </div>
         <h1 className="text-lg sm:text-xl font-bold text-fg-primary">Multi-Modelo Benchmark</h1>
         <p className="text-[11px] text-fg-tertiary">{ALL_MODELS.length} modelos IA · Prompt v2.1</p>
@@ -72,15 +73,15 @@ export default function BenchmarkPage() {
       {/* Tabs */}
       <div className="flex gap-1 p-1 bg-elevated rounded-[var(--r-xl)] border border-border-subtle">
         {[
-          { id: 'consensus' as const, label: '🏆 Consenso' },
-          { id: 'oracle' as const, label: '🔮 ORACLE' },
-          { id: 'models' as const, label: '📊 Modelos' },
-          { id: 'about' as const, label: 'ℹ️ Info' },
+          { id: 'consensus' as const, label: 'Consenso', icon: Trophy },
+          { id: 'oracle' as const, label: 'ORACLE', icon: Sparkles },
+          { id: 'models' as const, label: 'Modelos', icon: BarChart3 },
+          { id: 'about' as const, label: 'Info', icon: Activity },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={cn(
-            "flex-1 py-2 px-3 rounded-[var(--r-lg)] text-[11px] font-semibold transition-all",
+            "flex-1 py-2 px-3 rounded-[var(--r-lg)] text-[11px] font-semibold transition-all flex items-center justify-center gap-1",
             activeTab === tab.id ? "bg-accent-secondary text-white shadow-lg shadow-accent-secondary/20" : "text-fg-secondary hover:text-fg-primary hover:bg-raised/50"
-          )}>{tab.label}</button>
+          )}><tab.icon className="w-3.5 h-3.5" />{tab.label}</button>
         ))}
       </div>
 
@@ -109,12 +110,12 @@ export default function BenchmarkPage() {
                     <h3 className="text-xs font-bold text-fg-primary">{m.name}</h3>
                     <span className="px-1.5 py-0.5 rounded-full bg-accent-secondary/10 text-[9px] font-bold text-accent-secondary">{m.promptVersion}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px]">
-                    <span className="text-accent-premium font-semibold">🏆 {m.champion}</span>
+                   <div className="flex items-center gap-2 text-[11px]">
+                    <span className="text-accent-premium font-semibold flex items-center gap-1"><Trophy className="w-3.5 h-3.5" /> {m.champion}</span>
                     <span className="text-fg-disabled">·</span>
-                    <span className="text-accent-primary">🥈 {m.runnerUp}</span>
+                    <span className="text-accent-primary flex items-center gap-1"><ChevronRight className="w-3.5 h-3.5" /> {m.runnerUp}</span>
                     <span className="text-fg-disabled">·</span>
-                    <span className="text-accent-secondary">🥉 {m.thirdPlace}</span>
+                    <span className="text-accent-secondary flex items-center gap-1"><ChevronRight className="w-3.5 h-3.5" /> {m.thirdPlace}</span>
                   </div>
                 </div>
               );
@@ -152,9 +153,9 @@ export default function BenchmarkPage() {
                 <table className="w-full text-[11px]">
                   <thead><tr className="text-fg-tertiary text-[9px] uppercase tracking-wider border-b border-border-subtle bg-elevated/50">
                     <th className="text-left p-2">Equipo</th>
-                    <th className="text-center p-2">🏆</th>
-                    <th className="text-center p-2">🥈</th>
-                    <th className="text-center p-2">🥉</th>
+                    <th className="text-center p-2"><Trophy className="w-3.5 h-3.5 inline" /></th>
+                    <th className="text-center p-2"><Activity className="w-3.5 h-3.5 inline" /></th>
+                    <th className="text-center p-2"><Activity className="w-3.5 h-3.5 inline" /></th>
                     <th className="text-center p-2">Top4</th>
                   </tr></thead>
                   <tbody>
@@ -184,14 +185,14 @@ export default function BenchmarkPage() {
             </div>
           ) : oraclePredictions.length === 0 ? (
             <div className="surface p-8 text-center rounded-[var(--r-lg)]">
-              <p className="text-xs text-fg-secondary">🔮 Cargando predicciones ORACLE...</p>
+              <p className="text-xs text-fg-secondary"><Activity className="w-4 h-4 inline mr-1" /> Cargando predicciones ORACLE...</p>
             </div>
           ) : (
             <>
               {/* Summary card */}
               <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-premium/20">
                 <h3 className="text-xs font-bold text-fg-primary mb-2 flex items-center gap-2">
-                  <span>🔮</span> ORACLE vs WorldCupBench
+                  <Sparkles className="w-4 h-4" /> ORACLE vs WorldCupBench
                 </h3>
                 <p className="text-[11px] text-fg-secondary mb-3">
                   Comparación entre las predicciones del motor ORACLE (Poisson + Dixon-Coles + Elo + xG) y los {ALL_MODELS.length} modelos del benchmark.
@@ -224,9 +225,9 @@ export default function BenchmarkPage() {
                         agrees ? "bg-[var(--match-correct-bg)] border-[var(--match-correct-border)]" : "surface border-border-subtle"
                       )}>
                         <span className="text-[10px] text-fg-tertiary w-20 truncate">{m.name}</span>
-                        <span className="text-[10px] font-semibold text-fg-primary flex-1">🏆 {m.champion}</span>
-                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", agrees ? "bg-[var(--match-correct-border)] text-[var(--match-correct-text)]" : "bg-elevated text-fg-tertiary")}>
-                          {agrees ? '✓ Coincide' : '✗ Diferente'}
+                        <span className="text-[10px] font-semibold text-fg-primary flex-1 flex items-center gap-1"><Trophy className="w-3.5 h-3.5" /> {m.champion}</span>
+                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5", agrees ? "bg-[var(--match-correct-border)] text-[var(--match-correct-text)]" : "bg-elevated text-fg-tertiary")}>
+                          {agrees ? <><CheckCircle2 className="w-3 h-3" /> Coincide</> : <><ArrowRight className="w-3 h-3" /> Diferente</>}
                         </span>
                       </div>
                     );

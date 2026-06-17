@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
 import { MatchCardSkeleton, StatCardSkeleton, GroupTableSkeleton } from '@/components/Skeleton';
+import { Trophy, BarChart3, Target, Zap, ChevronRight } from 'lucide-react';
 
 type MainTab = 'partidos' | 'tablas' | 'top8' | 'bracket';
 type PhaseFilter = string;
@@ -116,10 +117,10 @@ export default function FixturePage() {
   useEffect(() => { if (fixtureData || simData) setLastUpdated(new Date()); }, [fixtureData, simData]);
 
   const MAIN_TABS = [
-    { id: 'partidos' as const, label: 'Partidos', emoji: '⚽' },
-    { id: 'tablas' as const, label: 'Tablas', emoji: '📊' },
-    { id: 'top8' as const, label: 'Top 8', emoji: '🏆' },
-    { id: 'bracket' as const, label: 'Bracket', emoji: '📐' },
+    { id: 'partidos' as const, label: 'Partidos', icon: Target },
+    { id: 'tablas' as const, label: 'Tablas', icon: BarChart3 },
+    { id: 'top8' as const, label: 'Top 8', icon: Trophy },
+    { id: 'bracket' as const, label: 'Bracket', icon: ChevronRight },
   ];
   const PHASES = [
     { id: 'all', label: 'Todos' }, { id: 'group', label: 'Grupos' },
@@ -191,7 +192,7 @@ export default function FixturePage() {
           <button key={t.id} onClick={() => setMainTab(t.id)} className={cn(
             "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[var(--r-lg)] text-xs font-semibold transition-all",
             mainTab === t.id ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/25" : "text-fg-secondary hover:text-fg-primary hover:bg-raised/50"
-          )}><span>{t.emoji}</span><span className="hidden sm:inline">{t.label}</span></button>
+          )}><t.icon className="w-4 h-4" /><span className="hidden sm:inline">{t.label}</span></button>
         ))}
       </div>
 
@@ -214,7 +215,7 @@ export default function FixturePage() {
       {allFailed && <div className="surface-danger p-5 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">Error cargando datos. Reintentando...</p></div>}
       {!loading && !allFailed && (fixtureError || simError) && (
         <div className="surface-elevated p-3 rounded-[var(--r-lg)] border border-state-warning/20 text-xs text-fg-secondary flex items-center gap-2 mb-3">
-          <span>⚠️</span>
+          <Zap className="w-4 h-4 text-state-warning shrink-0" />
           <span>Algunos datos podrían no estar disponibles. {fixtureError && 'Predicciones no cargadas. '} {simError && 'Resultados storificados no disponibles.'}</span>
         </div>
       )}

@@ -6,6 +6,7 @@ import { WORLD_CUP_TEAMS, ELO_RATINGS, POWER_RATINGS, type Team } from '@/lib/te
 import { WC2026_VENUES } from '@/lib/venues';
 import { useLiveScores } from '@/lib/swr/hooks';
 import { Badge } from '@/components/ui/Badge';
+import { Zap, Activity, TrendingUp, Sparkles, Users, BarChart3, Target, LayoutDashboard } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -133,8 +134,8 @@ export default function TeamsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="h-page text-accent-premium">
-          ⚽ 48 Equipos
+        <h1 className="h-page text-accent-premium flex items-center justify-center gap-2">
+          <Users className="w-8 h-8" /> 48 Equipos
         </h1>
         <p className="t-meta mt-2">
           Mundial FIFA 2026 — {filteredTeams.length} equipos
@@ -152,7 +153,7 @@ export default function TeamsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-surface backdrop-blur-xl border border-border-subtle rounded-xl px-4 py-3 pl-10 t-body focus:outline-none focus:border-border-focus transition-colors"
           />
-          <span className="absolute left-3 top-3 text-fg-tertiary">🔍</span>
+          <BarChart3 className="absolute left-3 top-3 w-4 h-4 text-fg-tertiary" />
         </div>
 
         {/* Confederation filter */}
@@ -294,7 +295,7 @@ function TeamCard({ team, stats, index, onClick }: {
 
       {/* Star players */}
       <div className="t-micro">
-        <span className="text-fg-secondary">⭐</span> {team.starPlayers.slice(0, 2).join(', ')}
+        <Sparkles className="w-3 h-3 inline text-fg-secondary" /> {team.starPlayers.slice(0, 2).join(', ')}
       </div>
     </motion.button>
   );
@@ -383,16 +384,16 @@ function TeamDetailModal({ team, stats, onClose }: {
 
           {/* Power ratings */}
           <div>
-            <h3 className="t-micro mb-3">💪 Ratings de Poder</h3>
+            <h3 className="t-micro mb-3"><Zap className="w-4 h-4 inline" /> Ratings de Poder</h3>
             <div className="space-y-3">
               {[
-                { label: 'Ataque', value: power.attack, icon: '⚔️' },
-                { label: 'Medio Campo', value: power.midfield, icon: '🎯' },
-                { label: 'Defensa', value: power.defense, icon: '🛡️' },
+                { label: 'Ataque', value: power.attack, icon: Zap },
+                { label: 'Medio Campo', value: power.midfield, icon: Target },
+                { label: 'Defensa', value: power.defense, icon: LayoutDashboard },
               ].map((p) => (
                 <div key={p.label}>
                   <div className="flex justify-between t-body mb-1">
-                    <span className="flex items-center gap-1"><span>{p.icon}</span> {p.label}</span>
+                    <span className="flex items-center gap-1"><p.icon className="w-4 h-4" /> {p.label}</span>
                     <span className="font-bold">{p.value}/100</span>
                   </div>
                   <div className="w-full bg-elevated rounded-full h-2">
@@ -409,7 +410,7 @@ function TeamDetailModal({ team, stats, onClose }: {
           {/* Elo details */}
           {eloData && (
             <div>
-              <h3 className="t-micro mb-3">📈 Elo Rating</h3>
+              <h3 className="t-micro mb-3"><TrendingUp className="w-4 h-4 inline" /> Elo Rating</h3>
               <div className="grid grid-cols-3 gap-2">
                 <div className="text-center p-3 rounded-lg surface">
                   <div className="text-xl font-black text-accent-primary">{elo}</div>
@@ -429,7 +430,7 @@ function TeamDetailModal({ team, stats, onClose }: {
 
           {/* Star players */}
           <div>
-            <h3 className="t-micro mb-3">⭐ Jugadores Estrella</h3>
+            <h3 className="t-micro mb-3"><Sparkles className="w-4 h-4 inline" /> Jugadores Estrella</h3>
             <div className="flex flex-wrap gap-2">
               {team.starPlayers.map((p) => (
                 <Badge key={p} variant="neutral" className="text-sm">{p}</Badge>

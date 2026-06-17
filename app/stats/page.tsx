@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS, ELO_RATINGS } from '@/lib/teams';
 import { ALL_MATCHES } from '@/lib/matches';
+import { BarChart3, Users, Target, Trophy, TrendingUp, Zap, Activity, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -47,12 +48,12 @@ const STAT_TINTS: Record<string, string> = {
   red:     'bg-tint-red',
 };
 
-function StatCard({ label, value, emoji, tint }: {
-  label: string; value: string | number; emoji: string; tint: string;
+function StatCard({ label, value, icon: Icon, tint }: {
+  label: string; value: string | number; icon: any; tint: string;
 }) {
   return (
     <div className={`p-4 rounded-xl ${STAT_TINTS[tint]} border border-border-subtle`}>
-      <div className="text-2xl mb-1">{emoji}</div>
+      <Icon className="w-6 h-6 mb-1 text-fg-secondary" />
       <div className="text-2xl font-black text-fg-primary">{value}</div>
       <div className="t-micro">{label}</div>
     </div>
@@ -134,10 +135,10 @@ export default function StatsPage() {
   }, [teamStats]);
 
   const TABS = [
-    { id: 'overview' as const, label: 'Resumen', emoji: '📊' },
-    { id: 'teams' as const, label: 'Equipos', emoji: '⚽' },
-    { id: 'matches' as const, label: 'Partidos', emoji: '🎯' },
-    { id: 'scorers' as const, label: 'Goleadores', emoji: '🥇' },
+    { id: 'overview' as const, label: 'Resumen', icon: BarChart3 },
+    { id: 'teams' as const, label: 'Equipos', icon: Users },
+    { id: 'matches' as const, label: 'Partidos', icon: Target },
+    { id: 'scorers' as const, label: 'Goleadores', icon: Sparkles },
   ];
 
   return (
@@ -148,8 +149,8 @@ export default function StatsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="h-page text-accent-primary">
-          📈 Estadísticas en Vivo
+        <h1 className="h-page text-accent-primary flex items-center justify-center gap-2">
+          <TrendingUp className="w-8 h-8" /> Estadísticas en Vivo
         </h1>
         <p className="t-meta mt-2">
           Mundial 2026 — {totalMatches} partidos jugados
@@ -169,7 +170,7 @@ export default function StatsPage() {
                   : 'text-fg-secondary hover:text-fg-primary hover:bg-raised/50'
               }`}
             >
-              <span>{t.emoji}</span>
+              <t.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{t.label}</span>
             </button>
           ))}
@@ -211,11 +212,11 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
   teamStats: any[]; matches: any[];
 }) {
   const stats = [
-    { label: 'Partidos', value: totalMatches, emoji: '⚽', tint: 'blue' },
-    { label: 'Goles', value: totalGoals, emoji: '🥅', tint: 'green' },
-    { label: 'Promedio', value: avgGoals, emoji: '📊', tint: 'violet' },
-    { label: 'Vallas Invictas', value: cleanSheets, emoji: '🛡️', tint: 'gold' },
-    { label: 'Alta Anotación', value: highScoring, emoji: '🔥', tint: 'red' },
+    { label: 'Partidos', value: totalMatches, icon: Target, tint: 'blue' },
+    { label: 'Goles', value: totalGoals, icon: Activity, tint: 'green' },
+    { label: 'Promedio', value: avgGoals, icon: BarChart3, tint: 'violet' },
+    { label: 'Vallas Invictas', value: cleanSheets, icon: CheckCircle2, tint: 'gold' },
+    { label: 'Alta Anotación', value: highScoring, icon: Zap, tint: 'red' },
   ];
 
   const biggestWins = [...matches].sort((a, b) => b.goalDiff - a.goalDiff).slice(0, 5);
@@ -236,7 +237,7 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
         {/* Biggest wins */}
         <Card className="p-5">
           <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
-            💥 Mayores Victorias
+            <Zap className="w-4 h-4" /> Mayores Victorias
           </h3>
           <div className="space-y-2">
             {biggestWins.map((m, i) => (
@@ -258,7 +259,7 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
         {/* Highest scoring */}
         <Card className="p-5">
           <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
-            🔥 Mayor Anotación
+            <Zap className="w-4 h-4" /> Mayor Anotación
           </h3>
           <div className="space-y-2">
             {highestScoring.map((m, i) => (
@@ -284,7 +285,7 @@ function OverviewTab({ totalMatches, totalGoals, avgGoals, cleanSheets, highScor
       {/* Top teams */}
       <Card className="p-5">
         <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
-          🏆 Mejores Equipos (por puntos)
+          <Trophy className="w-4 h-4" /> Mejores Equipos (por puntos)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
           {teamStats.filter(t => t.played > 0).slice(0, 9).map((t, i) => (
@@ -465,7 +466,7 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
     <div className="space-y-4">
       <Card className="p-5">
         <h3 className="h-card text-fg-secondary mb-4 flex items-center gap-2">
-          ⚽ Goleadores por Equipo
+          <Trophy className="w-4 h-4" /> Goleadores por Equipo
         </h3>
         <p className="t-micro mb-4">Goles por equipo en el torneo</p>
         <div className="space-y-3">
@@ -494,7 +495,7 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
       {/* Fun facts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="p-5">
-          <h3 className="h-card text-fg-secondary mb-3 flex items-center gap-2">🎯 Datos Curiosos</h3>
+          <h3 className="h-card text-fg-secondary mb-3 flex items-center gap-2"><Target className="w-4 h-4" /> Datos Curiosos</h3>
           <div className="space-y-2 t-body">
             <div className="flex justify-between">
               <span className="t-meta">Equipo más goleador</span>
@@ -515,7 +516,7 @@ function ScorersTab({ topScorers }: { topScorers: any[] }) {
         </Card>
 
         <Card className="p-5">
-          <h3 className="h-card text-fg-secondary mb-3 flex items-center gap-2">📊 Rendimiento</h3>
+          <h3 className="h-card text-fg-secondary mb-3 flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Rendimiento</h3>
           <div className="space-y-2 t-body">
             <div className="flex justify-between">
               <span className="t-meta">Más victorias</span>
