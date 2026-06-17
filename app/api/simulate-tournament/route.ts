@@ -17,13 +17,21 @@ export async function GET() {
     const liveStandings = await getLiveStandings();
     const liveBracket = await getLiveBracket();
 
+    // Map response fields for both INICIO and FIXTURE pages
     return NextResponse.json({
       success: true,
       results,
       total: results.length,
       championProbs: probs,
+      top8: probs.slice(0, 8).map(p => ({
+        team: p.teamId,
+        flag: '',
+        wins: p.simulationsCount,
+        pct: p.championProb,
+      })),
       liveStandings,
       liveBracket,
+      bracket: liveBracket,
     });
   } catch {
     return NextResponse.json({
@@ -31,8 +39,10 @@ export async function GET() {
       results: [],
       total: 0,
       championProbs: [],
+      top8: [],
       liveStandings: {},
       liveBracket: null,
+      bracket: null,
     });
   }
 }

@@ -866,7 +866,7 @@ export async function simulateTournamentMulti(
     team,
     flag: getFlag(team),
     wins,
-    pct: totalWithChampion > 0 ? Math.round((wins / totalWithChampion) * 1000) / 10 : 0,
+    pct: totalWithChampion > 0 ? Math.round((wins / totalWithChampion) * 10000) / 100 : 0,
   }));
 
   if (!lastBracket) {
@@ -893,5 +893,119 @@ export async function simulateTournamentMulti(
       runnerUp: runnerUpCounts,
       third: thirdCounts,
     },
+  };
+}
+
+// ─── Consensus Bracket Builder ──────────────────────────────────────────────
+// Builds a "canonical" TournamentBracket from aggregated simulation counts.
+// For each slot, the team that appears MOST across all simulations wins that slot.
+// This guarantees the bracket is always consistent with the champion probabilities.
+
+function topN(counts: Map<string, number>, n: number): string[] {
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([team]) => team);
+}
+
+function makeMatch(
+  id: string, round: string, roundLabel: string,
+  homeTeam: string, awayTeam: string,
+  counts: Map<string, number>, totalSims: number,
+): SimulatedMatch {
+  const homeWins = counts.get(homeTeam) || 0;
+  const awayWins = counts.get(awayTeam) || 0;
+  const total = homeWins + awayWins || 1;
+  const homeWinProb = Math.round((homeWins / total) * 10000) / 100;
+  const awayWinProb = Math.round((awayWins / total) * 10000) / 100;
+  const drawProb = 0;
+  const winner = homeWins >= awayWins ? homeTeam : awayTeam;
+  return {
+    id, round, roundLabel,
+    homeTeam, awayTeam,
+    homeFlag: getFlag(homeTeam), awayFlag: getFlag(awayTeam),
+    homeScore: 0, awayScore: 0,
+    winner,
+    isPlayed: false,
+    homeWinProb, drawProb, awayWinProb,
+    prediction: `${homeTeam} ${Math.round(homeWinProb)}% | ${awayTeam} ${Math.round(awayWinProb)}%`,
+  };
+}
+
+export function buildConsensusBracket(
+  roundCounts: MultiSimResult['roundCounts'],
+  totalSims: number,
+  championProbs?: ChampionProbability[],
+): TournamentBracket {
+  // R32: top 32 teams by r32 appearance count → pair them by bracket slot
+  const r32Teams = topN(roundCounts.r32, 32);
+  // R16: top 16 teams by r16 count (won R32)
+  const r16Teams = topN(roundCounts.r16, 16);
+  // QF: top 8 by qf count
+  const qfTeams = topN(roundCounts.qf, 8);
+  // SF: top 4 by sf count
+  const sfTeams = topN(roundCounts.sf, 4);
+  // Final: top 2 by final count
+  const finalTeams = topN(roundCounts.final, 2);
+
+  const champion = championProbs?.[0]?.team || topN(roundCounts.champion, 1)[0] || 'TBD';
+  const runnerUp = topN(roundCounts.runnerUp, 1)[0] || (finalTeams.length >= 2 ? (finalTeams[0] === champion ? finalTeams[1] : finalTeams[0]) : 'TBD');
+  const thirdTeam = topN(roundCounts.third, 1)[0] || 'TBD';
+
+  // Build bracket matches using consensus winners
+  const roundOf32: SimulatedMatch[] = [];
+  for (let i = 0; i < 16; i++) {
+    const home = r32Teams[i * 2] || 'TBD';
+    const away = r32Teams[i * 2 + 1] || 'TBD';
+    roundOf32.push(makeMatch(`R32-${i + 1}`, 'R32', '1/16 Final', home, away, roundCounts.r16, totalSims));
+  }
+
+  const roundOf16: SimulatedMatch[] = [];
+  for (let i = 0; i < 8; i++) {
+    const home = r16Teams[i * 2] || 'TBD';
+    const away = r16Teams[i * 2 + 1] || 'TBD';
+    roundOf16.push(makeMatch(`R16-${i + 1}`, 'R16', 'Octavos de Final', home, away, roundCounts.qf, totalSims));
+  }
+
+  const quarters: SimulatedMatch[] = [];
+  for (let i = 0; i < 4; i++) {
+    const home = qfTeams[i * 2] || 'TBD';
+    const away = qfTeams[i * 2 + 1] || 'TBD';
+    quarters.push(makeMatch(`QF-${i + 1}`, 'QF', 'Cuartos de Final', home, away, roundCounts.sf, totalSims));
+  }
+
+  const semis: SimulatedMatch[] = [];
+  for (let i = 0; i < 2; i++) {
+    const home = sfTeams[i * 2] || 'TBD';
+    const away = sfTeams[i * 2 + 1] || 'TBD';
+    semis.push(makeMatch(`SF-${i + 1}`, 'SF', 'Semifinales', home, away, roundCounts.final, totalSims));
+  }
+
+  const thirdPlace = makeMatch('TP-1', 'TP', 'Tercer Puesto',
+    topN(roundCounts.third, 2)[0] || 'TBD',
+    topN(roundCounts.third, 2)[1] || 'TBD',
+    roundCounts.third, totalSims,
+  );
+  thirdPlace.winner = thirdTeam;
+
+  const final_ = makeMatch('FINAL', 'F', 'La Gran Final',
+    finalTeams[0] || 'TBD', finalTeams[1] || 'TBD',
+    roundCounts.champion, totalSims,
+  );
+  final_.winner = champion;
+
+  return {
+    groups: [],
+    roundOf32, roundOf16, quarters, semis,
+    thirdPlace, final: final_,
+    champion,
+    championFlag: getFlag(champion),
+    runnerUp,
+    runnerUpFlag: getFlag(runnerUp),
+    thirdPlaceTeam: thirdTeam,
+    thirdPlaceFlag: getFlag(thirdTeam),
+    fourthPlaceTeam: topN(roundCounts.third, 2)[1] || 'TBD',
+    fourthPlaceFlag: getFlag(topN(roundCounts.third, 2)[1] || 'TBD'),
+    simulatedAt: new Date().toISOString(),
   };
 }

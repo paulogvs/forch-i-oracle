@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
-import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-sim';
+import { simulateTournamentMulti, buildConsensusBracket, type RealMatchResult } from '@/lib/tournament-sim';
 import { validateCronAuth } from '@/lib/cron-auth';
 
 const NUM_SIMULATIONS = 100;
@@ -27,11 +27,9 @@ export async function GET(request: Request) {
   try {
     console.log(`[cron:simulate] Starting ${NUM_SIMULATIONS} tournament simulations...`);
 
-    // Get any real match results that have been submitted
     const realResults = await db.getMatchResults();
     console.log(`[cron:simulate] Incorporating ${realResults.length} real match results`);
 
-    // Progress callback
     let lastProgress = '';
     const onProgress = (msg: string) => {
       if (msg !== lastProgress) {
@@ -40,24 +38,19 @@ export async function GET(request: Request) {
       }
     };
 
-    // Convert results to the format expected by tournament-sim
-    const simResults = realResults.map(r => ({
+    const simResults: RealMatchResult[] = realResults.map(r => ({
       matchId: r.matchId,
       homeScore: r.homeScore,
       awayScore: r.awayScore,
       winner: r.winner,
     }));
 
-    // Run multi-simulation
-    const multiResult = await simulateTournamentMulti(
-      NUM_SIMULATIONS,
-      simResults,
-      onProgress
-    );
+    const multiResult = await simulateTournamentMulti(NUM_SIMULATIONS, simResults, onProgress);
+
+    const consensusBracket = buildConsensusBracket(multiResult.roundCounts, multiResult.totalSims, multiResult.top8);
 
     results.simulationsCompleted = multiResult.totalSims;
 
-    // Save tournament probabilities
     const probs = multiResult.top8.map(entry => ({
       teamId: entry.team,
       championProb: entry.pct,
@@ -75,7 +68,6 @@ export async function GET(request: Request) {
 
     const duration = Date.now() - startTime;
 
-    // Update cron status
     await db.updateCronStatus({
       jobName: 'simulate',
       lastRun: new Date().toISOString(),
@@ -94,6 +86,7 @@ export async function GET(request: Request) {
       topTeam: results.topTeam,
       topProb: results.topProb,
       top8: multiResult.top8.slice(0, 8),
+      bracket: consensusBracket,
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

@@ -36,7 +36,7 @@ interface SimResult {
 interface FixtureResponse { success: boolean; fixture: FixtureMatch[]; }
 interface LiveResponse { success: boolean; finished: LiveMatch[]; live: LiveMatch[]; }
 interface SimResponse {
-  success: boolean; results: SimResult[]; top8: any[];
+  success: boolean; results: SimResult[]; top8: any[]; bracket: any;
   championProbs?: { teamId: string; championProb: number; simulationsCount: number; totalSimulations: number }[];
 }
 
@@ -525,7 +525,7 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
         <div className="text-2xl mb-1">🏆</div>
         <div className="text-base font-black text-accent-premium">{top.teamId}</div>
         <div className="text-[10px] text-fg-tertiary">
-          {top.championProb}% · {top.simulationsCount}/{top.totalSimulations} simulaciones
+          {top.championProb.toFixed(2)}% · {top.simulationsCount}/{top.totalSimulations} simulaciones
         </div>
       </div>
 
@@ -535,7 +535,7 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
           <div key={p.teamId} className="flex items-center gap-2">
             <span className={cn(
               "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-              i === 0 ? "bg-accent-premium text-canvas" : i === 1 ? "bg-fg-secondary text-canvas" : i === 2 ? "bg-state-warning/80 text-white" : "bg-white/[0.06] text-fg-disabled"
+              i === 0 ? "bg-accent-premium text-canvas" : i === 1 ? "bg-fg-secondary text-canvas" : i === 2 ? "bg-accent-premium/50 text-canvas" : "bg-white/[0.06] text-fg-disabled"
             )}>
               {i + 1}
             </span>
@@ -550,7 +550,7 @@ function ChampionWidget({ probs }: { probs: { teamId: string; championProb: numb
               />
             </div>
             <span className="text-[11px] font-bold text-accent-premium w-12 text-right shrink-0 font-mono tabular-nums">
-              {p.championProb}%
+              {p.championProb.toFixed(2)}%
             </span>
           </div>
         ))}

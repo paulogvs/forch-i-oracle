@@ -127,10 +127,10 @@ export function computeChampionProbsFromElo(): EloChampionProb[] {
   // Normalize so total probability sums to 1.0 (100%)
   const totalProb = results.reduce((sum, r) => sum + r.championProb, 0);
   for (const r of results) {
-    r.championProb = (r.championProb / totalProb) * 100;
-    r.semiProb = Math.min(r.semiProb * 100, 100);
-    r.quarterProb = Math.min(r.quarterProb * 100, 100);
-    r.groupAdvanceProb = Math.min(r.groupAdvanceProb * 100, 100);
+    r.championProb = Math.round((r.championProb / totalProb) * 10000) / 100;
+    r.semiProb = Math.round(Math.min(r.semiProb * 100, 100));
+    r.quarterProb = Math.round(Math.min(r.quarterProb * 100, 100));
+    r.groupAdvanceProb = Math.round(Math.min(r.groupAdvanceProb * 100, 100));
   }
 
   // Sort by champion probability descending
