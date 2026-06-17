@@ -72,13 +72,19 @@ export default function FixturePage() {
         'final': bracket.final ? [bracket.final] : [],
         'third': bracket.thirdPlace ? [bracket.thirdPlace] : [],
       };
+      // Track which bracket matches have been used (by position) to avoid duplicates
+      const usedBracketIndices: Record<string, number> = {};
       for (const m of base) {
         const bracketMatches = bracketRoundMap[m.round];
-        if (!bracketMatches) continue;
-        const bMatch = bracketMatches.find((bm: any) => bm.id === m.id || bm.homeTeam === m.homeTeam || bm.homeTeam === m.awayTeam);
-        if (bMatch && bMatch.homeTeam !== 'TBD') {
-          m.homeTeam = bMatch.homeTeam;
-          m.awayTeam = bMatch.awayTeam;
+        if (!bracketMatches || bracketMatches.length === 0) continue;
+        const idx = usedBracketIndices[m.round] || 0;
+        if (idx < bracketMatches.length) {
+          const bMatch = bracketMatches[idx];
+          if (bMatch && bMatch.homeTeam !== 'TBD') {
+            m.homeTeam = bMatch.homeTeam;
+            m.awayTeam = bMatch.awayTeam;
+          }
+          usedBracketIndices[m.round] = idx + 1;
         }
       }
     }

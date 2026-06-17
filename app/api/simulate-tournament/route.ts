@@ -6,7 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
-import { getLiveStandings, getLiveBracket } from '@/lib/prediction-history';
+import { getLiveStandings } from '@/lib/prediction-history';
 
 /** Get all stored real results */
 export async function GET() {
@@ -15,7 +15,10 @@ export async function GET() {
     const results = await db.getMatchResults();
     const probs = await db.getTournamentProbs();
     const liveStandings = await getLiveStandings();
-    const liveBracket = await getLiveBracket();
+
+    // Get stored consensus bracket (same source as championProbs)
+    const kvEntry = await db.getKeyValue('consensusBracket');
+    const consensusBracket = kvEntry?.value || null;
 
     // Map response fields for both INICIO and FIXTURE pages
     return NextResponse.json({
@@ -30,8 +33,7 @@ export async function GET() {
         pct: p.championProb,
       })),
       liveStandings,
-      liveBracket,
-      bracket: liveBracket,
+      bracket: consensusBracket,
     });
   } catch {
     return NextResponse.json({
@@ -41,7 +43,6 @@ export async function GET() {
       championProbs: [],
       top8: [],
       liveStandings: {},
-      liveBracket: null,
       bracket: null,
     });
   }

@@ -61,6 +61,9 @@ export async function GET(request: Request) {
     await db.saveTournamentProbs(probs);
     results.teamsRanked = probs.length;
 
+    // Store consensus bracket so API can return it without re-simulating
+    await db.setKeyValue('consensusBracket', consensusBracket);
+
     if (probs.length > 0) {
       results.topTeam = probs[0].teamId;
       results.topProb = probs[0].championProb;

@@ -12,6 +12,7 @@ import type {
   RealMatchResultInput,
   CronJobStatus,
   MatchStatus,
+  DBKeyValue,
 } from './types';
 import { WORLD_CUP_TEAMS, ELO_RATINGS, POWER_RATINGS } from '../teams';
 import { ALL_MATCHES } from '../matches';
@@ -471,6 +472,20 @@ async function seedMatches(matches: Omit<DBMatch, 'createdAt'>[]): Promise<void>
 }
 
 // ═══════════════════════════════════════════════════════════════
+// KEY-VALUE STORE
+// ═══════════════════════════════════════════════════════════════
+
+const kvStore = new Map<string, DBKeyValue>();
+
+async function getKeyValue(key: string): Promise<DBKeyValue | null> {
+  return kvStore.get(key) || null;
+}
+
+async function setKeyValue(key: string, value: unknown): Promise<void> {
+  kvStore.set(key, { key, value, updatedAt: new Date().toISOString() });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // EXPORT — Singleton instance
 // ═══════════════════════════════════════════════════════════════
 
@@ -511,4 +526,6 @@ export const inMemoryDataLayer: IDataLayer = {
   getCronStatus,
   seedTeams,
   seedMatches,
+  getKeyValue,
+  setKeyValue,
 };

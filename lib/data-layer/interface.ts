@@ -11,6 +11,7 @@ import type {
   RealMatchResultInput,
   CronJobStatus,
   MatchStatus,
+  DBKeyValue,
 } from './types';
 
 export interface IDataLayer {
@@ -67,4 +68,8 @@ export interface IDataLayer {
   // ─── BULK OPERATIONS (for cron jobs) ────────────────────
   seedTeams(teams: Omit<DBTeam, 'createdAt' | 'updatedAt'>[]): Promise<void>;
   seedMatches(matches: Omit<DBMatch, 'createdAt'>[]): Promise<void>;
+
+  // ─── KEY-VALUE STORE ────────────────────────────────────
+  getKeyValue(key: string): Promise<DBKeyValue | null>;
+  setKeyValue(key: string, value: unknown): Promise<void>;
 }

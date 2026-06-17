@@ -166,3 +166,13 @@ export interface CronJobStatus {
   recordsProcessed?: number;
   error?: string;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// KEY-VALUE STORE (for consensus bracket, etc.)
+// ═══════════════════════════════════════════════════════════════
+
+export interface DBKeyValue {
+  key: string;
+  value: unknown;
+  updatedAt: string;
+}

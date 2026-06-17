@@ -285,6 +285,7 @@ export async function getLiveStandings(): Promise<Record<string, Array<{
 
 /**
  * Get live knockout bracket from real results.
+ * Always runs simulation (even pre-tournament) so bracket is consistent with championProbs.
  */
 export async function getLiveBracket(): Promise<any> {
   const db = getDataLayer();
@@ -296,8 +297,6 @@ export async function getLiveBracket(): Promise<any> {
     awayScore: r.awayScore,
     winner: r.winner,
   }));
-
-  if (simResults.length === 0) return null;
 
   const multiResult = await simulateTournamentMulti(100, simResults, () => {});
   return multiResult.bracket;
