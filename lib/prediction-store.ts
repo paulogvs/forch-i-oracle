@@ -323,12 +323,16 @@ function calculateEloUpdate(form: TeamFormEntry, n: number): number {
   let eloChange = 0;
   const K = 20; // K-factor
 
+  // Get the team's actual baseline Elo (not hardcoded 1650)
+  const teamName = Array.from(teamForms.keys()).find(k => teamForms.get(k) === form);
+  const teamBaselineElo = teamName ? getTeamEloFallback(teamName) : 1500;
+
   for (let i = 0; i < form.points.length; i++) {
     const actualPoints = form.points[i]; // 3, 1, or 0
     const opponentElo = form.opponentElo[i];
 
-    // Expected points based on Elo difference
-    const eloDiff = 1650 - opponentElo; // Use baseline as team's starting elo
+    // Expected points based on Elo difference (using team's actual baseline)
+    const eloDiff = teamBaselineElo - opponentElo;
     const expectedWin = 1 / (1 + Math.pow(10, -eloDiff / 400));
     const expectedPoints = expectedWin * 3 + (1 - expectedWin - 0) * 1; // Simplified
 

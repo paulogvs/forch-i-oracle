@@ -25,9 +25,17 @@ const USE_DIXON_COLES = true;
  * Global calibration factor for lambdas.
  * Adjust so average total goals across all group matches ≈ 2.65.
  * Run scripts/calibrate-model.ts to determine the correct value.
- * Current value: 1.0 (pending calibration)
+ * Current value: 1.04 (pending calibration)
  */
 const CALIBRATION_FACTOR = 1.04;
+
+/**
+ * Set-piece adjustment factor.
+ * ~30% of World Cup goals come from set pieces (corners, free kicks, penalties).
+ * Teams with strong set-piece takers get a bonus.
+ * This is a flat multiplier applied after calibration.
+ */
+const SET_PIECE_FACTOR = 1.03; // ~3% boost for set-piece goals
 
 /**
  * Apply global calibration to lambda values.
@@ -90,7 +98,9 @@ export function calculateExpectedGoals(
   const baseGoals = (attack.attack + defense.defense) / 2;
 
   // Ajuste por ventaja de local
-  const homeFactor = isHomeTeam ? 1.12 : 0.92;
+  // Note: homeFactor only applied to the HOME team's attack.
+  // Away team attack uses 1.0 (no penalty) — the eloDiff already captures relative strength.
+  const homeFactor = isHomeTeam ? 1.12 : 1.0;
 
   // Ajuste por diferencia de Elo (equipos más fuertes marcan más contra rivales débiles)
   const eloDiff = attack.elo - defense.elo;
@@ -379,6 +389,10 @@ export async function calculateStatisticalPrediction(
   const calibrated = applyCalibration(homeLambda, awayLambda);
   homeLambda = calibrated.home;
   awayLambda = calibrated.away;
+
+  // 2e. Apply set-piece factor (~30% of WC goals from set pieces)
+  homeLambda *= SET_PIECE_FACTOR;
+  awayLambda *= SET_PIECE_FACTOR;
 
   // Clamp final
   homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));

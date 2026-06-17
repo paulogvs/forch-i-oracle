@@ -126,7 +126,7 @@ export default function TeamsPage() {
   }, [filteredTeams]);
 
   return (
-    <div className="min-h-screen bg-canvas text-fg-primary p-4 md:p-8">
+    <div className="max-w-6xl mx-auto space-y-4 animate-fade">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

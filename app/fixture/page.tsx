@@ -129,7 +129,7 @@ export default function FixturePage() {
 
   const filtered = phaseFilter === 'all' ? fixtures : fixtures.filter(m => m.round === phaseFilter);
   const getRoundLabel = (r: string) => ({ group:'Fase de Grupos','round-32':'1/16 Final','round-16':'Octavos',quarter:'Cuartos',semi:'Semifinales',third:'Tercer Puesto',final:'Final' }[r] || r);
-  const getFlag = (n: string) => getTeamByName(n)?.flag || '❓';
+  const getFlag = (n: string) => getTeamByName(n)?.flag || '🏳️';
   const predictedCount = fixtures.filter(f => f.isPredicted).length;
   const playedCount = realResults.size;
 
@@ -446,10 +446,10 @@ function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) =
             <div className="text-5xl mb-2 animate-bounce">{bracket.championFlag || '🏆'}</div>
             <div className="text-2xl font-black text-accent-premium tracking-wide">{bracket.champion}</div>
             <div className="text-[10px] text-[var(--match-gold-border)] uppercase tracking-[0.2em] mt-1">Campeón Mundial 2026</div>
-            {bracket.runnerUp && (
+                {bracket.runnerUp && (
               <div className="mt-3 flex items-center justify-center gap-4 text-xs">
                 <span className="text-fg-secondary">🥈 {bracket.runnerUp}</span>
-                {bracket.thirdPlaceTeam && <span className="text-[#CD7F32]">🥉 {bracket.thirdPlaceTeam}</span>}
+                {bracket.thirdPlaceTeam && <span className="text-[var(--accent-premium)]">🥉 {bracket.thirdPlaceTeam}</span>}
               </div>
             )}
           </div>
@@ -459,28 +459,28 @@ function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) =
       {/* Bracket rounds — visual flow */}
       <div className="space-y-4">
         {bracket.roundOf32?.length > 0 && (
-          <BracketRoundAesthetic title="1/16 Final" subtitle="32 equipos" matches={bracket.roundOf32} getFlag={getFlag} roundColor="from-cyan-500/20 to-blue-500/10" />
+          <BracketRoundAesthetic title="1/16 Final" subtitle="32 equipos" matches={bracket.roundOf32} getFlag={getFlag} roundColor="from-accent-primary/20 to-accent-secondary/10" />
         )}
         {bracket.roundOf16?.length > 0 && (
-          <BracketRoundAesthetic title="Octavos de Final" subtitle="16 equipos" matches={bracket.roundOf16} getFlag={getFlag} roundColor="from-blue-500/20 to-purple-500/10" />
+          <BracketRoundAesthetic title="Octavos de Final" subtitle="16 equipos" matches={bracket.roundOf16} getFlag={getFlag} roundColor="from-accent-secondary/20 to-accent-primary/10" />
         )}
         {bracket.quarters?.length > 0 && (
-          <BracketRoundAesthetic title="Cuartos de Final" subtitle="8 equipos" matches={bracket.quarters} getFlag={getFlag} roundColor="from-purple-500/20 to-pink-500/10" />
+          <BracketRoundAesthetic title="Cuartos de Final" subtitle="8 equipos" matches={bracket.quarters} getFlag={getFlag} roundColor="from-accent-primary/20 to-accent-premium/10" />
         )}
         {bracket.semis?.length > 0 && (
-          <BracketRoundAesthetic title="Semifinales" subtitle="4 equipos" matches={bracket.semis} getFlag={getFlag} roundColor="from-pink-500/20 to-amber-500/10" />
+          <BracketRoundAesthetic title="Semifinales" subtitle="4 equipos" matches={bracket.semis} getFlag={getFlag} roundColor="from-accent-premium/20 to-accent-primary/10" />
         )}
         {bracket.thirdPlace && (
-          <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-            <div className="text-[10px] text-amber-400 uppercase tracking-wider font-semibold mb-2">🥉 Tercer Puesto</div>
+          <div className="p-4 rounded-xl bg-gradient-to-r from-accent-premium/10 to-state-warning/10 border border-accent-premium/20">
+            <div className="text-[10px] text-accent-premium uppercase tracking-wider font-semibold mb-2">🥉 Tercer Puesto</div>
             <BracketMatchCard match={bracket.thirdPlace} getFlag={getFlag} />
           </div>
         )}
         {bracket.final && (
-          <div className="p-5 rounded-xl bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-yellow-500/10 border border-yellow-500/30">
+          <div className="p-5 rounded-xl bg-gradient-to-r from-accent-premium/10 via-accent-premium/15 to-accent-premium/10 border border-accent-premium/30">
             <div className="text-center mb-3">
               <span className="text-xl">🏆</span>
-              <div className="text-[10px] text-yellow-400 uppercase tracking-[0.2em] font-bold">La Gran Final</div>
+              <div className="text-[10px] text-accent-premium uppercase tracking-[0.2em] font-bold">La Gran Final</div>
             </div>
             <BracketMatchCard match={bracket.final} getFlag={getFlag} isFinal />
           </div>

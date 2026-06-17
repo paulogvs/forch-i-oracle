@@ -244,9 +244,9 @@ export default function LivePage() {
               return (
                 <div key={m.id} className={cn(
                   "flex items-center gap-2 p-3 rounded-[var(--r-lg)] border",
-                  exact ? "bg-[#052E16] border-[#166534]"
-                  : correct ? "bg-[#14291E] border-[#1B6B3A]"
-                  : "bg-[#2A0A0A] border-[#991B1B]"
+                  exact ? "bg-[var(--match-correct-bg)] border-[var(--match-correct-border)]"
+                  : correct ? "bg-[var(--match-partial-bg)] border-[var(--match-partial-border)]"
+                  : "bg-[var(--match-wrong-bg)] border-[var(--match-wrong-border)]"
                 )}>
                   {/* Home */}
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">

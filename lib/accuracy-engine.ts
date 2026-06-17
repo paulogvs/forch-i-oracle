@@ -301,3 +301,81 @@ function generateBaselineTrend(): AccuracyTrendPoint[] {
 
   return points;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// DRIFT DETECTION — Alert when model accuracy degrades
+// ═══════════════════════════════════════════════════════════════
+
+export interface DriftAlert {
+  type: 'accuracy_drop' | 'goal_error_increase' | 'draw_bias';
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  current: number;
+  baseline: number;
+  threshold: number;
+}
+
+/**
+ * Detect model drift by comparing recent performance against baseline.
+ * Returns alerts when accuracy degrades beyond acceptable thresholds.
+ */
+export async function detectDrift(): Promise<DriftAlert[]> {
+  const alerts: DriftAlert[] = [];
+  const comparisons = await getMatchComparisons();
+  const played = comparisons.filter(c => c.isPlayed);
+
+  if (played.length < 10) return alerts; // Need minimum data
+
+  // Split into recent (last 10) and overall
+  const recent = played.slice(-10);
+  const overall = played;
+
+  // 1. Accuracy drop detection
+  const overallAccuracy = overall.filter(c => c.winnerCorrect).length / overall.length;
+  const recentAccuracy = recent.filter(c => c.winnerCorrect).length / recent.length;
+  const accuracyDrop = overallAccuracy - recentAccuracy;
+
+  if (accuracyDrop > 0.15) {
+    alerts.push({
+      type: 'accuracy_drop',
+      severity: accuracyDrop > 0.25 ? 'high' : 'medium',
+      message: `Precisión reciente ${(recentAccuracy * 100).toFixed(0)}% vs global ${(overallAccuracy * 100).toFixed(0)}%`,
+      current: Math.round(recentAccuracy * 100),
+      baseline: Math.round(overallAccuracy * 100),
+      threshold: 15,
+    });
+  }
+
+  // 2. Goal error increase
+  const overallMAE = overall.reduce((s, c) => s + (c.goalError || 0), 0) / overall.length;
+  const recentMAE = recent.reduce((s, c) => s + (c.goalError || 0), 0) / recent.length;
+
+  if (recentMAE > overallMAE * 1.3) {
+    alerts.push({
+      type: 'goal_error_increase',
+      severity: recentMAE > overallMAE * 1.5 ? 'high' : 'medium',
+      message: `Error de goles reciente ${recentMAE.toFixed(2)} vs global ${overallMAE.toFixed(2)}`,
+      current: Math.round(recentMAE * 100) / 100,
+      baseline: Math.round(overallMAE * 100) / 100,
+      threshold: 30,
+    });
+  }
+
+  // 3. Draw bias detection (predicting too many or too few draws)
+  const recentDraws = recent.filter(c => c.predictedWinner === 'draw').length;
+  const recentDrawRate = recentDraws / recent.length;
+  const historicalDrawRate = 0.26; // ~26% of WC matches are draws
+
+  if (Math.abs(recentDrawRate - historicalDrawRate) > 0.15) {
+    alerts.push({
+      type: 'draw_bias',
+      severity: Math.abs(recentDrawRate - historicalDrawRate) > 0.25 ? 'high' : 'low',
+      message: `Tasa de empates predichos: ${(recentDrawRate * 100).toFixed(0)}% (histórico: ${(historicalDrawRate * 100).toFixed(0)}%)`,
+      current: Math.round(recentDrawRate * 100),
+      baseline: Math.round(historicalDrawRate * 100),
+      threshold: 15,
+    });
+  }
+
+  return alerts;
+}

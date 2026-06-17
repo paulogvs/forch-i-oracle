@@ -24,6 +24,14 @@
 export const RHO = -0.10;
 
 /**
+ * Phase-dependent RHO: knockout matches have lower draw probability
+ * (more aggressive play), so rho is weaker (less draw correction).
+ */
+export function getPhaseRho(phase: 'group' | 'knockout'): number {
+  return phase === 'knockout' ? -0.06 : RHO;
+}
+
+/**
  * Dixon-Coles τ correction factor for a specific score (h, a).
  *
  * @param lambda Home expected goals
@@ -64,6 +72,28 @@ export function poissonProbability(lambda: number, k: number): number {
     p *= lambda / i;
   }
   return p;
+}
+
+/**
+ * Precomputed factorial table for common values (0-20).
+ * Used to avoid redundant factorial calculations in Poisson PMF.
+ */
+const FACTORIAL_TABLE: number[] = [1];
+for (let i = 1; i <= 20; i++) {
+  FACTORIAL_TABLE[i] = FACTORIAL_TABLE[i - 1] * i;
+}
+
+/**
+ * Fast Poisson PMF using precomputed factorials for k ≤ 20.
+ * Falls back to recursive computation for larger values.
+ */
+export function poissonPMFFast(lambda: number, k: number): number {
+  if (k < 0) return 0;
+  if (k <= 20) {
+    return Math.exp(-lambda) * Math.pow(lambda, k) / FACTORIAL_TABLE[k];
+  }
+  // Fallback for rare high-score cases
+  return poissonProbability(lambda, k);
 }
 
 export interface DixonColesResult {

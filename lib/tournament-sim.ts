@@ -266,6 +266,18 @@ export function assignThirdsBacktracking(
 
 // ─── Team Helpers ──────────────────────────────────────────────────────────
 
+function samplePoisson(lambda: number): number {
+  if (lambda <= 0) return 0;
+  const L = Math.exp(-lambda);
+  let k = 0;
+  let p = 1;
+  do {
+    k++;
+    p *= Math.random();
+  } while (p > L);
+  return k - 1;
+}
+
 function getFlag(name: string): string {
   const t = WORLD_CUP_TEAMS.find((x) => x.name.toLowerCase() === name.toLowerCase());
   return t?.flag || '🏳️';
@@ -328,16 +340,31 @@ async function simulateMatch(
   }
 
   const stats = await calculateStatisticalPrediction(home, away);
-  const homeScore = stats.predictedScoreHome;
-  const awayScore = stats.predictedScoreAway;
+
+  // Stochastic sampling: instead of using MAP (deterministic), sample from
+  // Poisson distribution using predicted lambdas. This makes each simulation
+  // unique and produces meaningful probability distributions.
+  const homeLambda = stats.homeExpectedGoals;
+  const awayLambda = stats.awayExpectedGoals;
+  const homeScore = samplePoisson(homeLambda);
+  const awayScore = samplePoisson(awayLambda);
+
   let winner: string;
 
   if (homeScore > awayScore) winner = home;
   else if (awayScore > homeScore) winner = away;
   else {
     if (knockout) {
-      // In knockout, higher probability team wins (simulates ET/penalties)
-      winner = stats.homeWin > stats.awayWin ? home : away;
+      // In knockout, use probability-weighted random selection
+      const total = stats.homeWin + stats.draw + stats.awayWin;
+      const r = Math.random() * total;
+      if (r < stats.homeWin) winner = home;
+      else if (r < stats.homeWin + stats.draw) {
+        // Draw in knockout: higher probability team advances
+        winner = stats.homeWin > stats.awayWin ? home : away;
+      } else {
+        winner = away;
+      }
     } else {
       winner = 'draw';
     }

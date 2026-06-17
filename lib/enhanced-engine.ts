@@ -454,11 +454,9 @@ export function calculateCompositeAdjustment(
     adjustment *= (1 - injuryImpact);
   }
 
-  // 5. Altitude (usar función existente)
-  if (context.venue) {
-    const altFactor = getAltitudeFactor(context.teamName, context.venue);
-    adjustment *= altFactor;
-  }
+  // Note: Altitude and H2H are already applied by the base engine
+  // (predictor-engine.ts lines 361-372). Do NOT re-apply here to avoid
+  // double-counting these factors.
 
   return Math.max(0.7, Math.min(1.3, adjustment));
 }

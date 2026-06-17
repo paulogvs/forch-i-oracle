@@ -221,11 +221,11 @@ export default function BenchmarkPage() {
                     return (
                       <div key={m.name} className={cn(
                         "flex items-center gap-2 p-2.5 rounded-[var(--r-md)] border",
-                        agrees ? "bg-[#052E16] border-[#166534]" : "surface border-border-subtle"
+                        agrees ? "bg-[var(--match-correct-bg)] border-[var(--match-correct-border)]" : "surface border-border-subtle"
                       )}>
                         <span className="text-[10px] text-fg-tertiary w-20 truncate">{m.name}</span>
                         <span className="text-[10px] font-semibold text-fg-primary flex-1">🏆 {m.champion}</span>
-                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", agrees ? "bg-[#166534] text-[#4ADE80]" : "bg-[#2A2D35] text-[#6B7280]")}>
+                        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded-full", agrees ? "bg-[var(--match-correct-border)] text-[var(--match-correct-text)]" : "bg-elevated text-fg-tertiary")}>
                           {agrees ? '✓ Coincide' : '✗ Diferente'}
                         </span>
                       </div>
@@ -265,7 +265,7 @@ export default function BenchmarkPage() {
 
       {/* About */}
       {activeTab === 'about' && (
-        <div className="surface p-4 space-y-3 text-xs text-fg-secondary animate-fade border border-border-subxe">
+        <div className="surface p-4 space-y-3 text-xs text-fg-secondary animate-fade border border-border-subtle">
           <h2 className="text-xs font-bold text-fg-primary">Acerca de WorldCupBench</h2>
           <p>Evalúa la capacidad de modelos de IA para predecir el Mundial 2026. Mismo prompt (v2.1), respuesta JSON.</p>
           <div className="grid grid-cols-2 gap-2">
