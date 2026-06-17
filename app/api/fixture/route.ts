@@ -275,6 +275,41 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // OVERRIDE KNOCKOUT TEAMS WITH CONSENSUS BRACKET
+    // Ensures fixture knockout matches match championProbs (single source of truth)
+    // ═══════════════════════════════════════════════════════════
+    try {
+      const kvEntry = await db.getKeyValue('consensusBracket');
+      const bracket = kvEntry?.value as any;
+      if (bracket) {
+        const bracketRoundMap: Record<string, any[]> = {
+          'round-32': bracket.roundOf32 || [],
+          'round-16': bracket.roundOf16 || [],
+          'quarter': bracket.quarters || [],
+          'semi': bracket.semis || [],
+          'final': bracket.final ? [bracket.final] : [],
+          'third': bracket.thirdPlace ? [bracket.thirdPlace] : [],
+        };
+        const usedBracketIndices: Record<string, number> = {};
+        for (const m of fixture) {
+          const bracketMatches = bracketRoundMap[m.round];
+          if (!bracketMatches || bracketMatches.length === 0) continue;
+          const idx = usedBracketIndices[m.round] || 0;
+          if (idx < bracketMatches.length) {
+            const bMatch = bracketMatches[idx];
+            if (bMatch && bMatch.homeTeam !== 'TBD') {
+              m.homeTeam = bMatch.homeTeam;
+              m.awayTeam = bMatch.awayTeam;
+            }
+            usedBracketIndices[m.round] = idx + 1;
+          }
+        }
+      }
+    } catch {
+      // Non-critical — bracket override is best-effort
+    }
+
     // ═══════════════════════════════════════════════════
     // PHASE 3: Enrich with stored Groq analysis
     // ═══════════════════════════════════════════════════

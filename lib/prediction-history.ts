@@ -4,7 +4,7 @@
 
 import { getDataLayer } from './data-layer';
 import { calculateStatisticalPrediction } from './predictor-engine';
-import { simulateTournament, simulateTournamentMulti, type RealMatchResult } from './tournament-sim';
+import { simulateTournamentMulti, type RealMatchResult } from './tournament-sim';
 import { WORLD_CUP_TEAMS } from './teams';
 
 export interface PredictionSnapshot {
@@ -284,20 +284,12 @@ export async function getLiveStandings(): Promise<Record<string, Array<{
 }
 
 /**
- * Get live knockout bracket from real results.
- * Always runs simulation (even pre-tournament) so bracket is consistent with championProbs.
+ * Get live knockout bracket — SINGLE SOURCE OF TRUTH.
+ * Returns the stored consensus bracket (same data as championProbs).
+ * No re-simulation — bracket is built by cron/match-result and stored in KV store.
  */
 export async function getLiveBracket(): Promise<any> {
   const db = getDataLayer();
-  const realResults = await db.getMatchResults();
-
-  const simResults: RealMatchResult[] = realResults.map(r => ({
-    matchId: r.matchId,
-    homeScore: r.homeScore,
-    awayScore: r.awayScore,
-    winner: r.winner,
-  }));
-
-  const multiResult = await simulateTournamentMulti(100, simResults, () => {});
-  return multiResult.bracket;
+  const kvEntry = await db.getKeyValue('consensusBracket');
+  return kvEntry?.value || null;
 }

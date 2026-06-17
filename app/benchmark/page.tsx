@@ -47,17 +47,22 @@ export default function BenchmarkPage() {
     }
   }, [activeTab, oraclePredictions.length]);
 
-  const championTeams = Array.from(new Set(models.map(m => m.champion)));
-
-  // Compute ORACLE agreement data
-  const oracleChampion = oraclePredictions.length > 0 ? (() => {
-    // Find highest champion probability from predictions
-    const championProbs: Record<string, number> = {};
-    for (const p of oraclePredictions) {
-      if (p.homeWinPct > 50) championProbs[p.homeTeam] = (championProbs[p.homeTeam] || 0) + 1;
+  // Fetch stored champion probs (single source of truth) for ORACLE champion
+  const [oracleChampion, setOracleChampion] = useState<string | null>(null);
+  useEffect(() => {
+    if (activeTab === 'oracle' && !oracleChampion) {
+      fetch('/api/simulate-tournament')
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.championProbs?.length > 0) {
+            setOracleChampion(data.championProbs[0].teamId);
+          }
+        })
+        .catch(() => {});
     }
-    return Object.entries(championProbs).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-  })() : null;
+  }, [activeTab, oracleChampion]);
+
+  const championTeams = Array.from(new Set(models.map(m => m.champion)));
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 animate-fade">
