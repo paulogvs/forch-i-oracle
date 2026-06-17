@@ -18,7 +18,7 @@ AI-powered sports predictions for FIFA World Cup 2026 — a **closed-loop predic
 
 ### Closed-Loop Circuit
 ```
-API-Football (cada 6h) → Cron Ingest → Supabase/Store → Re-simulate → Panel En Vivo
+API-Football (cada 6h) → Cron Ingest → In-Memory Store → Re-simulate → Panel En Vivo
 ```
 
 ---
@@ -174,21 +174,10 @@ Full implementation of FIFA tiebreaker procedure (a-h):
 
 ## 💾 Data Persistence
 
-### Production (Supabase)
-When `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are set:
-- Results, forms, and predictions persist **across Vercel deploys**
-- 5 tables: `match_results`, `team_forms`, `predictions`, `tournament_probs`, `cron_status`
-- Full setup guide: [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)
-
-### Development (File Store)
-Without Supabase env vars:
-- Falls back to `lib/file-store.ts` — JSON files in `.forchi-data/`
-- Survives between requests within same deploy
-- Wiped on new Vercel deploy
-
-### Fallback (In-Memory)
-If neither is available:
+### In-Memory + File Store
+- Results, forms, and predictions persist via `lib/file-store.ts` — JSON files in `.forchi-data/`
 - In-memory Maps auto-seeded from `lib/teams.ts` and `lib/matches.ts`
+- Survives between requests within same deploy
 
 ---
 
@@ -226,10 +215,6 @@ GROQ_API_KEY=gsk_your_key_here
 
 # For real data ingestion (optional)
 FOOTBALL_API_KEY=your_api_football_key
-
-# For persistent data across deploys (optional, see SUPABASE_SETUP.md)
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJhbG...
 
 # For cron job protection (optional)
 CRON_SECRET=your-secret-here
@@ -272,8 +257,7 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 | **Data Fetching** | SWR (stale-while-revalidate) with smart refresh intervals |
 | **AI Analysis** | Groq Llama 3.3 70B (narrative only — numbers from math) |
 | **Data API** | API-Football (free tier) |
-| **Database** | Supabase PostgreSQL (optional, primary in production) |
-| **Fallback** | File-based JSON store (`lib/file-store.ts`) |
+| **Persistence** | File-based JSON store (`lib/file-store.ts`) |
 | **CI/CD** | GitHub Actions + Vercel |
 | **Scheduling** | GitHub Actions cron (Vercel Hobby limitation) |
 
@@ -300,15 +284,13 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 │   ├── tournament-sim.ts     # 100 Monte Carlo simulations
 │   ├── prediction-store.ts   # Bayesian dynamic updating
 │   ├── dashboard-utils.ts    # 🆕 date grouping, upcoming matches
-│   ├── data-layer/           # Abstraction (in-memory ↔ Supabase)
+│   ├── data-layer/           # Abstraction (in-memory + file-store)
 │   ├── matches.ts            # 128 WC2026 matches
 │   ├── teams.ts              # 48 teams with Elo, power ratings
 │   └── venues.ts             # 16 venues with altitude data
 ├── lib/__tests__/            # 105 tests (10 files)
 │   ├── dashboard-utils.test.ts  # 🆕 6 tests for dashboard utils
 │   └── ...
-├── supabase/migrations/
-│   └── 001_initial_schema.sql
 └── scripts/
     └── ...
 ```
@@ -343,7 +325,6 @@ The Dashboard (`/`) shows real-time prediction accuracy:
 
 ## 📄 Documentation
 
-- [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) — Step-by-step Supabase setup guide
 - [`USER_GUIDE.md`](USER_GUIDE.md) — User guide for all panels
 - [`AGENTS.md`](AGENTS.md) — Developer/agent instructions
 - [`CONTEXT.md`](CONTEXT.md) — Project context and domain language

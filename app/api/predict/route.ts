@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getDataLayerAsync();
 
-    // Check data layer cache first (Supabase or in-memory)
+    // Check data layer cache first
     const matchInDb = await db.getMatchByTeams(homeTeam, awayTeam);
     if (matchInDb) {
       const cachedPred = await db.getPrediction(matchInDb.id);

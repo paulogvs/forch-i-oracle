@@ -1,5 +1,5 @@
 'use client';
-import { LayoutDashboard, Trophy, Radio, BarChart3, TrendingUp, BarChart2, Users } from 'lucide-react';
+import { LayoutDashboard, Trophy, Radio, BarChart3, BarChart2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -14,10 +14,9 @@ const NAV = [
   { href: '/',          label: 'nav.home',      icon: LayoutDashboard, key: '1' },
   { href: '/fixture',   label: 'nav.fixture',   icon: Trophy, key: '2' },
   { href: '/live',      label: 'nav.live',      icon: Radio, key: '3' },
-  { href: '/forecast',  label: 'nav.forecast',  icon: TrendingUp, key: '4' },
-  { href: '/stats',     label: 'nav.stats',     icon: BarChart2, key: '5' },
-  { href: '/teams',     label: 'nav.teams',     icon: Users, key: '6' },
-  { href: '/benchmark', label: 'nav.benchmark', icon: BarChart3, key: '7' },
+  { href: '/stats',     label: 'nav.stats',     icon: BarChart2, key: '4' },
+  { href: '/teams',     label: 'nav.teams',     icon: Users, key: '5' },
+  { href: '/benchmark', label: 'nav.benchmark', icon: BarChart3, key: '6' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

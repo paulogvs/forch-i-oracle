@@ -5,22 +5,20 @@
 - **Language:** TypeScript (strict mode)
 - **Styling:** Tailwind CSS 3.4
 - **AI:** Groq Llama 3.3 70B
-- **Data:** API-Football (free tier) + Supabase (PostgreSQL, optional)
+- **Data:** API-Football (free tier)
 
 ## Scripts
 - `npm run dev` — Development server
 - `npm run build` — Production build
 - `npm start` — Production server
-- `npx tsx scripts/seed-supabase.ts` — Seed Supabase database
 
 ## Architecture
 
 ### Data Layer (Abstraction)
-- `lib/data-layer/` — Pluggable data layer (in-memory ↔ Supabase)
+- `lib/data-layer/` — Pluggable data layer (in-memory + file-store)
   - `interface.ts` — IDataLayer interface (contract)
   - `in-memory.ts` — In-memory implementation (default, auto-seeds)
-  - `supabase.ts` — Supabase PostgreSQL implementation
-  - `index.ts` — Factory (auto-selects based on env vars)
+  - `index.ts` — Factory (always in-memory)
   - `types.ts` — Shared TypeScript types
 
 ### Prediction Engines
@@ -80,9 +78,5 @@
 - `GROQ_API_KEY` — Groq Console (https://console.groq.com/keys)
 - `FOOTBALL_API_KEY` — API-Football (https://www.api-football.com/)
 
-## Optional (for persistent pipeline)
-- `SUPABASE_URL` — Supabase project URL
-- `SUPABASE_SERVICE_KEY` — Supabase service_role key (NOT anon)
+## Optional (for cron job protection)
 - `CRON_SECRET` — Secret for protecting cron endpoints
-
-See `SUPABASE_SETUP.md` for database setup instructions.

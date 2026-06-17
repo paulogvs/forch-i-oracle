@@ -1,6 +1,5 @@
 // FORCH.i ORACLE — Data Layer Interface
 // Abstract interface that all implementations must satisfy.
-// Switch between in-memory and Supabase by changing the implementation.
 
 import type {
   DBTeam,

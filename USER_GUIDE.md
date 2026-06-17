@@ -99,7 +99,6 @@ API-Football (every 6h) → Cron Ingest → Real Results → Re-simulate Bracket
 - Tailwind CSS 3.4
 - Groq Llama 3.3 70B (narrative analysis only)
 - API-Football (free tier)
-- Supabase (optional PostgreSQL)
 
 ---
 *FORCH.i © 2026 · Built by Paulo Velasco*

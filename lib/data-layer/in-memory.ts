@@ -1,6 +1,5 @@
 // FORCH.i ORACLE — In-Memory Data Layer Implementation
 // Full implementation of IDataLayer using in-memory Maps.
-// Used as default until Supabase is connected.
 
 import type { IDataLayer } from './interface';
 import type {

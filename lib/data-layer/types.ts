@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — Data Layer Types
-// Shared types used by all data layer implementations (in-memory, Supabase)
+// Shared types used by all data layer implementations
 
 // ═══════════════════════════════════════════════════════════════
 // TEAMS
@@ -29,7 +29,7 @@ export interface DBMatch {
   matchNumber?: number;
   groupChar?: string;
   round: MatchRound;
-  homeTeamId: string;    // team name for now (will be UUID when Supabase connected)
+  homeTeamId: string;
   awayTeamId: string;
   matchDate?: string;
   matchTime?: string;

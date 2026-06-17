@@ -372,3 +372,32 @@ function poissonPMF(k: number, lambda: number): number {
   for (let i = 2; i <= k; i++) factorial *= i;
   return result / factorial;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SEED FROM STORED RESULTS — Initialize engine on cold start
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Seed the Bayesian Dynamic engine with stored real results.
+ * Called on serverless cold starts to restore prediction accuracy.
+ * Without seeding, predictions revert to pure Elo baseline after each
+ * Vercel serverless function restart.
+ */
+export function seedFromResults(
+  results: Array<{ homeTeam: string; awayTeam: string; homeScore: number; awayScore: number }>
+): number {
+  let seeded = 0;
+  for (const r of results) {
+    if (r.homeTeam && r.awayTeam && !r.homeTeam.includes('TBD') && !r.awayTeam.includes('TBD')) {
+      addMatchResult({
+        homeTeam: r.homeTeam,
+        awayTeam: r.awayTeam,
+        homeGoals: r.homeScore,
+        awayGoals: r.awayScore,
+        date: new Date().toISOString(),
+      });
+      seeded++;
+    }
+  }
+  return seeded;
+}

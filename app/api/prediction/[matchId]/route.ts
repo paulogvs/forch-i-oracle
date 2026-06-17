@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — API Route: Get Pre-Calculated Prediction
-// Reads pre-calculated predictions from the data layer (Supabase or in-memory).
+// Reads pre-calculated predictions from the data layer.
 // GET /api/prediction/[matchId]
 
 import { NextRequest, NextResponse } from 'next/server';

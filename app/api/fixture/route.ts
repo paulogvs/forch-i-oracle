@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
 import { calculateStatisticalPrediction } from '@/lib/predictor-engine';
-import { predictMatchDynamic, addMatchResult, getResultsCount } from '@/lib/prediction-store';
+import { predictMatchDynamic, addMatchResult, getResultsCount, seedFromResults } from '@/lib/prediction-store';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
@@ -40,6 +40,25 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDataLayerAsync();
+
+    // ─── Seed Bayesian engine with stored results on cold start ───
+    // On Vercel serverless, in-memory state resets each invocation.
+    // Seed from persisted results so predictions reflect real data immediately.
+    const storedResults = await db.getMatchResults();
+    if (storedResults.length > 0 && getResultsCount() < storedResults.length) {
+      const ALL_MATCHES_STATIC = ALL_MATCHES;
+      seedFromResults(storedResults.map(r => {
+        // matchId format: "Argentina_vs_Canada" or just an ID
+        const match = ALL_MATCHES_STATIC.find(m => m.id === r.matchId);
+        const parts = r.matchId.includes('_vs_') ? r.matchId.split('_vs_') : [];
+        return {
+          homeTeam: match?.homeTeam || parts[0] || '',
+          awayTeam: match?.awayTeam || parts[1] || '',
+          homeScore: r.homeScore ?? 0,
+          awayScore: r.awayScore ?? 0,
+        };
+      }));
+    }
 
     // Ingest any real results
     for (const r of realResults) {
