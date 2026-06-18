@@ -2,9 +2,11 @@
 // FIFA-official tiebreakers + backtracking third-place assignment
 // Client-side multi-simulation for forecast page
 
-import { calculateStatisticalPrediction } from './predictor-engine';
+import { calculateStatisticalPrediction, loadEloOverrides, clearEloOverrides } from './predictor-engine';
 import { WORLD_CUP_TEAMS, ELO_RATINGS } from './teams';
 import { ALL_MATCHES } from './matches';
+import { getDataLayerAsync } from './data-layer';
+import type { EloEntry } from './teams';
 
 // ─── Data Structures ──────────────────────────────────────────────────────
 
@@ -762,6 +764,31 @@ export async function simulateTournamentMulti(
   realResults: RealMatchResult[] = [],
   onProgress?: (msg: string) => void
 ): Promise<MultiSimResult> {
+  // Load Elo overrides from DB (persistent updates from past match results)
+  try {
+    const db = await getDataLayerAsync();
+    const allTeams = WORLD_CUP_TEAMS.map(t => t.name);
+    const overrides = new Map<string, EloEntry>();
+    for (const teamName of allTeams) {
+      const kvEntry = await db.getKeyValue(`eloOverride:${teamName}`);
+      if (kvEntry && typeof kvEntry.value === 'object' && kvEntry.value !== null) {
+        const val = kvEntry.value as Partial<EloEntry>;
+        const base = ELO_RATINGS[teamName] || { elo: 1500, attack: 1.0, defense: 1.0 };
+        overrides.set(teamName, {
+          elo: val.elo ?? base.elo,
+          attack: val.attack ?? base.attack,
+          defense: val.defense ?? base.defense,
+        });
+      }
+    }
+    if (overrides.size > 0) {
+      loadEloOverrides(overrides);
+      if (onProgress) onProgress(`Elo overrides cargados: ${overrides.size} equipos actualizados`);
+    }
+  } catch {
+    // Fallback: use static ELO_RATINGS
+  }
+
   const championCounts = new Map<string, number>();
   let lastBracket: TournamentBracket | null = null;
 
@@ -880,6 +907,9 @@ export async function simulateTournamentMulti(
     const leader = top8[0];
     onProgress(`🏆 ${leader?.team || 'N/A'} lidera con ${leader?.pct || 0}%`);
   }
+
+  // Clean up Elo overrides after simulation
+  clearEloOverrides();
 
   return {
     top8,

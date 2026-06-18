@@ -67,7 +67,7 @@ export async function getOrComputeTournamentResults() {
     winner: r.winner,
   }));
 
-  const multiResult = await simulateTournamentMulti(100, simResults, () => {});
+  const multiResult = await simulateTournamentMulti(5000, simResults, () => {});
   // Use bracket from the simulation that produced the most frequent champion
   // (lastBracket is updated in simulateTournamentMulti to track the leader's bracket)
   const bracket = multiResult.bracket;
@@ -77,7 +77,7 @@ export async function getOrComputeTournamentResults() {
     teamId: c.team,
     championProb: c.pct,
     simulationsCount: c.wins,
-    totalSimulations: 100,
+    totalSimulations: 5000,
   }));
   await db.saveTournamentProbs(probs);
   await saveBracketAndPredictions(db, bracket);
@@ -147,7 +147,7 @@ export async function saveBracketAndPredictions(db: any, bracket: any) {
       topScores: [
         { home: bm.homeScore, away: bm.awayScore, probability: Math.round(Math.max(bm.homeWinProb, bm.awayWinProb)) }
       ],
-      analysis: `Este partido corresponde a la fase eliminatoria (${bm.roundLabel}) del Mundial 2026. Según nuestras 100 simulaciones Monte Carlo del torneo completo, el enfrentamiento proyectado es ${bm.homeTeam} vs ${bm.awayTeam}, con un marcador estimado de ${bm.homeScore}-${bm.awayScore} favoreciendo a ${bm.winner === bm.homeTeam ? bm.homeTeam : bm.awayTeam}.`
+      analysis: `Este partido corresponde a la fase eliminatoria (${bm.roundLabel}) del Mundial 2026. Según nuestras 5,000 simulaciones Monte Carlo del torneo completo, el enfrentamiento proyectado es ${bm.homeTeam} vs ${bm.awayTeam}, con un marcador estimado de ${bm.homeScore}-${bm.awayScore} favoreciendo a ${bm.winner === bm.homeTeam ? bm.homeTeam : bm.awayTeam}.`
     }).catch(() => {});
   }
 }

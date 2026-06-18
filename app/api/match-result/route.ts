@@ -25,6 +25,7 @@ import { getKeyFactors } from '@/lib/predictor-engine';
 import { batchProcess } from '@/lib/utils';
 import { validateCronAuth } from '@/lib/cron-auth';
 import { saveBracketAndPredictions } from '@/lib/tournament-results';
+import { processMatchEloUpdate } from '@/lib/elo-update';
 
 
 export async function POST(request: NextRequest) {
@@ -75,7 +76,12 @@ export async function POST(request: NextRequest) {
       winner,
     });
 
-    // Step 2: Update prediction-store (Bayesian engine)
+    // Step 2: Update Elo ratings (persistent — affects all future predictions)
+    const match = await db.getMatch(matchId);
+    const isKnockout = match?.round !== 'group';
+    const eloUpdate = await processMatchEloUpdate(homeTeam, awayTeam, homeScore, awayScore, isKnockout, db);
+
+    // Step 3: Update prediction-store (Bayesian engine)
     addMatchResult({
       homeTeam,
       awayTeam,
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
       awayXG: awayXG,
     });
 
-    // Step 3: Update team form in data layer
+    // Step 4: Update team form in data layer
     const now = new Date().toISOString().split('T')[0];
     const comp = competition || 'World Cup';
 
@@ -178,7 +184,7 @@ export async function POST(request: NextRequest) {
       eloDynamic: awayDynamic.elo,
     });
 
-    // Step 4: Find future matches for both teams and recalculate predictions
+    // Step 5: Find future matches for both teams and recalculate predictions
     const upcomingMatches = await db.getUpcomingMatches();
     const affectedMatches = upcomingMatches.filter(
       m => m.homeTeamId === homeTeam || m.awayTeamId === homeTeam ||
@@ -270,8 +276,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`[match-result] Auto-recalculated ${recalculated} predictions for affected teams`);
 
-    // Step 5: Re-simulate tournament if this is a group stage match
-    const match = await db.getMatch(matchId);
+    // Step 6: Re-simulate tournament if this is a group stage match
     if (match && match.round === 'group') {
       console.log('[match-result] Group stage match — tournament re-simulation recommended');
     }
@@ -284,7 +289,7 @@ export async function POST(request: NextRequest) {
     try {
       const { simulateTournamentMulti } = await import('@/lib/tournament-sim');
       const allResults = await db.getMatchResults();
-      const simResult = await simulateTournamentMulti(100, allResults);
+      const simResult = await simulateTournamentMulti(5000, allResults);
 
       // Persist bracket + all knockout match predictions (single source of truth)
       await saveBracketAndPredictions(db, simResult.bracket);
@@ -318,6 +323,20 @@ export async function POST(request: NextRequest) {
       predictionsRecalculated: recalculated,
       revalidated: ['fixture', 'tournament'],
       timestamp: new Date().toISOString(),
+      elo: {
+        home: {
+          team: homeTeam,
+          before: eloUpdate.homeEloBefore,
+          after: eloUpdate.homeEloAfter,
+          delta: eloUpdate.homeDelta,
+        },
+        away: {
+          team: awayTeam,
+          before: eloUpdate.awayEloBefore,
+          after: eloUpdate.awayEloAfter,
+          delta: eloUpdate.awayDelta,
+        },
+      },
       homeDynamic: {
         elo: homeDynamic.elo,
         momentum: homeMomentum,

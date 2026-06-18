@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — Cron Job: Tournament Simulation
-// Vercel Cron job that runs 100 tournament simulations and saves champion probabilities.
+// Vercel Cron job that runs 5,000 tournament simulations and saves champion probabilities.
 // Schedule: Daily at 00:00 UTC
 // Trigger: GET /api/cron/simulate
 
@@ -9,7 +9,7 @@ import { simulateTournamentMulti, type RealMatchResult } from '@/lib/tournament-
 import { validateCronAuth } from '@/lib/cron-auth';
 import { saveBracketAndPredictions } from '@/lib/tournament-results';
 
-const NUM_SIMULATIONS = 100;
+const NUM_SIMULATIONS = 5000;
 
 export async function GET(request: Request) {
   const unauthorized = validateCronAuth(request);

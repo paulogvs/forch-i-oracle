@@ -65,8 +65,25 @@ const DEFAULT_ELO = 1500;
 const DEFAULT_ATTACK = 0.7;
 const DEFAULT_DEFENSE = 1.5;
 
-/** Get Elo entry for a team. Exported for elo-proxy.ts. */
+/** In-memory Elo overrides (loaded from DB before simulation) */
+let eloOverrides: Map<string, EloEntry> | null = null;
+
+/** Load Elo overrides from DB into memory. Call before simulation runs. */
+export function loadEloOverrides(overrides: Map<string, EloEntry>): void {
+  eloOverrides = overrides;
+}
+
+/** Clear loaded overrides (call after simulation to reset) */
+export function clearEloOverrides(): void {
+  eloOverrides = null;
+}
+
+/** Get Elo entry for a team. Checks overrides first, then static ELO_RATINGS. */
 export function getElo(teamName: string): EloEntry {
+  // Check dynamic overrides first (set by match-result pipeline)
+  if (eloOverrides?.has(teamName)) {
+    return eloOverrides.get(teamName)!;
+  }
   return ELO_RATINGS[teamName] || {
     elo: DEFAULT_ELO,
     attack: DEFAULT_ATTACK,
