@@ -1,16 +1,39 @@
 // FORCH.i ORACLE — Persistent Elo Update Engine
+// SINGLE SOURCE OF TRUTH for Elo ratings and K-factors.
 // Updates team Elo ratings after each real match result.
 // Ratings are persisted to KV store and merged with static ELO_RATINGS at read time.
 //
-// Formula: Elo_new = Elo_old + K × (actual - expected)
-// K = 20 for group stage, 30 for knockout stage
+// Formula: Elo_new = Elo_old + K × (actual - expected) × goalDiffMultiplier
+// K escalates by stage: 40 (group) → 60 (R32/R16) → 70 (QF/SF) → 80 (Final)
 
 import { ELO_RATINGS, type EloEntry } from './teams';
 import type { IDataLayer } from './data-layer/interface';
 
-/** K-factor: higher in knockout (more decisive matches) */
-const K_GROUP = 20;
-const K_KNOCKOUT = 30;
+// ═══════════════════════════════════════════════════════════════
+// K-FACTOR BY STAGE — SINGLE SOURCE OF TRUTH
+// ═══════════════════════════════════════════════════════════════
+
+export type MatchRound = 'group' | 'R32' | 'R16' | 'QF' | 'SF' | 'F' | 'TP';
+
+/** K-factor for each tournament stage. Higher K = more reactive to results. */
+export const K_FACTORS: Record<MatchRound, number> = {
+  group: 40,   // Group stage: standard weight
+  R32: 60,     // Round of 32: knockout begins, higher stakes
+  R16: 60,     // Octavos: same as R32
+  QF: 70,      // Cuartos: quarter-finals, very high stakes
+  SF: 70,      // Semifinals: same as QF
+  F: 80,       // Final: maximum weight — single match decides champion
+  TP: 40,      // Third place: exhibition match, standard weight
+};
+
+/** Get K-factor for a given match round */
+export function getKFactor(round: MatchRound): number {
+  return K_FACTORS[round] ?? 40;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ELO CALCULATION
+// ═══════════════════════════════════════════════════════════════
 
 /** Expected score from Elo difference */
 function expectedScore(eloA: number, eloB: number): number {
@@ -22,9 +45,9 @@ function expectedScore(eloA: number, eloB: number): number {
  *
  * @param homeElo Current Elo of home team
  * @param awayElo Current Elo of away team
- * @param homeScore Actual home goals
- * @param awayScore Actual away goals
- * @param isKnockout Whether this is a knockout match (higher K)
+ * @param homeScore Actual home goals (90 min + ET if applicable)
+ * @param awayScore Actual away goals (90 min + ET if applicable)
+ * @param round Match round (determines K-factor)
  * @returns Updated Elo ratings for both teams
  */
 export function calculateEloUpdate(
@@ -32,9 +55,9 @@ export function calculateEloUpdate(
   awayElo: number,
   homeScore: number,
   awayScore: number,
-  isKnockout: boolean = false,
+  round: MatchRound = 'group',
 ): { newHomeElo: number; newAwayElo: number; homeDelta: number; awayDelta: number } {
-  const K = isKnockout ? K_KNOCKOUT : K_GROUP;
+  const K = getKFactor(round);
 
   // Actual result: 1 = win, 0.5 = draw, 0 = loss
   const homeActual = homeScore > awayScore ? 1 : homeScore < awayScore ? 0 : 0.5;
@@ -45,6 +68,7 @@ export function calculateEloUpdate(
   const awayExpected = expectedScore(awayElo, homeElo);
 
   // Goal difference multiplier (margin of victory bonus)
+  // Max 1.5x for 5+ goal margin
   const goalDiff = Math.abs(homeScore - awayScore);
   const multiplier = goalDiff <= 1 ? 1 : Math.min(1.5, 1 + (goalDiff - 1) * 0.1);
 
@@ -60,9 +84,13 @@ export function calculateEloUpdate(
   };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ELO LOOKUP — Checks overrides first, then static ratings
+// ═══════════════════════════════════════════════════════════════
+
 /**
  * Get current Elo for a team, checking overrides first, then falling back to static ratings.
- * This is the SINGLE ENTRY POINT for all Elo lookups.
+ * This is the SINGLE ENTRY POINT for all Elo lookups in the application.
  */
 export async function getCurrentElo(
   teamName: string,
@@ -83,6 +111,10 @@ export async function getCurrentElo(
   return ELO_RATINGS[teamName] || { elo: 1500, attack: 1.0, defense: 1.0 };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ELO PERSISTENCE
+// ═══════════════════════════════════════════════════════════════
+
 /**
  * Persist Elo overrides for a team after a match.
  * Also adjusts attack/defense based on the match outcome.
@@ -98,8 +130,9 @@ export async function persistEloUpdate(
 
   // Adjust attack/defense ratings based on this match
   // Smooth moving average: 90% old + 10% new observation
-  const newAttack = current.attack * 0.9 + (goalsScored / Math.max(1, goalsScored + goalsConceded)) * 0.1 * 3;
-  const newDefense = current.defense * 0.9 + (goalsConceded / Math.max(1, goalsScored + goalsConceded)) * 0.1 * 3;
+  const totalGoals = goalsScored + goalsConceded;
+  const newAttack = current.attack * 0.9 + (totalGoals > 0 ? (goalsScored / totalGoals) * 3 : 1.5) * 0.1;
+  const newDefense = current.defense * 0.9 + (totalGoals > 0 ? (goalsConceded / totalGoals) * 3 : 1.5) * 0.1;
 
   await db.setKeyValue(`eloOverride:${teamName}`, {
     elo: newElo,
@@ -108,6 +141,10 @@ export async function persistEloUpdate(
     updatedAt: new Date().toISOString(),
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+// PROCESS MATCH — Single entry point for post-match Elo updates
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Process a match result and update both teams' Elo ratings.
@@ -118,7 +155,7 @@ export async function processMatchEloUpdate(
   awayTeam: string,
   homeScore: number,
   awayScore: number,
-  isKnockout: boolean,
+  round: MatchRound,
   db: IDataLayer,
 ): Promise<{
   homeEloBefore: number;
@@ -127,6 +164,7 @@ export async function processMatchEloUpdate(
   awayEloAfter: number;
   homeDelta: number;
   awayDelta: number;
+  kFactor: number;
 }> {
   const homeCurrent = await getCurrentElo(homeTeam, db);
   const awayCurrent = await getCurrentElo(awayTeam, db);
@@ -136,15 +174,16 @@ export async function processMatchEloUpdate(
     awayCurrent.elo,
     homeScore,
     awayScore,
-    isKnockout,
+    round,
   );
 
   // Persist both teams
   await persistEloUpdate(homeTeam, newHomeElo, homeScore, awayScore, db);
   await persistEloUpdate(awayTeam, newAwayElo, awayScore, homeScore, db);
 
-  console.log(`[elo-update] ${homeTeam}: ${homeCurrent.elo} → ${newHomeElo} (${homeDelta >= 0 ? '+' : ''}${homeDelta})`);
-  console.log(`[elo-update] ${awayTeam}: ${awayCurrent.elo} → ${newAwayElo} (${awayDelta >= 0 ? '+' : ''}${awayDelta})`);
+  const kFactor = getKFactor(round);
+  console.log(`[elo-update] ${homeTeam}: ${homeCurrent.elo} → ${newHomeElo} (${homeDelta >= 0 ? '+' : ''}${homeDelta}) K=${kFactor}`);
+  console.log(`[elo-update] ${awayTeam}: ${awayCurrent.elo} → ${newAwayElo} (${awayDelta >= 0 ? '+' : ''}${awayDelta}) K=${kFactor}`);
 
   return {
     homeEloBefore: homeCurrent.elo,
@@ -153,5 +192,6 @@ export async function processMatchEloUpdate(
     awayEloAfter: newAwayElo,
     homeDelta,
     awayDelta,
+    kFactor,
   };
 }

@@ -295,11 +295,71 @@ function getTeamElo(name: string): number {
 
 // ─── Match Simulation ─────────────────────────────────────────────────────
 
+/**
+ * Simulate a penalty shootout with Elo-based advantage.
+ * Base probability is 50/50, adjusted by Elo difference.
+ *
+ * @param homeElo Home team Elo rating
+ * @param awayElo Away team Elo rating
+ * @returns Object with winner and penalty scores
+ */
+function simulatePenalties(
+  homeElo: number,
+  awayElo: number,
+): { winner: string; penHome: number; penAway: number } {
+  // Elo advantage: every 100 points = ~3% bonus
+  const eloDiff = homeElo - awayElo;
+  const homeBonus = Math.max(-0.15, Math.min(0.15, eloDiff / 3300));
+  const homeProb = 0.5 + homeBonus;
+
+  // Simulate 5 penalties each, then sudden death if needed
+  let penHome = 0;
+  let penAway = 0;
+
+  // Regular 5 kicks
+  for (let i = 0; i < 5; i++) {
+    if (Math.random() < (0.75 + homeBonus * 0.5)) penHome++; // ~75% conversion rate
+    if (Math.random() < (0.75 - homeBonus * 0.5)) penAway++;
+  }
+
+  // If still tied, sudden death
+  while (penHome === penAway) {
+    if (Math.random() < (0.75 + homeBonus * 0.5)) penHome++;
+    if (Math.random() < (0.75 - homeBonus * 0.5)) penAway++;
+  }
+
+  return {
+    winner: penHome > penAway ? '' : '', // Will be set by caller
+    penHome,
+    penAway,
+  };
+}
+
+/**
+ * Simulate extra time (30 minutes) with reduced lambda.
+ * Goals in extra time are ~35% of regular time lambda (fatigue + caution).
+ *
+ * @param homeLambda Regular time home expected goals
+ * @param awayLambda Regular time away expected goals
+ * @returns Extra time goals for each team
+ */
+function simulateExtraTime(
+  homeLambda: number,
+  awayLambda: number,
+): { homeGoals: number; awayGoals: number } {
+  const ET_LAMBDA_FACTOR = 0.35; // ~35% of regular time goals
+  return {
+    homeGoals: samplePoisson(homeLambda * ET_LAMBDA_FACTOR),
+    awayGoals: samplePoisson(awayLambda * ET_LAMBDA_FACTOR),
+  };
+}
+
 async function simulateMatch(
   home: string,
   away: string,
   realResult?: RealMatchResult,
-  knockout = false
+  knockout = false,
+  round: string = 'group',
 ): Promise<SimulatedMatch> {
   if (realResult) {
     return {
@@ -343,29 +403,46 @@ async function simulateMatch(
 
   const stats = await calculateStatisticalPrediction(home, away);
 
-  // Stochastic sampling: instead of using MAP (deterministic), sample from
-  // Poisson distribution using predicted lambdas. This makes each simulation
-  // unique and produces meaningful probability distributions.
+  // Stochastic sampling: sample from Poisson distribution using predicted lambdas
   const homeLambda = stats.homeExpectedGoals;
   const awayLambda = stats.awayExpectedGoals;
   const homeScore = samplePoisson(homeLambda);
   const awayScore = samplePoisson(awayLambda);
 
   let winner: string;
+  let extraTime = false;
+  let penalties = false;
+  let penHome = 0;
+  let penAway = 0;
+  let finalHomeScore = homeScore;
+  let finalAwayScore = awayScore;
 
-  if (homeScore > awayScore) winner = home;
-  else if (awayScore > homeScore) winner = away;
-  else {
+  if (homeScore > awayScore) {
+    winner = home;
+  } else if (awayScore > homeScore) {
+    winner = away;
+  } else {
+    // Draw in knockout → Extra time + penalties
     if (knockout) {
-      // In knockout, use probability-weighted random selection
-      const total = stats.homeWin + stats.draw + stats.awayWin;
-      const r = Math.random() * total;
-      if (r < stats.homeWin) winner = home;
-      else if (r < stats.homeWin + stats.draw) {
-        // Draw in knockout: higher probability team advances
-        winner = stats.homeWin > stats.awayWin ? home : away;
-      } else {
+      // Simulate extra time (30 min, reduced lambda)
+      const et = simulateExtraTime(homeLambda, awayLambda);
+      finalHomeScore = homeScore + et.homeGoals;
+      finalAwayScore = awayScore + et.awayGoals;
+      extraTime = true;
+
+      if (finalHomeScore > finalAwayScore) {
+        winner = home;
+      } else if (finalAwayScore > finalHomeScore) {
         winner = away;
+      } else {
+        // Still tied after extra time → Penalties
+        penalties = true;
+        const homeElo = getTeamElo(home);
+        const awayElo = getTeamElo(away);
+        const penResult = simulatePenalties(homeElo, awayElo);
+        penHome = penResult.penHome;
+        penAway = penResult.penAway;
+        winner = penHome > penAway ? home : away;
       }
     } else {
       winner = 'draw';
@@ -380,16 +457,24 @@ async function simulateMatch(
     awayTeam: away,
     homeFlag: getFlag(home),
     awayFlag: getFlag(away),
-    homeScore,
-    awayScore,
+    homeScore: finalHomeScore,
+    awayScore: finalAwayScore,
     winner,
     isPlayed: false,
     homeWinProb: stats.homeWin,
     drawProb: stats.draw,
     awayWinProb: stats.awayWin,
-    prediction: `📊 ${home} (${stats.homeWin}%) vs ${away} (${stats.awayWin}%)`,
+    prediction: penalties
+      ? `🎯 ${home} ${penHome}-${penAway} ${away} (penales)`
+      : extraTime
+        ? `⏱️ ${home} ${finalHomeScore}-${finalAwayScore} ${away} (tiempo extra)`
+        : `📊 ${home} (${stats.homeWin}%) vs ${away} (${stats.awayWin}%)`,
     xGHome: stats.homeExpectedGoals,
     xGAway: stats.awayExpectedGoals,
+    extraTime,
+    penalties,
+    penHome,
+    penAway,
   };
 }
 
@@ -444,7 +529,7 @@ async function simulateGroups(
     for (const match of matchups) {
       const resultKey = `${match.home}_vs_${match.away}`;
       const realResult = resultByTeams.get(resultKey);
-      const simResult = await simulateMatch(match.home, match.away, realResult);
+      const simResult = await simulateMatch(match.home, match.away, realResult, false, 'group');
 
       const homeIdx = teams.indexOf(match.home);
       const awayIdx = teams.indexOf(match.away);
@@ -592,7 +677,7 @@ async function simulateKnockout(
     // Look up real result by team names
     const resultKey = `${homeTeam}_vs_${awayTeam}`;
     const realResult = resultByTeams.get(resultKey);
-    const m = await simulateMatch(homeTeam, awayTeam, realResult, true);
+    const m = await simulateMatch(homeTeam, awayTeam, realResult, true, 'R32');
     m.id = `R32-${i + 1}`;
     m.roundLabel = '1/16 Final';
     roundOf32.push(m);
@@ -619,7 +704,7 @@ async function simulateKnockout(
     const [h, a] = r16def[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true);
+    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'R16');
     m.id = `R16-${i + 1}`;
     m.roundLabel = 'Octavos de Final';
     roundOf16.push(m);
@@ -634,7 +719,7 @@ async function simulateKnockout(
     const [h, a] = qfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true);
+    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'QF');
     m.id = `QF-${i + 1}`;
     m.roundLabel = 'Cuartos de Final';
     quarters.push(m);
@@ -649,7 +734,7 @@ async function simulateKnockout(
     const [h, a] = sfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true);
+    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'SF');
     m.id = `SF-${i + 1}`;
     m.roundLabel = 'Semifinales';
     semis.push(m);
@@ -661,14 +746,14 @@ async function simulateKnockout(
   const losers = semis.map((m) => m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
   const tpHome = losers[0] || 'TBD';
   const tpAway = losers[1] || 'TBD';
-  const thirdPlace = await simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true);
+  const thirdPlace = await simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP');
   thirdPlace.id = 'TP-1';
   thirdPlace.roundLabel = 'Tercer Puesto';
 
   // Final
   const finHome = semis[0]?.winner || 'TBD';
   const finAway = semis[1]?.winner || 'TBD';
-  const final = await simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true);
+  const final = await simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F');
   final.id = 'FINAL';
   final.roundLabel = 'La Gran Final';
 

@@ -25,7 +25,7 @@ import { getKeyFactors } from '@/lib/predictor-engine';
 import { batchProcess } from '@/lib/utils';
 import { validateCronAuth } from '@/lib/cron-auth';
 import { saveBracketAndPredictions } from '@/lib/tournament-results';
-import { processMatchEloUpdate } from '@/lib/elo-update';
+import { processMatchEloUpdate, type MatchRound } from '@/lib/elo-update';
 
 
 export async function POST(request: NextRequest) {
@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Update Elo ratings (persistent — affects all future predictions)
     const match = await db.getMatch(matchId);
-    const isKnockout = match?.round !== 'group';
-    const eloUpdate = await processMatchEloUpdate(homeTeam, awayTeam, homeScore, awayScore, isKnockout, db);
+    const matchRound = (match?.round || 'group') as MatchRound;
+    const eloUpdate = await processMatchEloUpdate(homeTeam, awayTeam, homeScore, awayScore, matchRound, db);
 
     // Step 3: Update prediction-store (Bayesian engine)
     addMatchResult({
