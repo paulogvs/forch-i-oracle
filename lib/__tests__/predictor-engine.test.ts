@@ -3,8 +3,8 @@ import { calculateStatisticalPrediction, getKeyFactors } from '../predictor-engi
 
 describe('predictor-engine', () => {
   describe('calculateStatisticalPrediction', () => {
-    it('should return valid prediction for elite vs mid-tier team', async () => {
-      const result = await calculateStatisticalPrediction('Francia', 'México');
+    it('should return valid prediction for elite vs mid-tier team', () => {
+      const result = calculateStatisticalPrediction('Francia', 'México');
 
       // Francia should be heavily favored
       expect(result.homeWin).toBeGreaterThan(result.awayWin);
@@ -19,8 +19,8 @@ describe('predictor-engine', () => {
       expect(result.awayExpectedGoals).toBeGreaterThan(0.3);
     });
 
-    it('should return close prediction for evenly matched teams', async () => {
-      const result = await calculateStatisticalPrediction('Argentina', 'Francia');
+    it('should return close prediction for evenly matched teams', () => {
+      const result = calculateStatisticalPrediction('Argentina', 'Francia');
 
       // Should be relatively close (within 25% — home advantage matters)
       const diff = Math.abs(result.homeWin - result.awayWin);
@@ -30,16 +30,16 @@ describe('predictor-engine', () => {
       expect(result.homeWin + result.draw + result.awayWin).toBe(100);
     });
 
-    it('should apply home advantage correctly', async () => {
-      const homeResult = await calculateStatisticalPrediction('México', 'Japón');
-      const awayResult = await calculateStatisticalPrediction('Japón', 'México');
+    it('should apply home advantage correctly', () => {
+      const homeResult = calculateStatisticalPrediction('México', 'Japón');
+      const awayResult = calculateStatisticalPrediction('Japón', 'México');
 
       // When Mexico is home, they should have higher win probability than when away
       expect(homeResult.homeWin).toBeGreaterThan(awayResult.awayWin);
     });
 
-    it('should produce realistic score predictions', async () => {
-      const result = await calculateStatisticalPrediction('Brasil', 'Haití');
+    it('should produce realistic score predictions', () => {
+      const result = calculateStatisticalPrediction('Brasil', 'Haití');
 
       // Score should be realistic (not 6-6)
       expect(result.predictedScoreHome).toBeLessThanOrEqual(4);
@@ -47,8 +47,8 @@ describe('predictor-engine', () => {
       expect(result.predictedScoreHome).toBeGreaterThan(result.predictedScoreAway);
     });
 
-    it('should return strength ratings in valid range', async () => {
-      const result = await calculateStatisticalPrediction('España', 'Argentina');
+    it('should return strength ratings in valid range', () => {
+      const result = calculateStatisticalPrediction('España', 'Argentina');
 
       expect(result.homeAttack).toBeGreaterThanOrEqual(15);
       expect(result.homeAttack).toBeLessThanOrEqual(99);
@@ -58,18 +58,18 @@ describe('predictor-engine', () => {
       expect(result.awayMidfield).toBeGreaterThanOrEqual(15);
     });
 
-    it('should determine confidence based on probability spread', async () => {
+    it('should determine confidence based on probability spread', () => {
       // Big mismatch → alta confidence
-      const mismatch = await calculateStatisticalPrediction('Francia', 'Haití');
+      const mismatch = calculateStatisticalPrediction('Francia', 'Haití');
       expect(mismatch.confidence).toBe('alta');
 
       // Close match → media or baja
-      const close = await calculateStatisticalPrediction('Portugal', 'Países Bajos');
+      const close = calculateStatisticalPrediction('Portugal', 'Países Bajos');
       expect(['media', 'baja'].includes(close.confidence)).toBe(true);
     });
 
-    it('should return top 5 most likely scores', async () => {
-      const result = await calculateStatisticalPrediction('Inglaterra', 'Croacia');
+    it('should return top 5 most likely scores', () => {
+      const result = calculateStatisticalPrediction('Inglaterra', 'Croacia');
 
       expect(result.topScores).toHaveLength(5);
       // Should be sorted by probability descending
@@ -80,8 +80,8 @@ describe('predictor-engine', () => {
       }
     });
 
-    it('should handle unknown teams with default ratings', async () => {
-      const result = await calculateStatisticalPrediction('Equipo Desconocido', 'México');
+    it('should handle unknown teams with default ratings', () => {
+      const result = calculateStatisticalPrediction('Equipo Desconocido', 'México');
 
       // Known team should be favored
       expect(result.awayWin).toBeGreaterThan(result.homeWin);
@@ -90,8 +90,8 @@ describe('predictor-engine', () => {
   });
 
   describe('getKeyFactors', () => {
-    it('should return 4 key factors', async () => {
-      const stats = await calculateStatisticalPrediction('Brasil', 'Argentina');
+    it('should return 4 key factors', () => {
+      const stats = calculateStatisticalPrediction('Brasil', 'Argentina');
       const factors = getKeyFactors(stats, 'Brasil', 'Argentina');
 
       expect(factors.length).toBeGreaterThanOrEqual(3);

@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         console.log(`[cron:recalculate] Predicting: ${match.homeTeamId} vs ${match.awayTeamId}`);
 
         // Use ensemble engine (4-model blend for maximum accuracy)
-        const ensemble = await calculateEnsemblePrediction(match.homeTeamId, match.awayTeamId);
+        const ensemble = calculateEnsemblePrediction(match.homeTeamId, match.awayTeamId);
 
         // Build key factors
         const factors = ensemble.keyFactors;

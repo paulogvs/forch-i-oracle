@@ -7,9 +7,8 @@ import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { ALL_MATCHES } from '@/lib/matches';
 import { getTeamByName } from '@/lib/teams';
-import { useFixture } from '@/lib/swr/hooks';
-import { useLiveScores } from '@/lib/swr/hooks';
-import { useSimulation } from '@/lib/swr/hooks';
+import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
+import { useTournamentStore } from '@/lib/store/tournament-store';
 import { groupResultsByDate, getUpcomingMatches, getFlag, getRoundLabel } from '@/lib/dashboard-utils';
 import type { MatchResultDetail } from '@/lib/dashboard-utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -45,27 +44,31 @@ interface SimResponse {
 // ═══════════════════════════════════════════════════════════════
 
 export default function DashboardPage() {
+  const { fixture: cachedFixture, bracket: cachedBracket, top8: cachedTop8, loading: storeLoading } = useTournamentStore();
   const { data: fixtureData, isLoading: fixtureLoading } = useFixture<FixtureResponse>();
   const { data: liveData, isLoading: liveLoading } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading } = useSimulation<SimResponse>();
 
-  const loading = fixtureLoading || liveLoading || simLoading;
+  const loading = fixtureLoading && liveLoading && simLoading && storeLoading;
 
   // ─── Predictions Map ──────────────────────────────────────
   const predictions = useMemo(() => {
     const predMap = new Map<string, FixtureMatch>();
-    if (fixtureData?.success && fixtureData.fixture) {
-      for (const m of fixtureData.fixture) {
+    const sourceFixture = fixtureData?.fixture || cachedFixture;
+    if (sourceFixture) {
+      for (const m of sourceFixture) {
         predMap.set(m.id, {
           id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, round: m.round, group: m.group || '',
-          predictedScore: m.predictedScore ?? null,
-          homeWinPct: m.homeWinPct ?? 0, drawPct: m.drawPct ?? 0, awayWinPct: m.awayWinPct ?? 0,
+          predictedScore: (m.predictedScore || (m as any).predictedScore) ?? null,
+          homeWinPct: (m.homeWinPct || (m as any).homeWinPct) ?? 0,
+          drawPct: (m.drawPct || (m as any).drawPct) ?? 0,
+          awayWinPct: (m.awayWinPct || (m as any).awayWinPct) ?? 0,
           confidence: m.confidence ?? null,
         });
       }
     }
     return predMap;
-  }, [fixtureData]);
+  }, [fixtureData, cachedFixture]);
 
   // ─── Finished & Live ──────────────────────────────────────
   const finishedMatches = useMemo(() => {
@@ -86,13 +89,28 @@ export default function DashboardPage() {
     return resultMap;
   }, [simData]);
 
-  // ─── Champion Probabilities — Instant Elo-based (no async simulation needed) ──
+  // ─── Champion Probabilities — Monte Carlo Consensus (Single Source of Truth) ──
   const championProbs = useMemo(() => {
-    // Use server data if available (from cron Monte Carlo simulation)
-    if (simData?.success && simData.championProbs && simData.championProbs.length > 0) {
-      return simData.championProbs.slice(0, 8);
+    // Priority: use multi-simulation consensus data (5,000 sims)
+    const sourceProbs = simData?.championProbs || (simData as any)?.championProbs || cachedTop8;
+    if (sourceProbs && sourceProbs.length > 0) {
+      return sourceProbs.slice(0, 8).map((p: any) => ({
+        teamId: p.teamId || p.team,
+        championProb: p.championProb || p.pct,
+        simulationsCount: p.simulationsCount || p.wins,
+        totalSimulations: p.totalSimulations || 5000,
+      }));
     }
-    // Fallback: deterministic Elo-based ranking (instant, <1ms)
+    // Fallback: top 8 from top8 array (also from simulation)
+    if (simData?.top8 && simData.top8.length > 0) {
+      return simData.top8.slice(0, 8).map(c => ({
+        teamId: c.team,
+        championProb: c.pct,
+        simulationsCount: c.wins,
+        totalSimulations: 5000,
+      }));
+    }
+    // Deep Fallback: deterministic Elo-based ranking (instant, <1ms)
     const eloProbs = computeChampionProbsFromElo();
     return eloProbs.slice(0, 8).map(c => ({
       teamId: c.teamName,
@@ -100,20 +118,21 @@ export default function DashboardPage() {
       simulationsCount: Math.round(c.championProb),
       totalSimulations: 100,
     }));
-  }, [simData]);
+  }, [simData, cachedTop8]);
 
   // ─── Projected Champion from Bracket (same source as simulation) ──
   const projectedChampion = useMemo(() => {
-    if (simData?.success && simData.bracket?.champion) {
+    const sourceBracket = simData?.bracket || cachedBracket;
+    if (sourceBracket?.champion) {
       return {
-        name: simData.bracket.champion,
-        runnerUp: simData.bracket.runnerUp,
-        thirdPlace: simData.bracket.thirdPlaceTeam,
-        flag: simData.bracket.championFlag,
+        name: sourceBracket.champion,
+        runnerUp: sourceBracket.runnerUp,
+        thirdPlace: sourceBracket.thirdPlaceTeam,
+        flag: sourceBracket.championFlag,
       };
     }
     return null;
-  }, [simData]);
+  }, [simData, cachedBracket]);
 
   // ─── Compute Stats ────────────────────────────────────────
   const stats = (() => {
@@ -557,12 +576,12 @@ function ChampionWidget({ probs, projectedChampion, getFlag }: {
         {projectedChampion && projectedChampion.runnerUp && (
           <div className="mt-2 flex items-center justify-center gap-3 text-[11px]">
             {projectedChampion.thirdPlace && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CD7F32]/20 text-[#CD7F32] font-semibold border border-[#CD7F32]/30">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-overlay text-fg-secondary font-semibold border border-border-subtle">
                 <span>{getFlag(projectedChampion.thirdPlace)}</span>
                 <span>🥉 {projectedChampion.thirdPlace}</span>
               </span>
             )}
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CBD5E1]/10 text-[#CBD5E1] font-semibold border border-[#CBD5E1]/20">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-overlay text-fg-secondary font-semibold border border-border-subtle">
               <span>{getFlag(projectedChampion.runnerUp)}</span>
               <span>🥈 {projectedChampion.runnerUp}</span>
             </span>
@@ -585,10 +604,10 @@ function ChampionWidget({ probs, projectedChampion, getFlag }: {
           >
             <span className={cn(
               "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0",
-              i === 0 ? "bg-[#E2B340] text-[#1a1000] font-bold" :
-              i === 1 ? "bg-[#B0B8C4] text-[#0a0a0a] font-bold" :
-              i === 2 ? "bg-[#CD7F32] text-white font-bold" :
-              "bg-white/[0.06] text-fg-disabled"
+              i === 0 ? "bg-[var(--medal-gold)] text-canvas font-bold" :
+              i === 1 ? "bg-[var(--medal-silver)] text-canvas font-bold" :
+              i === 2 ? "bg-[var(--medal-bronze)] text-canvas font-bold" :
+              "bg-raised text-fg-disabled"
             )}>
               {i + 1}
             </span>
@@ -602,10 +621,10 @@ function ChampionWidget({ probs, projectedChampion, getFlag }: {
                 transition={{ duration: 0.7, delay: i * 0.05, ease: 'easeOut' }}
                 style={{
                   background:
-                    i === 0 ? 'linear-gradient(to right, #E2B340, #F5D06A)' :
-                    i === 1 ? 'linear-gradient(to right, #8C95A0, #B0B8C4)' :
-                    i === 2 ? 'linear-gradient(to right, #8B5C1E, #CD7F32)' :
-                    'linear-gradient(to right, var(--text-disabled), var(--text-tertiary))',
+                    i === 0 ? 'var(--medal-gold)' :
+                    i === 1 ? 'var(--medal-silver)' :
+                    i === 2 ? 'var(--medal-bronze)' :
+                    'var(--text-disabled)',
                 }}
               />
             </div>

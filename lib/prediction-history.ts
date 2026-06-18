@@ -48,7 +48,7 @@ export async function generateInitialPredictions(): Promise<PredictionSnapshot[]
 
   for (const match of groupMatches) {
     try {
-      const pred = await calculateStatisticalPrediction(match.homeTeamId, match.awayTeamId);
+      const pred = calculateStatisticalPrediction(match.homeTeamId, match.awayTeamId);
       const snapshot: PredictionSnapshot = {
         matchId: match.id,
         homeTeam: match.homeTeamId,

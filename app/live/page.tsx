@@ -6,6 +6,7 @@ import { getTeamByName } from '@/lib/teams';
 import { cn } from '@/lib/utils';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
+import { useTournamentStore } from '@/lib/store/tournament-store';
 import { Radio, BarChart3, Activity, CheckCircle2, Clock, Zap } from 'lucide-react';
 
 type SubPanel = 'ahora' | 'resultados' | 'pendientes';
@@ -25,11 +26,12 @@ interface SimResponse { success: boolean; results: { matchId: string; homeScore:
 export default function LivePage() {
   const [subPanel, setSubPanel] = useState<SubPanel>('resultados');
 
+  const { standings: cachedStandings, fixture: cachedFixture, loading: storeLoading } = useTournamentStore();
   const { data: fixtureData, isLoading: fixtureLoading, error: fixtureError } = useFixture<FixtureResponse>();
   const { data: liveScoresData, isLoading: liveLoading, error: liveError } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
 
-  const loading = fixtureLoading && liveLoading && simLoading; // Only show global loading when ALL are loading
+  const loading = fixtureLoading && liveLoading && simLoading && storeLoading; // Only show global loading when ALL are loading
   const allFailed = fixtureError && liveError && simError; // Only show error when ALL fail
 
   const matches = useMemo(() => {
@@ -81,6 +83,8 @@ export default function LivePage() {
 
   // Compute standings from live-scores data (real-time, no cron dependency)
   const liveStandings = useMemo(() => {
+    if (cachedStandings && Object.keys(cachedStandings).length > 0) return cachedStandings;
+
     const standings: Record<string, any[]> = {};
     for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
       const teams = WORLD_CUP_TEAMS.filter(t => t.group === letter);
@@ -112,7 +116,7 @@ export default function LivePage() {
       standings[group].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
     }
     return standings;
-  }, [liveScoresData]);
+  }, [liveScoresData, cachedStandings]);
 
   const liveNow = matches.filter(m => m.isLive);
   const finished = matches.filter(m => m.isPlayed && !m.isLive);

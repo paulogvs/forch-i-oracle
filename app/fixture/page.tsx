@@ -11,6 +11,7 @@ import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot }
 import { motion, AnimatePresence } from 'motion/react';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
+import { useTournamentStore } from '@/lib/store/tournament-store';
 import { MatchCardSkeleton, StatCardSkeleton, GroupTableSkeleton } from '@/components/Skeleton';
 import { Trophy, BarChart3, Target, Zap, ChevronRight } from 'lucide-react';
 
@@ -39,20 +40,21 @@ export default function FixturePage() {
   const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null);
   const [tzOffset, setTzOffset] = useState<number>(-4);
 
+  const { fixture: cachedFixture, bracket: cachedBracket, standings: cachedStandings, top8: cachedTop8, loading: storeLoading } = useTournamentStore();
   const { data: fixtureData, isLoading: fixtureLoading, error: fixtureError } = useFixture<FixtureResponse>();
   const { data: liveData } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
 
-  const loading = fixtureLoading && simLoading; // Only show global loading when ALL are loading
-  const allFailed = fixtureError && simError; // Only show error when ALL fail
+  const loading = fixtureLoading && simLoading && storeLoading; // Only show global loading when ALL are loading
+  const allFailed = fixtureError && simError && !cachedFixture; // Only show error when ALL fail
 
   useEffect(() => { setTzOffset(getUserTimezoneOffset()); }, []);
 
-  const top8 = useMemo(() => simData?.success ? simData.top8 || [] : [], [simData]);
-  const bracket = useMemo(() => simData?.success ? simData.bracket : null, [simData]);
+  const top8 = useMemo(() => simData?.success ? simData.top8 || [] : cachedTop8 || [], [simData, cachedTop8]);
+  const bracket = useMemo(() => simData?.success ? simData.bracket : cachedBracket, [simData, cachedBracket]);
 
   const fixtures = useMemo(() => {
-    if (!fixtureData?.success) return [];
+    if (!fixtureData?.success) return cachedFixture || [];
     const base = (fixtureData.fixture || []).map((m: any) => ({
       id: m.id, group: m.group || 'KO', date: m.date, time: m.time || '',
       homeTeam: m.homeTeam, awayTeam: m.awayTeam, venue: m.venue || '', city: m.city || '',
@@ -98,7 +100,7 @@ export default function FixturePage() {
     }
 
     return base;
-  }, [fixtureData, bracket]);
+  }, [fixtureData, bracket, cachedFixture]);
 
   const realResults = useMemo(() => {
     const resultsMap = new Map<string, RealResult>();
@@ -114,6 +116,8 @@ export default function FixturePage() {
 
   // Compute standings from live-scores data (real-time, no cron dependency)
   const liveStandings = useMemo(() => {
+    if (cachedStandings && Object.keys(cachedStandings).length > 0) return cachedStandings;
+
     const standings: Record<string, any[]> = {};
     // Initialize all groups
     for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
@@ -148,7 +152,7 @@ export default function FixturePage() {
       standings[group].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
     }
     return standings;
-  }, [liveData]);
+  }, [liveData, cachedStandings]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => { if (fixtureData || simData) setLastUpdated(new Date()); }, [fixtureData, simData]);
@@ -300,13 +304,13 @@ export default function FixturePage() {
                 {(bracket.runnerUp || bracket.thirdPlaceTeam) && (
                   <div className="mt-2 flex items-center justify-center gap-3 text-[11px] flex-wrap">
                     {bracket.runnerUp && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CBD5E1]/10 text-[#CBD5E1] font-semibold border border-[#CBD5E1]/20">
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-overlay text-fg-secondary font-semibold border border-border-subtle">
                         <span>{getFlag(bracket.runnerUp)}</span>
                         <span>🥈 {bracket.runnerUp}</span>
                       </span>
                     )}
                     {bracket.thirdPlaceTeam && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CD7F32]/20 text-[#CD7F32] font-semibold border border-[#CD7F32]/30">
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-overlay text-fg-secondary font-semibold border border-border-subtle">
                         <span>{getFlag(bracket.thirdPlaceTeam)}</span>
                         <span>🥉 {bracket.thirdPlaceTeam}</span>
                       </span>

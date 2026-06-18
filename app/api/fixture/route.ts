@@ -101,6 +101,11 @@ export async function POST(request: NextRequest) {
     // PHASE 1: Predict group stage
     // ═══════════════════════════════════════════════════
 
+    // Load existing predictions from DB in one go to avoid N+1
+    const allMatchIds = ALL_MATCHES.map(m => m.id);
+    const dbPredictions = await db.getPredictionsForMatches(allMatchIds);
+    const dbPredictionsMap = new Map(dbPredictions.map(p => [p.matchId, p]));
+
     for (const group of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
       const groupMatches = MATCHES_BY_GROUP[group] || [];
       const standings: Record<string, { pts: number; gf: number; ga: number; gd: number; played: number }> = {};
@@ -114,10 +119,24 @@ export async function POST(request: NextRequest) {
       // Predict each match
       for (const match of groupMatches) {
         let prediction;
+        const existingPred = dbPredictionsMap.get(match.id);
 
-        if (useEnhancedFlag) {
+        // Optimization: if we already have a prediction in DB and it's fresh (same resultsHash), use it
+        if (existingPred && !realResults.length) {
+          prediction = {
+            homeWin: existingPred.homeWin,
+            draw: existingPred.draw,
+            awayWin: existingPred.awayWin,
+            homeGoals: parseInt(existingPred.mostLikelyScore?.split('-')[0] || '0'),
+            awayGoals: parseInt(existingPred.mostLikelyScore?.split('-')[1] || '0'),
+            confidence: existingPred.confidence,
+            homeXG: existingPred.expectedGoalsHome,
+            awayXG: existingPred.expectedGoalsAway,
+            dataQuality: existingPred.dataQualityScore,
+          };
+        } else if (useEnhancedFlag) {
           // Use ensemble engine (4-model blend for maximum accuracy)
-          const ensemble = await calculateEnsemblePrediction(match.homeTeam, match.awayTeam);
+          const ensemble = calculateEnsemblePrediction(match.homeTeam, match.awayTeam);
           prediction = {
             homeWin: ensemble.homeWin,
             draw: ensemble.draw,
@@ -178,7 +197,7 @@ export async function POST(request: NextRequest) {
             awayXG: dyn.awayExpectedGoals,
           };
         } else {
-          const stat = await calculateStatisticalPrediction(match.homeTeam, match.awayTeam);
+          const stat = calculateStatisticalPrediction(match.homeTeam, match.awayTeam);
           prediction = {
             homeWin: stat.homeWin,
             draw: stat.draw,
@@ -459,13 +478,13 @@ function resolveTeamSlot(
   return 'TBD';
 }
 
-async function predictSingleMatch(
+function predictSingleMatch(
   homeTeam: string,
   awayTeam: string,
   matchId: string,
   _getTeamFormCached: (name: string) => Promise<any>,
   useEnhanced: boolean
-): Promise<any> {
+): any {
   if (homeTeam === 'TBD' || awayTeam === 'TBD') {
     return {
       id: matchId,
@@ -484,7 +503,7 @@ async function predictSingleMatch(
 
   if (useEnhanced) {
     // Use ensemble engine for knockout matches too
-    const ensemble = await calculateEnsemblePrediction(homeTeam, awayTeam);
+    const ensemble = calculateEnsemblePrediction(homeTeam, awayTeam);
     prediction = {
       homeWin: ensemble.homeWin,
       draw: ensemble.draw,
@@ -499,7 +518,7 @@ async function predictSingleMatch(
       confidenceScore: ensemble.confidenceScore,
     };
   } else {
-    const stat = await calculateStatisticalPrediction(homeTeam, awayTeam);
+    const stat = calculateStatisticalPrediction(homeTeam, awayTeam);
     prediction = {
       homeWin: stat.homeWin,
       draw: stat.draw,
@@ -527,11 +546,11 @@ async function predictSingleMatch(
   };
 }
 
-async function simulateKnockoutPhase(
+function simulateKnockoutPhase(
   qualified: QualifiedTeams,
   getTeamFormCached: (name: string) => Promise<any>,
   useEnhanced: boolean
-): Promise<any[]> {
+): any[] {
   const results: any[] = [];
   const winners = new Map<string, string>();
   const losers = new Map<string, string>();
@@ -599,7 +618,7 @@ async function simulateKnockoutPhase(
       away = resolveTeamSlot(slot.away, qualified, winners, losers);
     }
 
-    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    const result = predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
     results.push(result);
     if (result.winner && result.winner !== 'TBD') {
       winners.set(`W-${slot.id}`, result.winner);
@@ -624,7 +643,7 @@ async function simulateKnockoutPhase(
   for (const slot of r16Slots) {
     const home = resolveTeamSlot(slot.home, qualified, winners, losers);
     const away = resolveTeamSlot(slot.away, qualified, winners, losers);
-    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    const result = predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
     results.push(result);
     if (result.winner && result.winner !== 'TBD') {
       winners.set(`W-${slot.id}`, result.winner);
@@ -645,7 +664,7 @@ async function simulateKnockoutPhase(
   for (const slot of qfSlots) {
     const home = resolveTeamSlot(slot.home, qualified, winners, losers);
     const away = resolveTeamSlot(slot.away, qualified, winners, losers);
-    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    const result = predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
     results.push(result);
     if (result.winner && result.winner !== 'TBD') {
       winners.set(`W-${slot.id}`, result.winner);
@@ -664,7 +683,7 @@ async function simulateKnockoutPhase(
   for (const slot of sfSlots) {
     const home = resolveTeamSlot(slot.home, qualified, winners, losers);
     const away = resolveTeamSlot(slot.away, qualified, winners, losers);
-    const result = await predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
+    const result = predictSingleMatch(home, away, slot.id, getTeamFormCached, useEnhanced);
     results.push(result);
     if (result.winner && result.winner !== 'TBD') {
       winners.set(`W-${slot.id}`, result.winner);
@@ -681,7 +700,7 @@ async function simulateKnockoutPhase(
   const sf2Loser = losers.get('L-SF-2');
 
   if (sf1Loser && sf2Loser && sf1Loser !== 'TBD' && sf2Loser !== 'TBD') {
-    const thirdResult = await predictSingleMatch(sf1Loser, sf2Loser, '3rd', getTeamFormCached, useEnhanced);
+    const thirdResult = predictSingleMatch(sf1Loser, sf2Loser, '3rd', getTeamFormCached, useEnhanced);
     results.push(thirdResult);
   }
 
@@ -693,7 +712,7 @@ async function simulateKnockoutPhase(
   const sf2Winner = winners.get('W-SF-2');
 
   if (sf1Winner && sf2Winner && sf1Winner !== 'TBD' && sf2Winner !== 'TBD') {
-    const finalResult = await predictSingleMatch(sf1Winner, sf2Winner, 'Final', getTeamFormCached, useEnhanced);
+    const finalResult = predictSingleMatch(sf1Winner, sf2Winner, 'Final', getTeamFormCached, useEnhanced);
     results.push(finalResult);
   }
 
