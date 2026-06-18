@@ -20,15 +20,15 @@
  * and ρ (rho) is the dependency parameter.
  */
 
-/** Dependency parameter. Typical values: -0.08 to -0.13 for international football. */
-export const RHO = -0.10;
+/** Dependency parameter. Reduced from -0.10 to -0.07 to allow more varied scores. */
+export const RHO = -0.07;
 
 /**
  * Phase-dependent RHO: knockout matches have lower draw probability
  * (more aggressive play), so rho is weaker (less draw correction).
  */
 export function getPhaseRho(phase: 'group' | 'knockout'): number {
-  return phase === 'knockout' ? -0.06 : RHO;
+  return phase === 'knockout' ? -0.04 : RHO;
 }
 
 /**

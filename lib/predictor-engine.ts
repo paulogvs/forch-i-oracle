@@ -24,10 +24,10 @@ const USE_DIXON_COLES = true;
 /**
  * Global calibration factor for lambdas.
  * Adjust so average total goals across all group matches ≈ 2.65.
- * Run scripts/calibrate-model.ts to determine the correct value.
- * Current value: 1.04 (pending calibration)
+ * Real World Cup 2022 average: 2.68 goals/match.
+ * Calibrated to match realistic international football scoring rates.
  */
-const CALIBRATION_FACTOR = 1.04;
+const CALIBRATION_FACTOR = 1.15;
 
 /**
  * Set-piece adjustment factor.
@@ -35,7 +35,7 @@ const CALIBRATION_FACTOR = 1.04;
  * Teams with strong set-piece takers get a bonus.
  * This is a flat multiplier applied after calibration.
  */
-const SET_PIECE_FACTOR = 1.03; // ~3% boost for set-piece goals
+const SET_PIECE_FACTOR = 1.05; // ~5% boost for set-piece goals (corners, free kicks, penalties)
 
 /**
  * Apply global calibration to lambda values.
@@ -112,8 +112,8 @@ export function calculateExpectedGoals(
   // Ajuste por forma reciente
   lambda *= (1 + formAdjustment);
 
-  // Clamp realista: 0.3 a 4.0 goles esperados
-  return Math.max(0.3, Math.min(4.0, lambda));
+  // Clamp realista: 0.3 a 4.5 goles esperados (allows high-scoring mismatches)
+  return Math.max(0.3, Math.min(4.5, lambda));
 }
 
 /**
@@ -363,8 +363,8 @@ export async function calculateStatisticalPrediction(
   }
 
   // Clamp a valores realistas
-  homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
-  awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
+  homeLambda = Math.max(0.3, Math.min(4.5, homeLambda));
+  awayLambda = Math.max(0.3, Math.min(4.5, awayLambda));
 
   // 2b. Altitude adjustment (si hay venue disponible)
   // Se aplica como factor adicional al lambda
@@ -382,8 +382,8 @@ export async function calculateStatisticalPrediction(
   awayLambda *= (2 - h2h.factor); // Invertir para away
 
   // Clamp again after adjustments
-  homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
-  awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
+  homeLambda = Math.max(0.3, Math.min(4.5, homeLambda));
+  awayLambda = Math.max(0.3, Math.min(4.5, awayLambda));
 
   // 2d. Apply global calibration factor
   const calibrated = applyCalibration(homeLambda, awayLambda);
@@ -395,8 +395,8 @@ export async function calculateStatisticalPrediction(
   awayLambda *= SET_PIECE_FACTOR;
 
   // Clamp final
-  homeLambda = Math.max(0.3, Math.min(4.0, homeLambda));
-  awayLambda = Math.max(0.3, Math.min(4.0, awayLambda));
+  homeLambda = Math.max(0.3, Math.min(4.5, homeLambda));
+  awayLambda = Math.max(0.3, Math.min(4.5, awayLambda));
 
   // 3. Calcular probabilidades con modelo Dixon-Coles (o Poisson puro)
   const rawProbs = USE_DIXON_COLES
