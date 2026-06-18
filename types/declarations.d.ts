@@ -13,6 +13,7 @@ declare module 'lucide-react' {
   export default icons;
   export const Trophy: Icon;
   export const Target: Icon;
+  export const Check: Icon;
   export const Zap: Icon;
   export const CheckCircle2: Icon;
   export const ArrowRight: Icon;
