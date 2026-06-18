@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enhanced prediction (uses base stats + adjustments)
-    const enhanced = await calculateEnhancedPrediction(
+    const enhanced = calculateEnhancedPrediction(
       homeTeam, awayTeam,
       homeContext, awayContext
     );

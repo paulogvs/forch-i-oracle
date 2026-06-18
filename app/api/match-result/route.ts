@@ -236,7 +236,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       };
 
-      const enhanced = await calculateEnhancedPrediction(match.homeTeamId, match.awayTeamId, homeCtx, awayCtx);
+      const enhanced = calculateEnhancedPrediction(match.homeTeamId, match.awayTeamId, homeCtx, awayCtx);
       const homeFormArray = mHomeForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
       const awayFormArray = mAwayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined;
       const factors = getKeyFactors(enhanced, match.homeTeamId, match.awayTeamId, homeFormArray, awayFormArray);

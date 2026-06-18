@@ -424,7 +424,7 @@ export interface StatisticalPrediction {
  * @param homeDaysRest Días de descanso del local (opcional, para fatiga)
  * @param awayDaysRest Días de descanso del visitante (opcional, para fatiga)
  */
-export async function calculateStatisticalPrediction(
+export function calculateStatisticalPrediction(
   homeTeam: string,
   awayTeam: string,
   homeForm?: ('W' | 'D' | 'L')[],
@@ -435,7 +435,7 @@ export async function calculateStatisticalPrediction(
   awayRealStats?: RealTeamStats,
   homeDaysRest?: number,
   awayDaysRest?: number,
-): Promise<StatisticalPrediction> {
+): StatisticalPrediction {
   // 1. Calcular ajustes por forma
   const homeFormAdj = formToAdjustment(homeForm || []);
   const awayFormAdj = formToAdjustment(awayForm || []);

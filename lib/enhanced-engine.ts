@@ -550,14 +550,14 @@ export interface EnhancedPrediction extends StatisticalPrediction {
  * Predicción mejorada que integra todos los factores del nuevo motor.
  * Usa calculateStatisticalPrediction como base y aplica ajustes.
  */
-export async function calculateEnhancedPrediction(
+export function calculateEnhancedPrediction(
   homeTeam: string,
   awayTeam: string,
   homeContext?: EnhancedPredictionContext,
   awayContext?: EnhancedPredictionContext
-): Promise<EnhancedPrediction> {
+): EnhancedPrediction {
   // 1. Predicción base del motor existente
-  const base = await calculateStatisticalPrediction(homeTeam, awayTeam);
+  const base = calculateStatisticalPrediction(homeTeam, awayTeam);
 
   // 2. Calcular ajustes compuestos
   const homeAdjustment = homeContext ? calculateCompositeAdjustment(homeContext) : 1.0;

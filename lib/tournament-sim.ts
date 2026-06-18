@@ -119,15 +119,22 @@ function sortGroupWithFIFATiebreakers(
   ): GroupTeamStanding[] {
     if (candidates.length <= 1) return [...candidates];
 
-    // Step a: points
-    candidates.sort((a, b) => b.points - a.points);
+    // FIFA Order: a) Points -> b) GD -> c) GS
+    candidates.sort((a, b) =>
+      b.points - a.points ||
+      b.goalDiff - a.goalDiff ||
+      b.goalsFor - a.goalsFor
+    );
 
     const result: GroupTeamStanding[] = [];
     let i = 0;
 
     while (i < candidates.length) {
       let j = i + 1;
-      while (j < candidates.length && candidates[j].points === candidates[i].points) j++;
+      while (j < candidates.length &&
+             candidates[j].points === candidates[i].points &&
+             candidates[j].goalDiff === candidates[i].goalDiff &&
+             candidates[j].goalsFor === candidates[i].goalsFor) j++;
 
       if (j - i === 1) {
         result.push(candidates[i]);
@@ -354,13 +361,13 @@ function simulateExtraTime(
   };
 }
 
-async function simulateMatch(
+function simulateMatch(
   home: string,
   away: string,
   realResult?: RealMatchResult,
   knockout = false,
   round: string = 'group',
-): Promise<SimulatedMatch> {
+): SimulatedMatch {
   if (realResult) {
     return {
       id: realResult.matchId,
@@ -401,7 +408,7 @@ async function simulateMatch(
     };
   }
 
-  const stats = await calculateStatisticalPrediction(home, away);
+  const stats = calculateStatisticalPrediction(home, away);
 
   // Stochastic sampling: sample from Poisson distribution using predicted lambdas
   const homeLambda = stats.homeExpectedGoals;
@@ -490,24 +497,13 @@ function getGroups(): Record<string, string[]> {
   return map;
 }
 
-async function simulateGroups(
-  realResults: Map<string, RealMatchResult>,
+function simulateGroups(
+  groups: Record<string, string[]>,
+  resultByTeams: Map<string, RealMatchResult>,
   onProgress?: (msg: string) => void
-): Promise<{ standings: Map<string, GroupTeamStanding[]>; matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] }> {
-  const groups = getGroups();
+): { standings: Map<string, GroupTeamStanding[]>; matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] } {
   const standings = new Map<string, GroupTeamStanding[]>();
   const allMatchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] = [];
-
-  // Build a lookup by team names: "Argentina_vs_Canada" -> RealMatchResult
-  const resultByTeams = new Map<string, RealMatchResult>();
-  // Build team-name-based lookup from ALL_MATCHES + realResults
-  const { ALL_MATCHES: matches } = await import('./matches');
-  for (const m of matches) {
-    const r = realResults.get(m.id);
-    if (r) {
-      resultByTeams.set(`${m.homeTeam}_vs_${m.awayTeam}`, r);
-    }
-  }
 
   for (const [letter, teams] of Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))) {
     if (onProgress) onProgress(`Simulando Grupo ${letter}...`);
@@ -529,7 +525,7 @@ async function simulateGroups(
     for (const match of matchups) {
       const resultKey = `${match.home}_vs_${match.away}`;
       const realResult = resultByTeams.get(resultKey);
-      const simResult = await simulateMatch(match.home, match.away, realResult, false, 'group');
+      const simResult = simulateMatch(match.home, match.away, realResult, false, 'group');
 
       const homeIdx = teams.indexOf(match.home);
       const awayIdx = teams.indexOf(match.away);
@@ -563,30 +559,20 @@ async function simulateGroups(
 
 // ─── Knockout Stage ────────────────────────────────────────────────────────
 
-async function simulateKnockout(
+function simulateKnockout(
   standings: Map<string, GroupTeamStanding[]>,
   matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[],
-  realResults: Map<string, RealMatchResult>,
+  resultByTeams: Map<string, RealMatchResult>,
   onProgress?: (msg: string) => void
-): Promise<{
+): {
   roundOf32: SimulatedMatch[];
   roundOf16: SimulatedMatch[];
   quarters: SimulatedMatch[];
   semis: SimulatedMatch[];
   thirdPlace: SimulatedMatch;
   final: SimulatedMatch;
-}> {
+} {
   const winners = new Map<string, string>();
-
-  // Build team-name-based lookup for knockout real results
-  const { ALL_MATCHES: matches } = await import('./matches');
-  const resultByTeams = new Map<string, RealMatchResult>();
-  for (const m of matches) {
-    const r = realResults.get(m.id);
-    if (r) {
-      resultByTeams.set(`${m.homeTeam}_vs_${m.awayTeam}`, r);
-    }
-  }
 
   // Top 8 terceros lugares con FIFA tiebreakers
   const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
@@ -677,7 +663,7 @@ async function simulateKnockout(
     // Look up real result by team names
     const resultKey = `${homeTeam}_vs_${awayTeam}`;
     const realResult = resultByTeams.get(resultKey);
-    const m = await simulateMatch(homeTeam, awayTeam, realResult, true, 'R32');
+    const m = simulateMatch(homeTeam, awayTeam, realResult, true, 'R32');
     m.id = `R32-${i + 1}`;
     m.roundLabel = '1/16 Final';
     roundOf32.push(m);
@@ -704,7 +690,7 @@ async function simulateKnockout(
     const [h, a] = r16def[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'R16');
+    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'R16');
     m.id = `R16-${i + 1}`;
     m.roundLabel = 'Octavos de Final';
     roundOf16.push(m);
@@ -719,7 +705,7 @@ async function simulateKnockout(
     const [h, a] = qfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'QF');
+    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'QF');
     m.id = `QF-${i + 1}`;
     m.roundLabel = 'Cuartos de Final';
     quarters.push(m);
@@ -734,7 +720,7 @@ async function simulateKnockout(
     const [h, a] = sfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = await simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'SF');
+    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'SF');
     m.id = `SF-${i + 1}`;
     m.roundLabel = 'Semifinales';
     semis.push(m);
@@ -746,14 +732,14 @@ async function simulateKnockout(
   const losers = semis.map((m) => m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
   const tpHome = losers[0] || 'TBD';
   const tpAway = losers[1] || 'TBD';
-  const thirdPlace = await simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP');
+  const thirdPlace = simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP');
   thirdPlace.id = 'TP-1';
   thirdPlace.roundLabel = 'Tercer Puesto';
 
   // Final
   const finHome = semis[0]?.winner || 'TBD';
   const finAway = semis[1]?.winner || 'TBD';
-  const final = await simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F');
+  const final = simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F');
   final.id = 'FINAL';
   final.roundLabel = 'La Gran Final';
 
@@ -779,7 +765,16 @@ export async function simulateTournament(
 
   if (onProgress) onProgress('Simulando fase de grupos con motor estadístico real...');
 
-  const { standings, matchResults } = await simulateGroups(resultsMap, onProgress);
+  const groups = getGroups();
+  const resultByTeams = new Map<string, RealMatchResult>();
+  for (const m of ALL_MATCHES) {
+    const r = resultsMap.get(m.id);
+    if (r) {
+      resultByTeams.set(`${m.homeTeam}_vs_${m.awayTeam}`, r);
+    }
+  }
+
+  const { standings, matchResults } = simulateGroups(groups, resultByTeams, onProgress);
 
   const groupStandings: GroupStandings[] = [];
   for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
@@ -787,7 +782,7 @@ export async function simulateTournament(
   }
 
   if (onProgress) onProgress('Simulando eliminatorias con Poisson + Elo...');
-  const knockout = await simulateKnockout(standings, matchResults, resultsMap, onProgress);
+  const knockout = simulateKnockout(standings, matchResults, resultByTeams, onProgress);
 
   const champion = knockout.final.winner;
   const runnerUp = champion === knockout.final.homeTeam ? knockout.final.awayTeam : knockout.final.homeTeam;
@@ -893,14 +888,23 @@ export async function simulateTournamentMulti(
 
   if (onProgress) onProgress(`Ejecutando ${numSims} simulaciones...`);
 
+  const groups = getGroups();
+  const resultByTeams = new Map<string, RealMatchResult>();
+  for (const m of ALL_MATCHES) {
+    const r = resultsMap.get(m.id);
+    if (r) {
+      resultByTeams.set(`${m.homeTeam}_vs_${m.awayTeam}`, r);
+    }
+  }
+
   for (let i = 0; i < numSims; i++) {
-    if (onProgress && i % 10 === 0) {
+    if (onProgress && i % 50 === 0) {
       onProgress(`Simulación ${i + 1}/${numSims}...`);
     }
 
     try {
-      const { standings, matchResults } = await simulateGroups(resultsMap);
-      const knockout = await simulateKnockout(standings, matchResults, resultsMap);
+      const { standings, matchResults } = simulateGroups(groups, resultByTeams);
+      const knockout = simulateKnockout(standings, matchResults, resultByTeams);
 
       // Track per-round appearances
       for (const m of knockout.roundOf32) {

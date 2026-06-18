@@ -297,10 +297,10 @@ export interface EnsemblePrediction {
  * @param awayTeam Away team name
  * @returns Complete ensemble prediction with uncertainty intervals
  */
-export async function calculateEnsemblePrediction(
+export function calculateEnsemblePrediction(
   homeTeam: string,
   awayTeam: string
-): Promise<EnsemblePrediction> {
+): EnsemblePrediction {
   // ═══ MODEL 1: Dixon-Coles ═══
   const homeEloEntry = ELO_RATINGS[homeTeam] || { elo: 1500, attack: 1.2, defense: 1.0 };
   const awayEloEntry = ELO_RATINGS[awayTeam] || { elo: 1500, attack: 1.2, defense: 1.0 };
@@ -319,7 +319,7 @@ export async function calculateEnsemblePrediction(
   const dixonColes = calculateMatchProbabilitiesDixonColes(dcHomeLambda, dcAwayLambda);
 
   // ═══ MODEL 2: Elo-Poisson (statistical engine) ═══
-  const eloPoisson = await calculateStatisticalPrediction(homeTeam, awayTeam);
+  const eloPoisson = calculateStatisticalPrediction(homeTeam, awayTeam);
 
   // ═══ MODEL 3: Bayesian Dynamic (prediction store) ═══
   const dynamic = predictMatchDynamic(homeTeam, awayTeam, homeAdvantage);

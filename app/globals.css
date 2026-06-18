@@ -73,6 +73,11 @@
   --match-standings-border: rgba(255,255,255,0.10);
   --match-modal-bg:        #0C1017;
 
+  /* ─── MEDALS ─── */
+  --medal-gold:   #E2B340;
+  --medal-silver: #B0B8C4;
+  --medal-bronze: #CD7F32;
+
   /* ─── RADII ─── */
   --r-sm: 8px;
   --r-md: 12px;
@@ -164,6 +169,10 @@ html.light {
   --match-standings-bg:    #FFFFFF;
   --match-standings-border: rgba(0,0,0,0.08);
   --match-modal-bg:        #FFFFFF;
+
+  --medal-gold:   #B8860B;
+  --medal-silver: #64748B;
+  --medal-bronze: #92400E;
 }
 
 * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
