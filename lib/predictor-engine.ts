@@ -1,4 +1,5 @@
 // FORCH.i ORACLE — Motor de Predicción Estadística
+// SINGLE SOURCE OF TRUTH for match predictions.
 // Usa modelo de Poisson + ratings Elo + Expected Goals (xG)
 // Los números vienen de MATEMÁTICAS, no del LLM
 //
@@ -11,8 +12,80 @@
 
 import { getAltitudeFactor } from './venues';
 import { computeH2H } from './h2h';
-import { ELO_RATINGS, type EloEntry } from './teams';
+import { ELO_RATINGS, WORLD_CUP_TEAMS, type EloEntry } from './teams';
 import { calculateMatchProbabilitiesDixonColes } from './poisson-dixon-coles';
+
+// ═══════════════════════════════════════════════════════════════
+// FATIGUE MODEL — SINGLE SOURCE OF TRUTH
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Calculate rest-day fatigue multiplier.
+ * Fewer rest days = more fatigue = lower attack efficiency.
+ *
+ * @param daysSinceLastMatch Days since team's last match
+ * @returns Multiplier: <1 = fatigued, 1 = optimal, >1 = fresher than average
+ */
+export function calculateFatigueFactor(daysSinceLastMatch: number | undefined): number {
+  if (daysSinceLastMatch === undefined || daysSinceLastMatch === null) return 1.0;
+  if (daysSinceLastMatch < 2) return 0.82;  // <48h: severe fatigue (-18%)
+  if (daysSinceLastMatch < 3) return 0.88;  // 2 days: heavy fatigue (-12%)
+  if (daysSinceLastMatch < 4) return 0.94;  // 3 days: moderate fatigue (-6%)
+  if (daysSinceLastMatch <= 5) return 1.0;  // 4-5 days: optimal
+  if (daysSinceLastMatch <= 7) return 1.02; // 6-7 days: well-rested (+2%)
+  return 1.03; // 8+ days: very fresh (but possible rustiness capped at +3%)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STAR PLAYER DEPENDENCY — SINGLE SOURCE OF TRUTH
+// ═══════════════════════════════════════════════════════════════
+
+/** Star player dependency weights by position */
+const STAR_WEIGHTS: Record<string, number> = {
+  GK: 0.08,   // Goalkeeper: 8% of team value
+  DEF: 0.06,  // Defender: 6%
+  MID: 0.10,  // Midfielder: 10%
+  FWD: 0.12,  // Forward: 12%
+};
+
+/**
+ * Calculate attack penalty when star players are missing.
+ * Checks if injured players match the team's starPlayers list.
+ *
+ * @param teamName Team name
+ * @param injuredPlayers List of injured player names
+ * @returns Penalty factor: 1.0 = no impact, 0.85 = -15% attack
+ */
+export function calculateStarPlayerPenalty(
+  teamName: string,
+  injuredPlayers?: string[],
+): number {
+  if (!injuredPlayers || injuredPlayers.length === 0) return 1.0;
+
+  const team = WORLD_CUP_TEAMS.find(t => t.name === teamName);
+  if (!team) return 1.0;
+
+  // Check how many star players are injured
+  const starPlayers = team.starPlayers;
+  let penalty = 0;
+
+  for (const injured of injuredPlayers) {
+    const starIndex = starPlayers.findIndex(sp =>
+      sp.toLowerCase().includes(injured.toLowerCase()) ||
+      injured.toLowerCase().includes(sp.toLowerCase())
+    );
+    if (starIndex >= 0) {
+      // First star: full weight, second: 70%, third: 40%
+      const weights = [1.0, 0.7, 0.4];
+      penalty += 0.12 * (weights[starIndex] || 0.3); // 12% per star player
+    } else {
+      // Non-star player: minimal impact
+      penalty += 0.02;
+    }
+  }
+
+  return Math.max(0.75, 1.0 - penalty); // Minimum 75% of original attack
+}
 
 // ═══════════════════════════════════════════════════════════════
 // ENGINE CONFIGURATION
@@ -338,6 +411,7 @@ export interface StatisticalPrediction {
 
 /**
  * Predicción estadística completa basada en modelo de Poisson + Elo
+ * SINGLE SOURCE OF TRUTH for all match predictions.
  *
  * @param homeTeam Nombre del equipo local
  * @param awayTeam Nombre del equipo visitante
@@ -347,6 +421,8 @@ export interface StatisticalPrediction {
  * @param awayInjuries Lesiones conocidas visitante (opcional, reduce ratings)
  * @param homeRealStats Stats reales del local desde API-Football (opcional, override)
  * @param awayRealStats Stats reales del visitante desde API-Football (opcional, override)
+ * @param homeDaysRest Días de descanso del local (opcional, para fatiga)
+ * @param awayDaysRest Días de descanso del visitante (opcional, para fatiga)
  */
 export async function calculateStatisticalPrediction(
   homeTeam: string,
@@ -356,7 +432,9 @@ export async function calculateStatisticalPrediction(
   homeInjuries?: string[],
   awayInjuries?: string[],
   homeRealStats?: RealTeamStats,
-  awayRealStats?: RealTeamStats
+  awayRealStats?: RealTeamStats,
+  homeDaysRest?: number,
+  awayDaysRest?: number,
 ): Promise<StatisticalPrediction> {
   // 1. Calcular ajustes por forma
   const homeFormAdj = formToAdjustment(homeForm || []);
@@ -410,6 +488,18 @@ export async function calculateStatisticalPrediction(
   // 2e. Apply set-piece factor (~30% of WC goals from set pieces)
   homeLambda *= SET_PIECE_FACTOR;
   awayLambda *= SET_PIECE_FACTOR;
+
+  // 2f. Fatigue adjustment (rest days between matches)
+  const homeFatigue = calculateFatigueFactor(homeDaysRest);
+  const awayFatigue = calculateFatigueFactor(awayDaysRest);
+  homeLambda *= homeFatigue;
+  awayLambda *= awayFatigue;
+
+  // 2g. Star player injury penalty
+  const homeStarPenalty = calculateStarPlayerPenalty(homeTeam, homeInjuries);
+  const awayStarPenalty = calculateStarPlayerPenalty(awayTeam, awayInjuries);
+  homeLambda *= homeStarPenalty;
+  awayLambda *= awayStarPenalty;
 
   // Clamp final
   homeLambda = Math.max(0.3, Math.min(4.5, homeLambda));

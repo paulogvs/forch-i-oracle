@@ -292,3 +292,13 @@ export async function getLiveBracket(): Promise<any> {
   const data = await getOrComputeTournamentResults();
   return data.bracket;
 }
+
+/**
+ * Get prediction drift history for a specific match.
+ * Returns array of snapshots showing how prediction changed over time.
+ */
+export async function getMatchDriftHistory(matchId: string): Promise<PredictionSnapshot[]> {
+  const db = getDataLayer();
+  const snapshots = await db.getPredictionSnapshots(matchId);
+  return snapshots.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+}

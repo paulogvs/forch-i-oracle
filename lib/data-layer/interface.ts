@@ -65,6 +65,21 @@ export interface IDataLayer {
   saveAccuracyMetric(metric: Omit<DBAccuracyMetric, 'id' | 'evaluatedAt'>): Promise<DBAccuracyMetric>;
   getOverallAccuracy(): Promise<{ total: number; correct: number; accuracy: number; avgBrier: number }>;
 
+  // ─── PREDICTION SNAPSHOTS ─────────────────────────────────
+  getPredictionSnapshots(matchId: string): Promise<Array<{
+    matchId: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeGoals: number;
+    awayGoals: number;
+    homeWinPct: number;
+    drawPct: number;
+    awayWinPct: number;
+    confidence: string;
+    createdAt: string;
+    trigger: string;
+  }>>;
+
   // ─── BULK OPERATIONS (for cron jobs) ────────────────────
   seedTeams(teams: Omit<DBTeam, 'createdAt' | 'updatedAt'>[]): Promise<void>;
   seedMatches(matches: Omit<DBMatch, 'createdAt'>[]): Promise<void>;

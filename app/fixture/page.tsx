@@ -6,6 +6,7 @@ import { getTeamByName, ELO_RATINGS, POWER_RATINGS } from '@/lib/teams';
 import { utcToLocal, getUserTimezoneOffset, getTimezoneLabel, TIMEZONE_PRESETS } from '@/lib/timezone';
 import { cn } from '@/lib/utils';
 import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
+import DriftSparkline from '@/components/DriftSparkline';
 import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot } from '@/components/icons/animated-icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
@@ -223,12 +224,23 @@ export default function FixturePage() {
         </div>
       </div>
 
-      <div className="flex gap-1 p-1 bg-elevated rounded-[var(--r-xl)] mb-4 border border-border-subtle">
+      <div className="flex gap-1 p-1 bg-elevated rounded-[var(--r-xl)] mb-4 border border-border-subtle relative">
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)} className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[var(--r-lg)] text-xs font-semibold transition-all",
-            mainTab === t.id ? "bg-accent-primary text-white shadow-lg shadow-accent-primary/25" : "text-fg-secondary hover:text-fg-primary hover:bg-raised/50"
-          )}><t.icon className="w-4 h-4" /><span className="hidden sm:inline">{t.label}</span></button>
+            "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[var(--r-lg)] text-xs font-semibold relative z-10 transition-colors duration-200",
+            mainTab === t.id ? "text-white" : "text-fg-secondary hover:text-fg-primary"
+          )}>
+            {mainTab === t.id && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute inset-0 bg-accent-primary rounded-[var(--r-lg)] shadow-lg shadow-accent-primary/25"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              <t.icon className="w-4 h-4" /><span className="hidden sm:inline">{t.label}</span>
+            </span>
+          </button>
         ))}
       </div>
 
@@ -256,9 +268,17 @@ export default function FixturePage() {
         </div>
       )}
 
+      <AnimatePresence mode="wait">
       {/* PARTIDOS */}
       {!loading && !allFailed && mainTab === 'partidos' && (
-        <div className="space-y-5">
+        <motion.div
+          key="partidos"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-5"
+        >
           {/* Champion banner — only shown when filtering final/semi phase */}
           {(phaseFilter === 'final' || phaseFilter === 'semi') && bracket?.champion && (
             <motion.div
@@ -325,13 +345,27 @@ export default function FixturePage() {
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       )}
 
 
-      {!loading && !allFailed && mainTab === 'tablas' && <TablasTab liveStandings={liveStandings} getFlag={getFlag} />}
-      {!loading && !allFailed && mainTab === 'top8' && <Top8Tab top8={top8} getFlag={getFlag} />}
-      {!loading && !allFailed && mainTab === 'bracket' && bracket && <BracketTab bracket={bracket} getFlag={getFlag} />}
+      {!loading && !allFailed && mainTab === 'tablas' && (
+        <motion.div key="tablas" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+          <TablasTab liveStandings={liveStandings} getFlag={getFlag} />
+        </motion.div>
+      )}
+      {!loading && !allFailed && mainTab === 'top8' && (
+        <motion.div key="top8" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+          <Top8Tab top8={top8} getFlag={getFlag} />
+        </motion.div>
+      )}
+      {!loading && !allFailed && mainTab === 'bracket' && bracket && (
+        <motion.div key="bracket" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+          <BracketTab bracket={bracket} getFlag={getFlag} />
+        </motion.div>
+      )}
+
+      </AnimatePresence>
 
       {selectedMatch && (
         <MatchDetailModal match={selectedMatch} realResult={realResults.get(selectedMatch.id)} status={getMatchStatus(selectedMatch, realResults.get(selectedMatch.id))} getFlag={getFlag} getRoundLabel={getRoundLabel} onClose={() => setSelectedMatch(null)} />
@@ -725,6 +759,9 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
               </div>
             </div>
           )}
+
+          {/* ═══ DRIFT SPARKLINE — Evolución temporal ═══ */}
+          <DriftSparkline matchId={match.id} homeTeam={match.homeTeam} awayTeam={match.awayTeam} className="mt-3" />
 
           {/* ═══ DRIFT — Prediction vs Reality ═══ */}
           {isPlayed && realResult && match.homeGoals !== null && match.awayGoals !== null && (() => {

@@ -480,6 +480,22 @@ async function getOverallAccuracy(): Promise<{ total: number; correct: number; a
 }
 
 // ═══════════════════════════════════════════════════════════════
+// PREDICTION SNAPSHOTS (for drift tracking)
+// ═══════════════════════════════════════════════════════════════
+
+const predictionSnapshotsStore = new Map<string, Array<{
+  matchId: string; homeTeam: string; awayTeam: string;
+  homeGoals: number; awayGoals: number; homeWinPct: number;
+  drawPct: number; awayWinPct: number; confidence: string;
+  createdAt: string; trigger: string;
+}>>();
+
+async function getPredictionSnapshots(matchId: string) {
+  ensureInitialized();
+  return predictionSnapshotsStore.get(matchId) || [];
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BULK OPERATIONS
 // ═══════════════════════════════════════════════════════════════
 
@@ -566,4 +582,5 @@ export const inMemoryDataLayer: IDataLayer = {
   seedMatches,
   getKeyValue,
   setKeyValue,
+  getPredictionSnapshots,
 };
