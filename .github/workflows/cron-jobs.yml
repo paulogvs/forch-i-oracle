@@ -10,6 +10,7 @@
 # Configuración requerida en GitHub Secrets:
 #   VERCEL_URL   — https://forch-i-oracle.vercel.app (o tu dominio personalizado)
 #   CRON_SECRET  — Mismo valor que en Vercel Environment Variables
+#                  Se envía como Authorization: Bearer header (NO como query param)
 #
 # Schedules (UTC):
 #   Ingest:      cada 6 horas   → 0 */6 * * *
@@ -47,7 +48,8 @@ jobs:
         run: |
           echo "Iniciando ingesta de datos..."
           RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
-            "${VERCEL_URL}/api/cron/ingest?secret=${CRON_SECRET}")
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${VERCEL_URL}/api/cron/ingest")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | head -n -1)
           
@@ -77,7 +79,8 @@ jobs:
         run: |
           echo "Recalculando predicciones..."
           RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
-            "${VERCEL_URL}/api/cron/recalculate?secret=${CRON_SECRET}")
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${VERCEL_URL}/api/cron/recalculate")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | head -n -1)
           
@@ -107,7 +110,8 @@ jobs:
         run: |
           echo "Ejecutando simulación de torneo..."
           RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
-            "${VERCEL_URL}/api/cron/simulate?secret=${CRON_SECRET}")
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${VERCEL_URL}/api/cron/simulate")
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
           BODY=$(echo "$RESPONSE" | head -n -1)
           
