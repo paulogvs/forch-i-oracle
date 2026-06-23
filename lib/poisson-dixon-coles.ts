@@ -21,7 +21,7 @@
  */
 
 /** Dependency parameter. Reduced from -0.10 to -0.07 to allow more varied scores. */
-export const RHO = -0.07;
+export const RHO = -0.03; // Reducido de -0.07 para menos inflación de 0-0/1-1
 
 /**
  * Phase-dependent RHO: knockout matches have lower draw probability

@@ -339,9 +339,9 @@ export function calculateH2HFactorWeighted(
 
   const winRate = teamAWins / totalWeight;
 
-  // Mapear win rate a factor: 0.5 → 1.0, 0.75 → 1.15, 0.25 → 0.85
-  const factor = 1.0 + (winRate - 0.5) * 0.3;
-  return Math.max(0.85, Math.min(1.15, factor));
+  // Mapear win rate a factor: más amplio para mayor diferenciación
+  const factor = 1.0 + (winRate - 0.5) * 0.4;
+  return Math.max(0.80, Math.min(1.20, factor));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -458,7 +458,7 @@ export function calculateCompositeAdjustment(
   // (predictor-engine.ts lines 361-372). Do NOT re-apply here to avoid
   // double-counting these factors.
 
-  return Math.max(0.7, Math.min(1.3, adjustment));
+  return Math.max(0.6, Math.min(1.4, adjustment));
 }
 
 // ═══════════════════════════════════════════════════════════════

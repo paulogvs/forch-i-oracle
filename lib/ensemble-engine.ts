@@ -308,13 +308,14 @@ export function calculateEnsemblePrediction(
   // Calculate lambdas for Dixon-Coles
   const eloDiff = homeEloEntry.elo - awayEloEntry.elo;
   const homeAdvantage = 1.12; // 12% home advantage for WC2026 neutral venues
-  const baseHomeLambda = (homeEloEntry.attack + awayEloEntry.defense) / 2 * homeAdvantage;
-  const baseAwayLambda = (awayEloEntry.attack + homeEloEntry.defense) / 2;
+  // Ponderación sesgada hacia ataque (65/35) consistente con predictor-engine
+  const baseHomeLambda = (homeEloEntry.attack * 0.65 + awayEloEntry.defense * 0.35) * homeAdvantage;
+  const baseAwayLambda = awayEloEntry.attack * 0.65 + homeEloEntry.defense * 0.35;
 
-  // Apply Elo differential adjustment
+  // Apply Elo differential adjustment — clamps más amplios para permitir goleadas
   const eloFactor = 1 + (eloDiff / 500);
-  const dcHomeLambda = Math.max(0.3, Math.min(4.0, baseHomeLambda * Math.max(0.7, Math.min(1.3, eloFactor))));
-  const dcAwayLambda = Math.max(0.3, Math.min(4.0, baseAwayLambda * Math.max(0.7, Math.min(1.4, 1 / eloFactor))));
+  const dcHomeLambda = Math.max(0.3, Math.min(6.0, baseHomeLambda * Math.max(0.5, Math.min(1.8, eloFactor))));
+  const dcAwayLambda = Math.max(0.3, Math.min(6.0, baseAwayLambda * Math.max(0.5, Math.min(1.8, 1 / eloFactor))));
 
   const dixonColes = calculateMatchProbabilitiesDixonColes(dcHomeLambda, dcAwayLambda);
 

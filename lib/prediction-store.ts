@@ -112,10 +112,10 @@ export function getDynamicStats(team: string): TeamDynamicStats {
   const form = teamForms.get(team);
 
   if (!form || form.dates.length === 0) {
-    // No matches yet — return baseline
+    // No matches yet — return baseline (attack más alto para menos conservador)
     return {
       elo: baseElo,
-      attackStrength: 1.2,
+      attackStrength: 1.5,
       defenseStrength: 1.0,
       xGDiff: 0,
       formPoints: 0,
@@ -138,7 +138,8 @@ export function getDynamicStats(team: string): TeamDynamicStats {
   const xGAgainstAvg = weightedAvg(form.xGAgainst, weights, totalWeight);
 
   // Bayesian blend: combine actual performance with prior (baseline)
-  const priorAttack = baseElo > 1900 ? 1.8 : baseElo > 1800 ? 1.3 : 0.9;
+  // Priors más altos para permitir lambdas más generosos
+  const priorAttack = baseElo > 1900 ? 2.2 : baseElo > 1800 ? 1.7 : 1.2;
   const blendedAttack = bayesianBlend(attackStrength, priorAttack, n, PRIOR_WEIGHT);
   const blendedDefense = bayesianBlend(defenseStrength, 1.0, n, PRIOR_WEIGHT);
 

@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — Cron Job: Data Ingestion
-// GitHub Actions cron job that ingests data from worldcup26.ir (primary) and updates data layer.
+// GitHub Actions cron job that ingests match results and updates data layer.
 // Schedule: Every 6 hours
 // Trigger: GET /api/cron/ingest
 //
@@ -7,16 +7,18 @@
 // of remaining bracket with updated predictions and drift tracking.
 //
 // DATA SOURCES (in order of priority):
-// 1. worldcup26.ir — Free, open-source, no API key (PRIMARY)
-// 2. API-Football (v3) — requires paid plan for 2026 season (fallback)
-// 3. football-data.org (v4) — free tier includes World Cup (secondary fallback)
-// 4. Manual submission via /api/match-result
+// 1. wheniskickoff.com — Free, no API key, static JSON (PRIMARY)
+// 2. openfootball/worldcup.json — Free GitHub CDN, no API key (FALLBACK)
+// 3. API-Football (v3) — requires paid plan for 2026 season (secondary fallback)
+// 4. football-data.org (v4) — free tier includes World Cup (tertiary fallback)
+// 5. Manual submission via /api/match-result
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
 import { validateCronAuth } from '@/lib/cron-auth';
 import { fetchWC26Games, teamIdToSpanish, teamEnglishToSpanish, type WC26Game } from '@/lib/worldcup26-api';
+// Note: data sources are wheniskickoff.com (primary) + openfootball (fallback)
 
 const getApiKey = () => process.env.FOOTBALL_API_KEY;
 const BASE_URL = 'https://v3.football.api-sports.io';
@@ -272,21 +274,21 @@ export async function GET(request: Request) {
       });
     }
 
-    // Step 3: Fetch World Cup 2026 fixtures — try worldcup26.ir FIRST (primary, free, no API key)
+    // Step 3: Fetch World Cup 2026 fixtures — try wheniskickoff.com FIRST (primary, free, no API key)
     diagnostics.push({
       step: 'source_selection',
       status: 'ok',
-      message: 'Data source priority: 1) worldcup26.ir (free) → 2) API-Football → 3) football-data.org',
+      message: 'Data source priority: 1) wheniskickoff.com (free) → 2) openfootball (free) → 3) API-Football → 4) football-data.org',
     });
 
     const wc26Games = await fetchWC26Games();
 
     if (wc26Games && wc26Games.length > 0) {
-      // worldcup26.ir worked — process its games
+      // Primary source worked — process its games
       diagnostics.push({
         step: 'wc26_success',
         status: 'ok',
-        message: `Received ${wc26Games.length} games from worldcup26.ir`,
+        message: `Received ${wc26Games.length} games from wheniskickoff.com/openfootball`,
       });
 
       results.fixturesProcessed = await processWC26Games(wc26Games, db, results, diagnostics);
@@ -295,7 +297,7 @@ export async function GET(request: Request) {
       diagnostics.push({
         step: 'fallback_apifootball',
         status: 'warn',
-        message: 'worldcup26.ir unavailable. Trying API-Football...',
+        message: 'wheniskickoff.com/openfootball unavailable. Trying API-Football...',
       });
 
       const wcData = await apiFetch('/fixtures?league=9&season=2026', diagnostics);

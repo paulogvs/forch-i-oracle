@@ -1,13 +1,15 @@
-// FORCH.i ORACLE — Live Scores API (Direct from worldcup26.ir)
+// FORCH.i ORACLE — Live Scores API
 // Instant real scores without going through full ingest pipeline.
 // Server-side cache: 45s TTL (prevents external API rate-limit exhaustion).
 //
 // GET /api/live-scores — Returns all finished + live matches with scores
 // GET /api/live-scores?live=true — Returns only live matches
 // GET /api/live-scores?group=A — Returns matches for a specific group
+//
+// Data sources: wheniskickoff.com (primary) + openfootball (fallback)
 
 import { NextResponse } from 'next/server';
-import { fetchWC26Games, convertWC26Game, teamIdToSpanish, type WC26Game, type ProcessedWC26Match } from '@/lib/worldcup26-api';
+import { fetchWC26Games, convertWC26Game, type ProcessedWC26Match } from '@/lib/worldcup26-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 // Server-side cache: 45 seconds (shorter than SWR's 30s to ensure fresh data)
@@ -53,8 +55,8 @@ export async function GET(request: Request) {
     if (!games) {
       return NextResponse.json({
         success: false,
-        error: 'Failed to fetch from worldcup26.ir',
-        source: 'worldcup26.ir',
+        error: 'Failed to fetch match data',
+        source: 'wheniskickoff.com/openfootball',
       }, { status: 503 });
     }
 
@@ -82,7 +84,7 @@ export async function GET(request: Request) {
     if (liveOnly) {
       return NextResponse.json({
         success: true,
-        source: 'worldcup26.ir',
+        source: 'wheniskickoff.com/openfootball',
         lastUpdated: new Date().toISOString(),
         live,
         stats: {
@@ -96,7 +98,7 @@ export async function GET(request: Request) {
 
     const response: LiveScoresResponse = {
       success: true,
-      source: 'worldcup26.ir',
+      source: 'wheniskickoff.com/openfootball',
       lastUpdated: new Date().toISOString(),
       finished,
       live,
@@ -118,7 +120,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: false,
       error: msg,
-      source: 'worldcup26.ir',
+      source: 'wheniskickoff.com/openfootball',
     }, { status: 500 });
   }
 }
