@@ -1,20 +1,77 @@
 // FORCH.i ORACLE — Live Scores API
 // Instant real scores without going through full ingest pipeline.
-// Server-side cache: 45s TTL (prevents external API rate-limit exhaustion).
+// Server-side cache: 30s TTL (live data needs freshness).
 //
 // GET /api/live-scores — Returns all finished + live matches with scores
 // GET /api/live-scores?live=true — Returns only live matches
 // GET /api/live-scores?group=A — Returns matches for a specific group
 //
-// Data sources: wheniskickoff.com (primary) + openfootball (fallback)
+// Data sources:
+// 1. football-data.org — Live scores during match hours (IN_PLAY, FINISHED)
+// 2. wheniskickoff.com — Static fixtures (upcoming/scheduled)
 
 import { NextResponse } from 'next/server';
 import { fetchWC26Games, convertWC26Game, type ProcessedWC26Match } from '@/lib/worldcup26-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 
-// Server-side cache: 45 seconds (shorter than SWR's 30s to ensure fresh data)
+// Server-side cache: 30 seconds (live data needs freshness)
 const liveCache = new Map<string, { data: any; expiresAt: number }>();
-const LIVE_CACHE_TTL = 45_000;
+const LIVE_CACHE_TTL = 30_000;
+
+// football-data.org config
+const FD_BASE_URL = 'https://api.football-data.org/v4';
+
+// Map football-data.org team names to our Spanish names
+const FD_NAME_MAP: Record<string, string> = {
+  'Mexico': 'México',
+  'South Africa': 'Sudáfrica',
+  'South Korea': 'Corea del Sur',
+  'Czech Republic': 'Chequia',
+  'Czechia': 'Chequia',
+  'United States': 'Estados Unidos',
+  'USA': 'Estados Unidos',
+  'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
+  'Ivory Coast': 'Costa de Marfil',
+  "Côte d'Ivoire": 'Costa de Marfil',
+  'DR Congo': 'RD Congo',
+  'Congo DR': 'RD Congo',
+  'Saudi Arabia': 'Arabia Saudita',
+  'Iran': 'Irán',
+  'Iraq': 'Irak',
+  'New Zealand': 'Nueva Zelanda',
+  'Netherlands': 'Países Bajos',
+  'Tunisia': 'Túnez',
+  'Algeria': 'Argelia',
+  'Morocco': 'Marruecos',
+  'Egypt': 'Egipto',
+  'Cape Verde': 'Cabo Verde',
+  'Uzbekistan': 'Uzbekistán',
+  'Korea Republic': 'Corea del Sur',
+  'Korea DR': 'Corea del Sur',
+};
+
+interface FDMatch {
+  id: number;
+  utcDate: string;
+  status: string;
+  matchday: number | null;
+  stage: string;
+  group: string | null;
+  homeTeam: { id: number; name: string; tla: string | null };
+  awayTeam: { id: number; name: string; tla: string | null };
+  score: {
+    winner: string | null;
+    duration: string;
+    fullTime: { homeTeam: number | null; awayTeam: number | null };
+    halfTime: { homeTeam: number | null; awayTeam: number | null };
+  };
+  goals?: Array<{
+    minute: number;
+    scorer: { name: string; id: number };
+    type: string;
+    team: { id: number; name: string };
+  }>;
+}
 
 interface LiveScoresResponse {
   success: boolean;
@@ -29,6 +86,16 @@ interface LiveScoresResponse {
     liveCount: number;
     upcomingCount: number;
   };
+}
+
+function mapFDTeamName(fdName: string): string | null {
+  return FD_NAME_MAP[fdName] || null;
+}
+
+function mapFDStatus(status: string): 'live' | 'finished' | 'upcoming' {
+  if (status === 'IN_PLAY' || status === 'PAUSED') return 'live';
+  if (status === 'FINISHED') return 'finished';
+  return 'upcoming';
 }
 
 export async function GET(request: Request) {
@@ -49,78 +116,136 @@ export async function GET(request: Request) {
     return NextResponse.json(cached.data);
   }
 
+  // Try football-data.org first for live scores (free tier, no auth needed)
+  let fdMatches: FDMatch[] | null = null;
   try {
-    const games = await fetchWC26Games();
-
-    if (!games) {
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to fetch match data',
-        source: 'wheniskickoff.com/openfootball',
-      }, { status: 503 });
+    const headers: Record<string, string> = {};
+    const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
+    if (fdToken) {
+      headers['X-Auth-Token'] = fdToken;
     }
 
-    const finished: ProcessedWC26Match[] = [];
-    const live: ProcessedWC26Match[] = [];
-    const upcoming: ProcessedWC26Match[] = [];
+    // Fetch IN_PLAY + FINISHED matches for real-time data
+    const response = await fetch(
+      `${FD_BASE_URL}/competitions/WC/matches?status=IN_PLAY,FINISHED`,
+      {
+        headers,
+        signal: AbortSignal.timeout(10000),
+      }
+    );
 
-    for (const game of games) {
-      // Apply group filter if specified
-      if (groupFilter && game.group !== groupFilter) continue;
+    if (response.ok) {
+      const data = await response.json();
+      fdMatches = data.matches || [];
+    }
+  } catch {
+    // football-data.org unavailable — fall through to wheniskickoff
+  }
 
-      const converted = convertWC26Game(game);
-      if (!converted) continue;
+  const finished: ProcessedWC26Match[] = [];
+  const live: ProcessedWC26Match[] = [];
+  const upcoming: ProcessedWC26Match[] = [];
 
-      if (converted.isFinished) {
-        finished.push(converted);
-      } else if (converted.isLive) {
-        live.push(converted);
-      } else {
-        upcoming.push(converted);
+  // Process football-data.org matches if available
+  if (fdMatches && fdMatches.length > 0) {
+    for (const fd of fdMatches) {
+      const status = mapFDStatus(fd.status);
+      if (status !== 'live' && status !== 'finished') continue;
+
+      const homeTeam = mapFDTeamName(fd.homeTeam.name);
+      const awayTeam = mapFDTeamName(fd.awayTeam.name);
+      if (!homeTeam || !awayTeam) continue;
+
+      const homeGoals = fd.score.fullTime.homeTeam;
+      const awayGoals = fd.score.fullTime.awayTeam;
+      if (homeGoals === null || awayGoals === null) continue;
+
+      const match: ProcessedWC26Match = {
+        homeTeam,
+        awayTeam,
+        homeScore: homeGoals,
+        awayScore: awayGoals,
+        isFinished: fd.status === 'FINISHED',
+        isLive: fd.status === 'IN_PLAY' || fd.status === 'PAUSED',
+        timeElapsed: fd.status === 'IN_PLAY' ? 'En juego' : '',
+        group: fd.group || '',
+        matchday: fd.matchday || 0,
+        round: fd.stage || '',
+        homeScorers: (fd.goals || []).filter(g => g.team.id === fd.homeTeam.id).map(g => g.scorer.name),
+        awayScorers: (fd.goals || []).filter(g => g.team.id === fd.awayTeam.id).map(g => g.scorer.name),
+        stadium: '',
+        winner: fd.score.winner === 'HOME_TEAM' ? homeTeam : fd.score.winner === 'AWAY_TEAM' ? awayTeam : 'draw',
+      };
+
+      if (match.isFinished) {
+        finished.push(match);
+      } else if (match.isLive) {
+        live.push(match);
       }
     }
+  }
 
-    // If live-only, return just live matches
-    if (liveOnly) {
-      return NextResponse.json({
-        success: true,
-        source: 'wheniskickoff.com/openfootball',
-        lastUpdated: new Date().toISOString(),
-        live,
-        stats: {
-          totalGames: games.length,
-          finishedCount: finished.length,
-          liveCount: live.length,
-          upcomingCount: upcoming.length,
-        },
-      });
+  // Fallback: use wheniskickoff.com for upcoming matches (and any live/finished not caught by FD)
+  try {
+    const games = await fetchWC26Games();
+    if (games) {
+      for (const game of games) {
+        if (groupFilter && game.group !== groupFilter) continue;
+        const converted = convertWC26Game(game);
+        if (!converted) continue;
+
+        // Skip if already captured from football-data.org
+        const alreadyHave = [...finished, ...live].some(
+          m => m.homeTeam === converted.homeTeam && m.awayTeam === converted.awayTeam
+        );
+        if (alreadyHave) continue;
+
+        if (converted.isFinished) {
+          finished.push(converted);
+        } else if (converted.isLive) {
+          live.push(converted);
+        } else {
+          upcoming.push(converted);
+        }
+      }
     }
+  } catch {
+    // wheniskickoff unavailable — that's fine, we have FD data
+  }
 
-    const response: LiveScoresResponse = {
+  // If live-only, return just live matches
+  if (liveOnly) {
+    return NextResponse.json({
       success: true,
-      source: 'wheniskickoff.com/openfootball',
+      source: fdMatches && fdMatches.length > 0 ? 'football-data.org' : 'wheniskickoff.com',
       lastUpdated: new Date().toISOString(),
-      finished,
       live,
-      upcoming,
       stats: {
-        totalGames: games.length,
+        totalGames: finished.length + live.length + upcoming.length,
         finishedCount: finished.length,
         liveCount: live.length,
         upcomingCount: upcoming.length,
       },
-    };
-
-    // Cache the response
-    liveCache.set(cacheKey, { data: response, expiresAt: Date.now() + LIVE_CACHE_TTL });
-
-    return NextResponse.json(response);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({
-      success: false,
-      error: msg,
-      source: 'wheniskickoff.com/openfootball',
-    }, { status: 500 });
+    });
   }
+
+  const response: LiveScoresResponse = {
+    success: true,
+    source: fdMatches && fdMatches.length > 0 ? 'football-data.org + wheniskickoff.com' : 'wheniskickoff.com',
+    lastUpdated: new Date().toISOString(),
+    finished,
+    live,
+    upcoming,
+    stats: {
+      totalGames: finished.length + live.length + upcoming.length,
+      finishedCount: finished.length,
+      liveCount: live.length,
+      upcomingCount: upcoming.length,
+    },
+  };
+
+  // Cache the response
+  liveCache.set(cacheKey, { data: response, expiresAt: Date.now() + LIVE_CACHE_TTL });
+
+  return NextResponse.json(response);
 }

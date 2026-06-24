@@ -3,28 +3,32 @@
 # La app sigue en Vercel; GitHub solo dispara HTTP requests a las APIs.
 #
 # Data Source Priority (en ingest):
-#   1. worldcup26.ir — Free, open-source, no API key (PRIMARY)
-#   2. API-Football (v3) — requires paid plan for 2026 season (fallback)
-#   3. football-data.org (v4) — free tier includes World Cup (secondary fallback)
+#   1. wheniskickoff.com — Free, no API key (PRIMARY)
+#   2. openfootball/worldcup.json — Free GitHub CDN (FALLBACK)
+#   3. API-Football (v3) — requires paid plan for 2026 season (secondary fallback)
+#   4. football-data.org (v4) — free tier includes World Cup (tertiary fallback)
 #
 # Configuración requerida en GitHub Secrets:
 #   VERCEL_URL   — https://forch-i-oracle.vercel.app (o tu dominio personalizado)
 #   CRON_SECRET  — Mismo valor que en Vercel Environment Variables
 #                  Se envía como Authorization: Bearer header (NO como query param)
 #
-# Schedules (UTC):
-#   Ingest:      cada 6 horas   → 0 */6 * * *
-#   Recalculate: cada 12 horas  → 0 */12 * * *
-#   Simulate:    diario 00:00   → 0 0 * * *
+# Schedules (UTC) — aligned to match ends:
+#   Ingest:      15:30, 18:30, 21:30, 00:30 UTC (post-match, after 150 min)
+#   Recalculate: cada 6 horas → 0 */6 * * *
+#   Simulate:    diario 00:00 → 0 0 * * *
 
 name: Cron Jobs - FORCH.i ORACLE
 
 on:
   schedule:
-    - cron: '0 */6 * * *'      # Ingest: cada 6h
-    - cron: '0 */12 * * *'     # Recalculate: cada 12h
-    - cron: '0 0 * * *'        # Simulate: diario a medianoche UTC
-  workflow_dispatch:            # Permite ejecución manual desde UI de GitHub
+    - cron: '30 15 * * *'   # Ingest: match 1 (13:00 UTC) ends ~15:30
+    - cron: '30 18 * * *'   # Ingest: match 2 (16:00 UTC) ends ~18:30
+    - cron: '30 21 * * *'   # Ingest: match 3 (19:00 UTC) ends ~21:30
+    - cron: '30 0 * * *'    # Ingest: match 4 (22:00 UTC) ends ~00:30
+    - cron: '0 */6 * * *'   # Recalculate: cada 6h
+    - cron: '0 0 * * *'     # Simulate: diario a medianoche UTC
+  workflow_dispatch:         # Permite ejecución manual desde UI de GitHub
 
 concurrency:
   group: cron-jobs
@@ -36,10 +40,15 @@ env:
 
 jobs:
   # ═══════════════════════════════════════════════════════════════════
-  # JOB 1: DATA INGESTION — cada 6 horas
+  # JOB 1: DATA INGESTION — post-match (4x/day during WC)
   # ═══════════════════════════════════════════════════════════════════
   cron-ingest:
-    if: github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch'
+    if: >
+      github.event.schedule == '30 15 * * *' ||
+      github.event.schedule == '30 18 * * *' ||
+      github.event.schedule == '30 21 * * *' ||
+      github.event.schedule == '30 0 * * *' ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -67,10 +76,10 @@ jobs:
           echo "✅ Ingest completado (status: ${{ steps.ingest.outputs.status }})"
 
   # ═══════════════════════════════════════════════════════════════════
-  # JOB 2: RECALCULATE PREDICTIONS — cada 12 horas
+  # JOB 2: RECALCULATE PREDICTIONS — cada 6 horas
   # ═══════════════════════════════════════════════════════════════════
   cron-recalculate:
-    if: github.event.schedule == '0 */12 * * *' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

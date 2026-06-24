@@ -2,15 +2,13 @@
 // Updated to use the data layer for caching predictions and the enhanced engine.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getPrediction } from '@/lib/groq';
-import { getMatchContext } from '@/lib/football-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
 import { getKeyFactors } from '@/lib/predictor-engine';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { DEFAULT_FORM } from '@/lib/teams';
-import type { Prediction } from '@/lib/groq';
+import type { Prediction } from '@/lib/types/prediction';
 
 interface MatchContext {
   id: string;
@@ -152,17 +150,6 @@ export async function POST(request: NextRequest) {
         : undefined,
     };
 
-    // Get API-Football context for Groq
-    let contextData: string;
-    let homeInjuriesArr: string[] | undefined;
-    let awayInjuriesArr: string[] | undefined;
-
-    try {
-      contextData = await getMatchContext(homeTeam, awayTeam);
-    } catch {
-      contextData = `No hay datos en vivo disponibles para ${homeTeam} vs ${awayTeam}. Basado en conocimiento general.`;
-    }
-
     // Enhanced prediction (uses base stats + adjustments)
     const enhanced = calculateEnhancedPrediction(
       homeTeam, awayTeam,
@@ -177,29 +164,7 @@ export async function POST(request: NextRequest) {
       awayForm?.last5?.map(f => f.result) as ('W' | 'D' | 'L')[] | undefined
     );
 
-    // Groq analysis
-    let groqAnalysis: { analysis: string; homeKeyPlayers: string[]; awayKeyPlayers: string[] } | null = null;
-
-    try {
-      const groqPrediction = await getPrediction(
-        homeTeam, awayTeam, contextData, matchContext, enhanced
-      );
-      groqAnalysis = {
-        analysis: groqPrediction.analysis,
-        homeKeyPlayers: groqPrediction.homeKeyPlayers,
-        awayKeyPlayers: groqPrediction.awayKeyPlayers,
-      };
-    } catch (groqError) {
-      const groqMsg = groqError instanceof Error ? groqError.message : String(groqError);
-      console.warn(`[predict:v2] Groq fallback: ${groqMsg}`);
-      groqAnalysis = {
-        analysis: `Análisis estadístico: ${homeTeam} tiene ${enhanced.homeWin}% de probabilidad de victoria con un marcador más probable de ${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}. Goles esperados: ${homeTeam} ${enhanced.homeExpectedGoals} xG vs ${awayTeam} ${enhanced.awayExpectedGoals} xG. Confianza del modelo: ${enhanced.confidence}.`,
-        homeKeyPlayers: [],
-        awayKeyPlayers: [],
-      };
-    }
-
-    // Build prediction object
+    // Build prediction object (all numbers from mathematical engines — no LLM)
     const prediction: Prediction = {
       homeWin: enhanced.homeWin,
       draw: enhanced.draw,
@@ -207,10 +172,10 @@ export async function POST(request: NextRequest) {
       predictedScoreHome: enhanced.predictedScoreHome,
       predictedScoreAway: enhanced.predictedScoreAway,
       confidence: enhanced.confidence,
-      analysis: groqAnalysis?.analysis || `Predicción estadística: ${homeTeam} ${enhanced.homeWin}% | Empate ${enhanced.draw}% | ${awayTeam} ${enhanced.awayWin}%`,
+      analysis: `Predicción estadística: ${homeTeam} ${enhanced.homeWin}% | Empate ${enhanced.draw}% | ${awayTeam} ${enhanced.awayWin}%. Marcador más probable: ${enhanced.predictedScoreHome}-${enhanced.predictedScoreAway}. Goles esperados: ${homeTeam} ${enhanced.homeExpectedGoals} xG vs ${awayTeam} ${enhanced.awayExpectedGoals} xG.`,
       keyFactors,
-      homeKeyPlayers: groqAnalysis?.homeKeyPlayers || [],
-      awayKeyPlayers: groqAnalysis?.awayKeyPlayers || [],
+      homeKeyPlayers: [],
+      awayKeyPlayers: [],
       homeFormLast5: homeForm?.last5?.map(f => f.result) || DEFAULT_FORM,
       awayFormLast5: awayForm?.last5?.map(f => f.result) || DEFAULT_FORM,
       homeAttackStrength: enhanced.homeAttack,
@@ -279,16 +244,8 @@ export async function POST(request: NextRequest) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error('[predict:v2] FALLO:', errorMsg);
 
-    let userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
-    let statusCode = 500;
-
-    if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('GROQ_API_KEY') || errorMsg.includes('authentication') || errorMsg.includes('401')) {
-      userMessage = 'Servicio no disponible temporalmente. Estamos trabajando en ello.';
-      statusCode = 503;
-    } else if (errorMsg.includes('QUOTA') || errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('rate limit')) {
-      userMessage = 'Demasiadas solicitudes. Intenta de nuevo en un minuto.';
-      statusCode = 429;
-    }
+    const userMessage = 'Error generando la predicción. Intenta de nuevo en unos segundos.';
+    const statusCode = 500;
 
     return NextResponse.json(
       { error: userMessage, details: process.env.NODE_ENV === 'development' ? errorMsg : undefined },

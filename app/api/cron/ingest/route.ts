@@ -344,64 +344,14 @@ export async function GET(request: Request) {
       }
     }
 
-    // AUTO-RECALCULATE: If new results were ingested, trigger recalculate AND simulate
+    // Log summary of what was ingested
     if (results.resultsIngested > 0) {
-      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested. Triggering auto-recalculate...`);
       diagnostics.push({
         step: 'ingest_summary',
         status: 'ok',
         message: `${results.resultsIngested} results ingested, ${results.formsUpdated} forms updated`,
       });
-
-      // Trigger recalculate automatically
-      try {
-        const crs = process.env.CRON_SECRET || '';
-        const recalcUrl = new URL(request.url);
-        recalcUrl.pathname = '/api/cron/recalculate';
-        const recalcRes = await fetch(recalcUrl.toString(), {
-          headers: { Authorization: `Bearer ${crs}` },
-          signal: AbortSignal.timeout(120000),
-        });
-        const recalcData = await recalcRes.json().catch(() => ({}));
-        diagnostics.push({
-          step: 'auto_recalculate',
-          status: recalcRes.ok ? 'ok' : 'warn',
-          message: recalcRes.ok
-            ? `Auto-recalculate triggered: ${recalcData.predictionsSaved ?? '?'} predictions updated`
-            : `Auto-recalculate failed: HTTP ${recalcRes.status}`,
-        });
-      } catch (err) {
-        diagnostics.push({
-          step: 'auto_recalculate',
-          status: 'warn',
-          message: `Auto-recalculate error: ${err instanceof Error ? err.message : String(err)}`,
-        });
-      }
-
-      // Trigger simulate automatically
-      try {
-        const crs = process.env.CRON_SECRET || '';
-        const simUrl = new URL(request.url);
-        simUrl.pathname = '/api/cron/simulate';
-        const simRes = await fetch(simUrl.toString(), {
-          headers: { Authorization: `Bearer ${crs}` },
-          signal: AbortSignal.timeout(120000),
-        });
-        const simData = await simRes.json().catch(() => ({}));
-        diagnostics.push({
-          step: 'auto_simulate',
-          status: simRes.ok ? 'ok' : 'warn',
-          message: simRes.ok
-            ? `Auto-simulate triggered: ${simData.simulationsCompleted ?? '?'} sims, top: ${simData.topTeam ?? '?'}`
-            : `Auto-simulate failed: HTTP ${simRes.status}`,
-        });
-      } catch (err) {
-        diagnostics.push({
-          step: 'auto_simulate',
-          status: 'warn',
-          message: `Auto-simulate error: ${err instanceof Error ? err.message : String(err)}`,
-        });
-      }
+      console.log(`[cron:ingest] ${results.resultsIngested} new results ingested`);
     }
 
     // Check for name mapping failures

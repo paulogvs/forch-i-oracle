@@ -7,7 +7,6 @@ import { NextResponse } from 'next/server';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { addMatchResult } from '@/lib/prediction-store';
-import { getPrediction as getGroqPrediction } from '@/lib/groq';
 import { validateCronAuth } from '@/lib/cron-auth';
 
 export async function GET(request: Request) {
@@ -56,34 +55,10 @@ export async function GET(request: Request) {
         // Build key factors
         const factors = ensemble.keyFactors;
 
-        // Get Groq analysis (non-blocking, with fallback)
-        let analysis: string | undefined;
-        let homeKeyPlayers: string[] | undefined;
-        let awayKeyPlayers: string[] | undefined;
-
-        try {
-          const groqResult = await getGroqPrediction(
-            match.homeTeamId,
-            match.awayTeamId,
-            `Ensemble: DC=${ensemble.weights.dixonColes.toFixed(2)} Bay=${ensemble.weights.bayesianDynamic.toFixed(2)} Elo=${ensemble.weights.eloPoisson.toFixed(2)} | Agreement=${ensemble.agreement.agreementScore.toFixed(2)} | Entropy=${ensemble.uncertainty.entropy.toFixed(2)}`,
-            match.venue ? {
-              id: match.id,
-              group: match.groupChar || '',
-              matchday: match.matchNumber || 1,
-              date: match.matchDate || '',
-              time: match.matchTime || '',
-              venue: match.venue,
-              city: match.city || '',
-            } : null,
-            ensemble.models.eloPoisson  // Pass the StatisticalPrediction from the ensemble's Elo model
-          );
-          analysis = groqResult.analysis;
-          homeKeyPlayers = groqResult.homeKeyPlayers;
-          awayKeyPlayers = groqResult.awayKeyPlayers;
-        } catch (groqError) {
-          console.warn(`[cron:recalculate] Groq fallback for ${match.homeTeamId} vs ${match.awayTeamId}`);
-          analysis = `${match.homeTeamId} (${ensemble.homeWin}%) vs ${match.awayTeamId} (${ensemble.awayWin}%) — Marcador: ${ensemble.predictedScoreHome}-${ensemble.predictedScoreAway} — Confianza: ${ensemble.confidence} (${ensemble.confidenceScore}/100)`;
-        }
+        // Build analysis from ensemble numbers (no LLM needed)
+        const analysis = `${match.homeTeamId} (${ensemble.homeWin}%) vs ${match.awayTeamId} (${ensemble.awayWin}%) — Marcador: ${ensemble.predictedScoreHome}-${ensemble.predictedScoreAway} — Confianza: ${ensemble.confidence} (${ensemble.confidenceScore}/100)`;
+        const homeKeyPlayers: string[] | undefined = undefined;
+        const awayKeyPlayers: string[] | undefined = undefined;
 
         // Save prediction
         await db.savePrediction({

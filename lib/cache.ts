@@ -1,7 +1,7 @@
 // FORCH.i ORACLE — Server-side caching layer
 // Two caches: Groq predictions (2h) + API responses (5 min)
 
-import type { Prediction } from './groq';
+import type { Prediction } from './types/prediction';
 
 // ═══ GROQ PREDICTION CACHE (2 hours) ═══
 interface GroqCacheEntry {
