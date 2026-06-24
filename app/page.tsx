@@ -20,6 +20,7 @@ import { computeChampionProbsFromElo, type EloChampionProb } from '@/lib/elo-cha
 
 interface FixtureMatch {
   id: string; homeTeam: string; awayTeam: string; round: string; group: string;
+  date: string; time: string;
   predictedScore: [number, number] | null; homeWinPct: number; drawPct: number; awayWinPct: number;
   confidence: string | null;
 }
@@ -59,6 +60,7 @@ export default function DashboardPage() {
       for (const m of sourceFixture) {
         predMap.set(m.id, {
           id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, round: m.round, group: m.group || '',
+          date: (m as any).date || '', time: (m as any).time || '',
           predictedScore: (m.predictedScore || (m as any).predictedScore) ?? null,
           homeWinPct: (m.homeWinPct || (m as any).homeWinPct) ?? 0,
           drawPct: (m.drawPct || (m as any).drawPct) ?? 0,

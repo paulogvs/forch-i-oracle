@@ -1,7 +1,6 @@
 // FORCH.i ORACLE — Dashboard Utilities
 // Functions for grouping, sorting, and formatting dashboard data
 
-import { ALL_MATCHES } from './matches';
 import { getTeamByName } from './teams';
 
 // ═══════════════════════════════════════════════════════════════
@@ -112,30 +111,23 @@ export function getUpcomingMatches(
       if (!p.predictedScore) return false;
       // Exclude if either team already has a finished result
       if (finishedTeams.has(`${p.homeTeam}_vs_${p.awayTeam}`)) return false;
-      // Exclude matches from before today
-      const staticMatch = ALL_MATCHES.find(
-        m => m.homeTeam === p.homeTeam && m.awayTeam === p.awayTeam
-      );
-      if (staticMatch) {
-        const matchDate = new Date(`${staticMatch.date}T${staticMatch.time || '00:00'}:00Z`);
+      // Exclude matches from before today — use date/time directly from prediction
+      if (p.date) {
+        const matchDate = new Date(`${p.date}T${p.time || '00:00'}:00Z`);
         if (matchDate < todayStart) return false;
       }
       return true;
     })
     .map(p => {
-      // Find the static match for date info
-      const staticMatch = ALL_MATCHES.find(
-        m => m.homeTeam === p.homeTeam && m.awayTeam === p.awayTeam
-      );
-      const matchDate = staticMatch ? new Date(`${staticMatch.date}T${staticMatch.time || '00:00'}:00Z`) : now;
+      const matchDate = p.date ? new Date(`${p.date}T${p.time || '00:00'}:00Z`) : now;
       const daysUntil = Math.max(0, Math.ceil((matchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
       return {
         id: p.id,
         homeTeam: p.homeTeam,
         awayTeam: p.awayTeam,
-        date: staticMatch?.date || '',
-        time: staticMatch?.time || '',
+        date: p.date || '',
+        time: p.time || '',
         round: p.round || 'group',
         group: p.group || '',
         predictedScore: p.predictedScore,
