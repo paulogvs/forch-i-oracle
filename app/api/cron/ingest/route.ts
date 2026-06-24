@@ -352,6 +352,33 @@ export async function GET(request: Request) {
         message: `${results.resultsIngested} results ingested, ${results.formsUpdated} forms updated`,
       });
       console.log(`[cron:ingest] ${results.resultsIngested} new results ingested`);
+
+      // AUTO-SIMULATE: Trigger tournament simulation after ingesting new results
+      // This updates champion probabilities ~30 min after each match ends.
+      // Safe now: Groq removed, no cascade chain (just ingest → simulate = ~35s total).
+      try {
+        const crs = process.env.CRON_SECRET || '';
+        const simUrl = new URL(request.url);
+        simUrl.pathname = '/api/cron/simulate';
+        const simRes = await fetch(simUrl.toString(), {
+          headers: { Authorization: `Bearer ${crs}` },
+          signal: AbortSignal.timeout(120000),
+        });
+        const simData = await simRes.json().catch(() => ({}));
+        diagnostics.push({
+          step: 'auto_simulate',
+          status: simRes.ok ? 'ok' : 'warn',
+          message: simRes.ok
+            ? `Auto-simulate triggered: ${simData.simulationsCompleted ?? '?'} sims, top: ${simData.topTeam ?? '?'}`
+            : `Auto-simulate failed: HTTP ${simRes.status}`,
+        });
+      } catch (err) {
+        diagnostics.push({
+          step: 'auto_simulate',
+          status: 'warn',
+          message: `Auto-simulate error: ${err instanceof Error ? err.message : String(err)}`,
+        });
+      }
     }
 
     // Check for name mapping failures
