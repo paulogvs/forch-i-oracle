@@ -103,12 +103,23 @@ export function getUpcomingMatches(
   count = 4
 ): UpcomingMatch[] {
   const now = new Date();
+  // Start of today (00:00 UTC) — exclude matches before this
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
 
   const upcoming = Array.from(predictions.values())
     .filter(p => {
       if (!p.predictedScore) return false;
       // Exclude if either team already has a finished result
       if (finishedTeams.has(`${p.homeTeam}_vs_${p.awayTeam}`)) return false;
+      // Exclude matches from before today
+      const staticMatch = ALL_MATCHES.find(
+        m => m.homeTeam === p.homeTeam && m.awayTeam === p.awayTeam
+      );
+      if (staticMatch) {
+        const matchDate = new Date(`${staticMatch.date}T${staticMatch.time || '00:00'}:00Z`);
+        if (matchDate < todayStart) return false;
+      }
       return true;
     })
     .map(p => {

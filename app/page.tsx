@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight, Sparkles } from 'lucide-react';
+import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
@@ -193,22 +193,6 @@ export default function DashboardPage() {
     return getUpcomingMatches(predictions, finishedSet, 4);
   }, [predictions, finishedMatches]);
 
-  // ─── Match of the Day ─────────────────────────────────────
-  const matchOfDay = useMemo(() => {
-    const upcoming = Array.from(predictions.values()).filter(p =>
-      p.predictedScore && !finishedMatches.some(f => f.homeTeam === p.homeTeam && f.awayTeam === p.awayTeam)
-    );
-    if (upcoming.length === 0) return null;
-
-    const scored = upcoming.map(p => {
-      const balance = Math.abs(p.homeWinPct - p.awayWinPct);
-      const scoreCloseness = Math.abs(p.predictedScore![0] - p.predictedScore![1]) <= 1 ? 0 : 2;
-      return { ...p, interestScore: balance + scoreCloseness };
-    });
-    scored.sort((a, b) => a.interestScore - b.interestScore);
-    return scored[0];
-  }, [predictions, finishedMatches]);
-
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade pb-8">
 
@@ -275,22 +259,6 @@ export default function DashboardPage() {
           color="gold"
         />
       </div>
-
-      {/* ═══ PARTIDO DEL DÍA ═══ */}
-      {matchOfDay && (
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="space-y-2"
-        >
-          <h2 className="text-xs font-bold text-fg-primary flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-accent-premium" />
-            Partido del Día
-          </h2>
-          <MatchOfDayCard match={matchOfDay} getFlag={getFlag} />
-        </motion.section>
-      )}
 
       {/* ═══ EN VIVO ═══ */}
       <AnimatePresence>
@@ -408,40 +376,6 @@ export default function DashboardPage() {
 // ═══════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════
-
-function MatchOfDayCard({ match, getFlag }: { match: any; getFlag: (n: string) => string }) {
-  const [h, a] = match.predictedScore!;
-  return (
-    <div className="surface-interactive p-4 rounded-[var(--r-lg)] border border-accent-premium/20 relative overflow-hidden">
-      {/* Background glow */}
-      <div className="absolute inset-0 bg-gradient-to-r from-accent-premium/5 via-transparent to-accent-premium/5 pointer-events-none" />
-
-      <div className="relative flex items-center gap-3">
-        <div className="flex-1 text-center">
-          <span className="text-2xl block">{getFlag(match.homeTeam)}</span>
-          <div className="text-xs font-bold text-fg-primary mt-1">{match.homeTeam}</div>
-          <div className="text-[10px] text-fg-tertiary">{Math.round(match.homeWinPct)}%</div>
-        </div>
-        <div className="text-center px-4">
-          <div className="px-4 py-2 bg-accent-premium/15 rounded-[var(--r-md)] border border-accent-premium/20">
-            <span className="font-mono font-bold text-lg text-accent-premium tabular-nums">{h}-{a}</span>
-          </div>
-          <div className="text-[10px] text-fg-tertiary mt-1">Predicción</div>
-        </div>
-        <div className="flex-1 text-center">
-          <span className="text-2xl block">{getFlag(match.awayTeam)}</span>
-          <div className="text-xs font-bold text-fg-primary mt-1">{match.awayTeam}</div>
-          <div className="text-[10px] text-fg-tertiary">{Math.round(match.awayWinPct)}%</div>
-        </div>
-      </div>
-
-      <p className="relative text-[10px] text-fg-tertiary text-center mt-3 flex items-center justify-center gap-1">
-        <Sparkles className="h-3 w-3 text-accent-premium" />
-        Partido equilibrado — predicción ajustada por motor ensemble
-      </p>
-    </div>
-  );
-}
 
 function LiveMatchCard({ match, getFlag }: { match: LiveMatch; getFlag: (n: string) => string }) {
   return (
