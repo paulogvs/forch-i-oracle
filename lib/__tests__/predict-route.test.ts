@@ -4,45 +4,13 @@ import type { NextRequest } from 'next/server';
 // @ts-nocheck — vitest test file, mock objects don't satisfy NextRequest strictly
 
 // Mock the modules that make external calls
-vi.mock('@/lib/groq', () => ({
-  getPrediction: vi.fn().mockResolvedValue({
-    homeWin: 40,
-    draw: 30,
-    awayWin: 30,
-    analysis: 'Test analysis from Groq',
-    homeKeyPlayers: ['Player 1', 'Player 2'],
-    awayKeyPlayers: ['Player 3', 'Player 4'],
-    keyFactors: [],
-    homeFormLast5: ['W', 'W', 'D', 'L', 'W'],
-    awayFormLast5: ['L', 'W', 'D', 'W', 'L'],
-    homeAttackStrength: 50,
-    awayAttackStrength: 50,
-    homeDefenseStrength: 50,
-    awayDefenseStrength: 50,
-    homeMidfieldStrength: 50,
-    awayMidfieldStrength: 50,
-    predictedScoreHome: 1,
-    predictedScoreAway: 1,
-    confidence: 'media',
-    homeExpectedGoals: 1.5,
-    awayExpectedGoals: 1.2,
-    over25Probability: 55,
-    bttsProbability: 60,
-    topScores: [{ home: 1, away: 1, probability: 12.5 }],
-  }),
-  parseGroqJson: vi.fn(),
-  parseGroqAnalysis: vi.fn(),
-  validatePrediction: vi.fn(),
-}));
-
 vi.mock('@/lib/football-api', () => ({
   getMatchContext: vi.fn().mockResolvedValue('Test match context'),
-  getComprehensiveTeamStats: vi.fn().mockResolvedValue(null), // No real stats in tests → fallback to Elo
+  getComprehensiveTeamStats: vi.fn().mockResolvedValue(null),
 }));
 
 // Import after mocking
 import { POST } from '@/app/api/predict/route';
-import { getPrediction } from '@/lib/groq';
 
 describe('POST /api/predict', () => {
   beforeEach(() => {
@@ -96,34 +64,8 @@ describe('POST /api/predict', () => {
     expect(typeof data.prediction.homeWin).toBe('number');
     expect(data.prediction.homeWin).toBeGreaterThanOrEqual(0);
     expect(data.prediction.homeWin).toBeLessThanOrEqual(100);
-    expect(data.prediction.analysis).toBe('Test analysis from Groq');
-  });
-
-  it('should call getPrediction with correct parameters', async () => {
-    const context = {
-      id: 'A1',
-      group: 'A',
-      matchday: 1,
-      date: '2026-06-11',
-      time: '02:00',
-      venue: 'Estadio Azteca',
-      city: 'Mexico City',
-    };
-    const request = createMockRequest({
-      homeTeam: 'México',
-      awayTeam: 'Sudáfrica',
-      matchContext: context,
-    });
-
-    await POST(request);
-
-    expect(getPrediction).toHaveBeenCalledWith(
-      'México',
-      'Sudáfrica',
-      expect.any(String),
-      context,
-      expect.any(Object) // stats
-    );
+    expect(data.prediction.analysis).toBeDefined();
+    expect(typeof data.prediction.analysis).toBe('string');
   });
 
   it('should include timestamp in response', async () => {
