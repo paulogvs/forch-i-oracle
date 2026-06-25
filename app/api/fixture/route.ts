@@ -10,6 +10,7 @@ import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/l
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { getOrComputeTournamentResults } from '@/lib/tournament-results';
+import { fetchWC26Games, teamIdToSpanish, type WC26Game } from '@/lib/worldcup26-api';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
 interface FixtureCacheEntry { data: unknown; expiresAt: number; }
@@ -27,6 +28,51 @@ function setFixtureCache(key: string, data: unknown): void {
   fixtureCache.set(key, { data, expiresAt: Date.now() + FIXTURE_CACHE_TTL });
 }
 
+// ═══ COLD START: Fetch fresh results from wheniskickoff.com ═══
+// On Vercel, /tmp is ephemeral — data layer loses results on cold start.
+// This function re-fetches results from the external API and ingests them.
+async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
+  const existingResults = await db.getMatchResults();
+  if (existingResults.length > 0) return 0; // Already have results
+
+  const games = await fetchWC26Games();
+  if (!games || games.length === 0) return 0;
+
+  let ingested = 0;
+  for (const game of games) {
+    if (game.finished !== 'TRUE') continue;
+
+    const homeTeam = teamIdToSpanish(game.home_team_id);
+    const awayTeam = teamIdToSpanish(game.away_team_id);
+    if (!homeTeam || !awayTeam) continue;
+
+    // Find matching match in our database
+    let match = await db.getMatchByTeams(homeTeam, awayTeam);
+    if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
+    if (!match) continue;
+
+    // Check if already ingested
+    const alreadyIngested = existingResults.some(r => r.matchId === match!.id);
+    if (alreadyIngested) continue;
+
+    const homeGoals = parseInt(game.home_score) || 0;
+    const awayGoals = parseInt(game.away_score) || 0;
+    const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+
+    await db.submitMatchResult({
+      matchId: match.id,
+      homeScore: homeGoals,
+      awayScore: awayGoals,
+      winner,
+    });
+
+    ingested++;
+    existingResults.push({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+  }
+
+  return ingested;
+}
+
 export async function POST(request: NextRequest) {
   // Rate limit: 20 req/min per IP
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
@@ -39,6 +85,12 @@ export async function POST(request: NextRequest) {
     const { useDynamic = true, useEnhanced: useEnhancedFlag = true, realResults = [] } = body;
 
     const db = await getDataLayerAsync();
+
+    // ─── COLD START: Re-fetch results from external API if data layer is empty ───
+    // On Vercel, /tmp is ephemeral — results are lost on cold start.
+    // This ensures predictions always reflect real results, even after cold start.
+    await ensureResultsFromExternalAPI(db);
+
     const storedResults = await db.getMatchResults();
     const resultsHash = storedResults
       .map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`)
