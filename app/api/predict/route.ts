@@ -6,6 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { getCachedPrediction, setCachedPrediction } from '@/lib/cache';
 import { getKeyFactors } from '@/lib/predictor-engine';
 import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/lib/enhanced-engine';
+import { calculateEnsemblePrediction } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { DEFAULT_FORM } from '@/lib/teams';
 import type { Prediction } from '@/lib/types/prediction';
@@ -97,6 +98,10 @@ export async function POST(request: NextRequest) {
           fromDb: true,
           timestamp: cachedPred.predictedAt,
           dataQuality: cachedPred.dataQualityScore,
+          agreement: cachedPred.agreement || null,
+          uncertainty: cachedPred.uncertainty || null,
+          models: cachedPred.models || null,
+          confidenceScore: cachedPred.confidenceScore || null,
         });
       }
     }
@@ -191,6 +196,27 @@ export async function POST(request: NextRequest) {
       topScores: enhanced.topScores,
     };
 
+    // ═══ MODEL DISAGREEMENT — Run ensemble alongside enhanced engine ═══
+    // The ensemble computes per-model agreement and uncertainty metrics
+    let ensembleAgreement: any = undefined;
+    let ensembleUncertainty: any = undefined;
+    let ensembleModels: any = undefined;
+    let ensembleConfidenceScore: number | undefined = undefined;
+    try {
+      const ensemble = calculateEnsemblePrediction(homeTeam, awayTeam);
+      ensembleAgreement = ensemble.agreement;
+      ensembleUncertainty = ensemble.uncertainty;
+      ensembleConfidenceScore = ensemble.confidenceScore;
+      ensembleModels = {
+        dixonColes: { homeWin: ensemble.models.dixonColes.homeWin, draw: ensemble.models.dixonColes.draw, awayWin: ensemble.models.dixonColes.awayWin },
+        eloPoisson: { homeWin: ensemble.models.eloPoisson.homeWin, draw: ensemble.models.eloPoisson.draw, awayWin: ensemble.models.eloPoisson.awayWin },
+        bayesian: { homeWin: ensemble.models.dynamic.homeWinPct, draw: ensemble.models.dynamic.drawPct, awayWin: ensemble.models.dynamic.awayWinPct },
+        purePoisson: ensemble.models.purePoisson,
+      };
+    } catch {
+      // Non-critical — disagreement data is supplemental
+    }
+
     // Save to data layer (if match exists)
     if (matchInDb) {
       try {
@@ -220,6 +246,11 @@ export async function POST(request: NextRequest) {
           analysis: prediction.analysis,
           homeKeyPlayers: prediction.homeKeyPlayers,
           awayKeyPlayers: prediction.awayKeyPlayers,
+          // Model disagreement data
+          agreement: ensembleAgreement,
+          uncertainty: ensembleUncertainty,
+          models: ensembleModels,
+          confidenceScore: ensembleConfidenceScore,
         });
       } catch {
         console.warn('[predict:v2] Could not save prediction to data layer');
@@ -239,6 +270,11 @@ export async function POST(request: NextRequest) {
       fromDb: false,
       timestamp: new Date().toISOString(),
       dataQuality: enhanced.dataQualityScore,
+      // Model disagreement data
+      agreement: ensembleAgreement,
+      uncertainty: ensembleUncertainty,
+      models: ensembleModels,
+      confidenceScore: ensembleConfidenceScore,
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);

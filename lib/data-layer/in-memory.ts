@@ -258,6 +258,10 @@ async function savePrediction(prediction: Omit<DBMatchPrediction, 'id' | 'predic
     dataQualityScore: prediction.dataQualityScore,
     modelVersion: prediction.modelVersion,
     topScores: prediction.topScores || [],
+    agreement: prediction.agreement,
+    uncertainty: prediction.uncertainty,
+    models: prediction.models,
+    confidenceScore: prediction.confidenceScore,
   });
 
   return saved;

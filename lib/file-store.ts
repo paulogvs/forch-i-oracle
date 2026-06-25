@@ -106,6 +106,28 @@ export interface PersistedPrediction {
   dataQualityScore: number;
   modelVersion: string;
   topScores: { home: number; away: number; probability: number }[];
+  // New fields for model disagreement
+  agreement?: {
+    homeWinStdDev: number;
+    drawStdDev: number;
+    awayWinStdDev: number;
+    agreementScore: number;
+    unanimousWinner: boolean;
+  };
+  uncertainty?: {
+    homeWin90: { low: number; high: number };
+    draw90: { low: number; high: number };
+    awayWin90: { low: number; high: number };
+    entropy: number;
+    effectiveOutcomes: number;
+  };
+  models?: {
+    dixonColes?: { homeWin: number; draw: number; awayWin: number };
+    eloPoisson?: { homeWin: number; draw: number; awayWin: number };
+    bayesian?: { homeWin: number; draw: number; awayWin: number };
+    purePoisson?: { homeWin: number; draw: number; awayWin: number };
+  };
+  confidenceScore?: number;
 }
 
 export function getPredictions(): Record<string, PersistedPrediction> {

@@ -79,6 +79,50 @@ export interface DBMatchPrediction {
   analysis?: string;
   homeKeyPlayers?: string[];
   awayKeyPlayers?: string[];
+
+  // ═══════════════════════════════════════════════════════════════
+  // MODEL DISAGREEMENT & UNCERTAINTY (NEW — WorldCupBench inspired)
+  // ═══════════════════════════════════════════════════════════════
+  /** Agreement metrics across the 4 ensemble models */
+  agreement?: {
+    homeWinStdDev: number;
+    drawStdDev: number;
+    awayWinStdDev: number;
+    agreementScore: number;
+    unanimousWinner: boolean;
+  };
+  /** Uncertainty intervals with entropy */
+  uncertainty?: {
+    homeWin90: { low: number; high: number };
+    draw90: { low: number; high: number };
+    awayWin90: { low: number; high: number };
+    entropy: number;
+    effectiveOutcomes: number;
+  };
+  /** Individual model outputs for transparency */
+  models?: {
+    dixonColes?: { homeWin: number; draw: number; awayWin: number };
+    eloPoisson?: { homeWin: number; draw: number; awayWin: number };
+    bayesian?: { homeWin: number; draw: number; awayWin: number };
+    purePoisson?: { homeWin: number; draw: number; awayWin: number };
+  };
+  /** Numeric confidence score (0-100) */
+  confidenceScore?: number;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DAG NODE — For tournament bracket DAG structure
+// ═══════════════════════════════════════════════════════════════
+
+/** A single node in the knockout DAG */
+export interface DAGNode {
+  matchId: string;
+  round: string;
+  homeSlot: string;
+  awaySlot: string;
+  feedsInto: string | null;     // matchId of the match this winner goes to
+  feedsIntoSlot: 'home' | 'away' | null;
+  loserGoesTo: string | null;   // for third place match
 }
 
 // ═══════════════════════════════════════════════════════════════

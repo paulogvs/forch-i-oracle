@@ -10,6 +10,7 @@ import { calculateEnhancedPrediction, type EnhancedPredictionContext } from '@/l
 import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensemble-engine';
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { getOrComputeTournamentResults } from '@/lib/tournament-results';
+import { buildTournamentDAG } from '@/lib/tournament-dag';
 import { fetchWC26Games, teamIdToSpanish, type WC26Game } from '@/lib/worldcup26-api';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
@@ -232,6 +233,16 @@ export async function POST(request: NextRequest) {
               homeElo: ensemble.models.eloPoisson.homeElo,
               awayElo: ensemble.models.eloPoisson.awayElo,
               topScores: ensemble.topScores,
+              // Model disagreement data (already computed by ensemble)
+              agreement: ensemble.agreement,
+              uncertainty: ensemble.uncertainty,
+              confidenceScore: ensemble.confidenceScore,
+              models: {
+                dixonColes: { homeWin: ensemble.models.dixonColes.homeWin, draw: ensemble.models.dixonColes.draw, awayWin: ensemble.models.dixonColes.awayWin },
+                eloPoisson: { homeWin: ensemble.models.eloPoisson.homeWin, draw: ensemble.models.eloPoisson.draw, awayWin: ensemble.models.eloPoisson.awayWin },
+                bayesian: { homeWin: ensemble.models.dynamic.homeWinPct, draw: ensemble.models.dynamic.drawPct, awayWin: ensemble.models.dynamic.awayWinPct },
+                purePoisson: ensemble.models.purePoisson,
+              },
             });
           } catch {
             // Non-critical if save fails
@@ -279,6 +290,10 @@ export async function POST(request: NextRequest) {
           awayWinPct: prediction.awayWin,
           xG: [prediction.homeXG, prediction.awayXG],
           dataQuality: prediction.dataQuality,
+          // Model disagreement data
+          agreement: prediction.agreement || null,
+          uncertainty: prediction.uncertainty || null,
+          confidenceScore: prediction.confidenceScore || null,
         });
 
         // Update standings
@@ -358,6 +373,10 @@ export async function POST(request: NextRequest) {
         drawPct: koResult ? koResult.drawProb : null,
         awayWinPct: koResult ? koResult.awayWinProb : null,
         xG: koResult && koResult.xGHome != null && koResult.xGAway != null ? [koResult.xGHome, koResult.xGAway] : null,
+        // Knockout model disagreement data
+        agreement: koResult?.agreement || null,
+        uncertainty: koResult?.uncertainty || null,
+        confidenceScore: koResult?.confidenceScore || null,
       });
     }
 
@@ -394,6 +413,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ═══ TOURNAMENT DAG — Bracket dependency structure ═══
+    const dag = buildTournamentDAG();
+
     const response = {
       success: true,
       fixture,
@@ -406,6 +428,18 @@ export async function POST(request: NextRequest) {
       realResultsIngested: realResults.length,
       totalRealResults: storedResults.length,
       resultsHash,
+      // Tournament DAG (bracket structure)
+      bracketDAG: {
+        nodes: dag.nodes.map(n => ({
+          matchId: n.matchId,
+          round: n.round,
+          roundLabel: n.roundLabel,
+          feedsInto: n.feedsInto,
+          feedsIntoSlot: n.feedsIntoSlot,
+          feedsFrom: n.feedsFrom,
+        })),
+        depth: dag.depth,
+      },
     };
 
     // Cache the response (skip if real results were submitted)
