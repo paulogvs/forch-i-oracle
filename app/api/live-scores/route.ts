@@ -173,11 +173,11 @@ export async function GET(request: Request) {
   let fdError: string | null = null;
   try {
     const headers: Record<string, string> = {};
-    const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
+    const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN || process.env.FOOTBALL_API_KEY;
     if (fdToken) {
       headers['X-Auth-Token'] = fdToken;
     } else {
-      fdError = 'No FOOTBALL_DATA_ORG_TOKEN set — football-data.org requires auth for WC (TIER_ONE)';
+      fdError = 'No FOOTBALL_DATA_ORG_TOKEN or FOOTBALL_API_KEY set — football-data.org requires auth for WC (TIER_ONE)';
       console.warn(`[live-scores] ${fdError}`);
     }
 
@@ -306,7 +306,7 @@ export async function GET(request: Request) {
     },
     debug: {
       fdError: fdError || undefined,
-      fdTokenSet: !!process.env.FOOTBALL_DATA_ORG_TOKEN,
+      fdTokenSet: !!(process.env.FOOTBALL_DATA_ORG_TOKEN || process.env.FOOTBALL_API_KEY),
       fdMatchCount: fdMatches?.length || 0,
     },
   };
