@@ -11,7 +11,7 @@
 // 2. wheniskickoff.com — Static fixtures (upcoming/scheduled)
 
 import { NextResponse } from 'next/server';
-import { fetchWC26Games, convertWC26Game, type ProcessedWC26Match } from '@/lib/worldcup26-api';
+import { fetchWC26Games, convertWC26Game, type ProcessedWC26Match, type WC26Game } from '@/lib/worldcup26-api';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 // Server-side cache: 30 seconds (live data needs freshness)
@@ -220,7 +220,8 @@ export async function GET(request: Request) {
 
       const homeGoals = fd.score.fullTime.homeTeam;
       const awayGoals = fd.score.fullTime.awayTeam;
-      if (homeGoals === null || awayGoals === null) continue;
+      // Use == null to catch both null AND undefined (football-data.org returns undefined for missing scores)
+      if (homeGoals == null || awayGoals == null) continue;
 
       const match: ProcessedWC26Match = {
         homeTeam,
@@ -247,32 +248,65 @@ export async function GET(request: Request) {
     }
   }
 
-  // Fallback: use wheniskickoff.com for upcoming matches (and any live/finished not caught by FD)
+  // Fetch wheniskickoff.com data once (used for both fallback and merge)
+  let wkiGames: WC26Game[] | null = null;
   try {
-    const games = await fetchWC26Games();
-    if (games) {
-      for (const game of games) {
-        if (groupFilter && game.group !== groupFilter) continue;
-        const converted = convertWC26Game(game);
-        if (!converted) continue;
+    wkiGames = await fetchWC26Games();
+  } catch {
+    // wheniskickoff unavailable — that's fine, we have FD data
+  }
 
-        // Skip if already captured from football-data.org
-        const alreadyHave = [...finished, ...live].some(
-          m => m.homeTeam === converted.homeTeam && m.awayTeam === converted.awayTeam
-        );
-        if (alreadyHave) continue;
+  // Fallback: use wheniskickoff.com for upcoming matches (and any live/finished not caught by FD)
+  if (wkiGames) {
+    for (const game of wkiGames) {
+      if (groupFilter && game.group !== groupFilter) continue;
+      const converted = convertWC26Game(game);
+      if (!converted) continue;
 
-        if (converted.isFinished) {
-          finished.push(converted);
-        } else if (converted.isLive) {
-          live.push(converted);
-        } else {
-          upcoming.push(converted);
+      // Skip if already captured from football-data.org
+      const alreadyHave = [...finished, ...live].some(
+        m => m.homeTeam === converted.homeTeam && m.awayTeam === converted.awayTeam
+      );
+      if (alreadyHave) continue;
+
+      if (converted.isFinished) {
+        finished.push(converted);
+      } else if (converted.isLive) {
+        live.push(converted);
+      } else {
+        upcoming.push(converted);
+      }
+    }
+  }
+
+  // MERGE: Fill any finished entries missing scores from wheniskickoff data
+  // This handles edge cases where football-data.org returned matches with
+  // undefined scores that slipped through the null check
+  if (wkiGames) {
+    for (const game of wkiGames) {
+      const converted = convertWC26Game(game);
+      if (!converted || !converted.isFinished) continue;
+
+      const match = finished.find(
+        m => m.homeTeam === converted.homeTeam && m.awayTeam === converted.awayTeam
+      );
+      if (match) {
+        // Fill in missing scores
+        if (match.homeScore == null || match.awayScore == null) {
+          match.homeScore = converted.homeScore;
+          match.awayScore = converted.awayScore;
+          match.winner = converted.winner;
+          match.timeElapsed = 'finished';
+        }
+        // Also fill empty scorers
+        if (match.homeScorers.length === 0 && converted.homeScorers.length > 0) {
+          match.homeScorers = converted.homeScorers;
+        }
+        if (match.awayScorers.length === 0 && converted.awayScorers.length > 0) {
+          match.awayScorers = converted.awayScorers;
         }
       }
     }
-  } catch {
-    // wheniskickoff unavailable — that's fine, we have FD data
   }
 
   // If live-only, return just live matches
