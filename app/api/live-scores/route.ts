@@ -21,33 +21,80 @@ const LIVE_CACHE_TTL = 30_000;
 // football-data.org config
 const FD_BASE_URL = 'https://api.football-data.org/v4';
 
-// Map football-data.org team names to our Spanish names
+// Map football-data.org team names to our Spanish names (all 48 WC2026 teams)
+// football-data.org uses English names → we map to our Spanish names
 const FD_NAME_MAP: Record<string, string> = {
+  // Group A
   'Mexico': 'México',
   'South Africa': 'Sudáfrica',
   'South Korea': 'Corea del Sur',
+  'Korea Republic': 'Corea del Sur',
   'Czech Republic': 'Chequia',
   'Czechia': 'Chequia',
+  // Group B
+  'Canada': 'Canadá',
+  'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
+  'Bosnia & Herzegovina': 'Bosnia y Herzegovina',
+  'Qatar': 'Qatar',
+  'Switzerland': 'Suiza',
+  // Group C
+  'Brazil': 'Brasil',
+  'Morocco': 'Marruecos',
+  'Haiti': 'Haití',
+  'Haití': 'Haití',
+  'Scotland': 'Escocia',
+  // Group D
   'United States': 'Estados Unidos',
   'USA': 'Estados Unidos',
-  'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
+  'Paraguay': 'Paraguay',
+  'Australia': 'Australia',
+  // Group E
+  'Turkey': 'Turquía',
+  'Türkiye': 'Turquía',
+  'Germany': 'Alemania',
+  'Curacao': 'Curazao',
+  'Curaçao': 'Curazao',
+  // Group F
   'Ivory Coast': 'Costa de Marfil',
   "Côte d'Ivoire": 'Costa de Marfil',
+  'Ecuador': 'Ecuador',
+  'Netherlands': 'Países Bajos',
+  // Group G
+  'Japan': 'Japón',
+  'Sweden': 'Suecia',
+  'Tunisia': 'Túnez',
+  'Belgium': 'Bélgica',
+  // Group H
+  'Egypt': 'Egipto',
+  'Iran': 'Irán',
+  'New Zealand': 'Nueva Zelanda',
+  // Group I
+  'Spain': 'España',
+  'Cape Verde': 'Cabo Verde',
+  'Cape Verde Islands': 'Cabo Verde',
+  'Saudi Arabia': 'Arabia Saudita',
+  'Uruguay': 'Uruguay',
+  // Group J
+  'France': 'Francia',
+  'Senegal': 'Senegal',
+  'Iraq': 'Irak',
+  'Norway': 'Noruega',
+  // Group K
+  'Argentina': 'Argentina',
+  'Algeria': 'Argelia',
+  'Austria': 'Austria',
+  'Jordan': 'Jordania',
+  // Group L
+  'Portugal': 'Portugal',
   'DR Congo': 'RD Congo',
   'Congo DR': 'RD Congo',
-  'Saudi Arabia': 'Arabia Saudita',
-  'Iran': 'Irán',
-  'Iraq': 'Irak',
-  'New Zealand': 'Nueva Zelanda',
-  'Netherlands': 'Países Bajos',
-  'Tunisia': 'Túnez',
-  'Algeria': 'Argelia',
-  'Morocco': 'Marruecos',
-  'Egypt': 'Egipto',
-  'Cape Verde': 'Cabo Verde',
   'Uzbekistan': 'Uzbekistán',
-  'Korea Republic': 'Corea del Sur',
-  'Korea DR': 'Corea del Sur',
+  'Colombia': 'Colombia',
+  // Knockout (additional names)
+  'England': 'Inglaterra',
+  'Croatia': 'Croacia',
+  'Ghana': 'Ghana',
+  'Panama': 'Panamá',
 };
 
 interface FDMatch {
@@ -86,6 +133,11 @@ interface LiveScoresResponse {
     liveCount: number;
     upcomingCount: number;
   };
+  debug?: {
+    fdError?: string;
+    fdTokenSet: boolean;
+    fdMatchCount: number;
+  };
 }
 
 function mapFDTeamName(fdName: string): string | null {
@@ -116,30 +168,40 @@ export async function GET(request: Request) {
     return NextResponse.json(cached.data);
   }
 
-  // Try football-data.org first for live scores (free tier, no auth needed)
+  // Try football-data.org first for live scores (requires token — WC is TIER_ONE)
   let fdMatches: FDMatch[] | null = null;
+  let fdError: string | null = null;
   try {
     const headers: Record<string, string> = {};
     const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
     if (fdToken) {
       headers['X-Auth-Token'] = fdToken;
+    } else {
+      fdError = 'No FOOTBALL_DATA_ORG_TOKEN set — football-data.org requires auth for WC (TIER_ONE)';
+      console.warn(`[live-scores] ${fdError}`);
     }
 
-    // Fetch IN_PLAY + FINISHED matches for real-time data
-    const response = await fetch(
-      `${FD_BASE_URL}/competitions/WC/matches?status=IN_PLAY,FINISHED`,
-      {
-        headers,
-        signal: AbortSignal.timeout(10000),
+    if (fdToken) {
+      // Fetch IN_PLAY + FINISHED matches for real-time data
+      const response = await fetch(
+        `${FD_BASE_URL}/competitions/WC/matches?status=IN_PLAY,FINISHED`,
+        {
+          headers,
+          signal: AbortSignal.timeout(10000),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        fdMatches = data.matches || [];
+      } else {
+        fdError = `football-data.org HTTP ${response.status}`;
+        console.warn(`[live-scores] ${fdError}`);
       }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      fdMatches = data.matches || [];
     }
-  } catch {
-    // football-data.org unavailable — fall through to wheniskickoff
+  } catch (err) {
+    fdError = `football-data.org fetch failed: ${err}`;
+    console.warn(`[live-scores] ${fdError}`);
   }
 
   const finished: ProcessedWC26Match[] = [];
@@ -241,6 +303,11 @@ export async function GET(request: Request) {
       finishedCount: finished.length,
       liveCount: live.length,
       upcomingCount: upcoming.length,
+    },
+    debug: {
+      fdError: fdError || undefined,
+      fdTokenSet: !!process.env.FOOTBALL_DATA_ORG_TOKEN,
+      fdMatchCount: fdMatches?.length || 0,
     },
   };
 
