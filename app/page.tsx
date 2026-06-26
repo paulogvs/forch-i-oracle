@@ -75,7 +75,9 @@ export default function DashboardPage() {
 
   // ─── Finished from fixture (actualScore) & Live from live-scores ───
   const finishedMatches = useMemo(() => {
-    return Array.from(predictions.values()).filter(p => p.actualScore != null);
+    return Array.from(predictions.values()).filter(p =>
+      p.actualScore != null && p.actualScore[0] != null && p.actualScore[1] != null
+    );
   }, [predictions]);
 
   const liveNow = useMemo(() => {
@@ -136,17 +138,37 @@ export default function DashboardPage() {
     return null;
   }, [simData, cachedBracket]);
 
-  // ─── Compute Stats from fixture actualScore (no cross-source matching) ───
+  // ─── Compute Stats from fixture actualScore + simData fallback ───
   const stats = (() => {
     let correct = 0, wrong = 0, totalPlayed = 0;
     let over25Correct = 0, over25Total = 0, exactScores = 0;
     const matchDetails: MatchResultDetail[] = [];
 
-    for (const pred of finishedMatches) {
-      if (!pred.predictedScore || !pred.actualScore) continue;
+    // Build a set of match IDs that already have actual scores from fixture
+    const withActualScore = new Set(
+      Array.from(predictions.values())
+        .filter(p => p.actualScore != null && p.actualScore[0] != null && p.actualScore[1] != null)
+        .map(p => p.id)
+    );
+
+    // Process ALL predictions that have predicted scores
+    const allPreds = Array.from(predictions.values());
+    for (const pred of allPreds) {
+      if (!pred.predictedScore) continue;
+
+      // Priority 1: actualScore from fixture (source of truth)
+      // Priority 2: simData results (fallback for cold start / missing data)
+      let rH: number, rA: number;
+      if (withActualScore.has(pred.id)) {
+        [rH, rA] = pred.actualScore!;
+      } else {
+        const sim = simResults.get(pred.id);
+        if (!sim) continue; // No real result available yet
+        rH = sim.homeScore;
+        rA = sim.awayScore;
+      }
 
       const [pH, pA] = pred.predictedScore;
-      const [rH, rA] = pred.actualScore;
       const predWinner = pH > pA ? 'home' : pH < pA ? 'away' : 'draw';
       const realWinner = rH > rA ? 'home' : rH < rA ? 'away' : 'draw';
       const isCorrect = predWinner === realWinner;
