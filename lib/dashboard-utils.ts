@@ -2,6 +2,7 @@
 // Functions for grouping, sorting, and formatting dashboard data
 
 import { getTeamByName } from './teams';
+import { utcToLocal } from './timezone';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -60,7 +61,9 @@ export function groupResultsByDate(
   const groups = new Map<string, MatchResultDetail[]>();
 
   for (const m of matchDetails) {
-    const dateKey = m.date || 'unknown';
+    // Convert UTC date+time to local timezone for grouping
+    const local = utcToLocal(m.date || '2026-01-01', m.time || '00:00');
+    const dateKey = local.date;
     if (!groups.has(dateKey)) groups.set(dateKey, []);
     groups.get(dateKey)!.push(m);
   }

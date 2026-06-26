@@ -34,7 +34,6 @@ function setFixtureCache(key: string, data: unknown): void {
 // This function re-fetches results from the external API and ingests them.
 async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
   const existingResults = await db.getMatchResults();
-  if (existingResults.length > 0) return 0; // Already have results
 
   const games = await fetchWC26Games();
   if (!games || games.length === 0) return 0;

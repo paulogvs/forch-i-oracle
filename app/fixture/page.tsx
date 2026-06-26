@@ -22,9 +22,10 @@ type MatchStatus = 'exact' | 'winner_ok' | 'wrong' | 'upcoming';
 interface FixtureMatch {
   id: string; group: string; date: string; time: string; homeTeam: string; awayTeam: string;
   venue: string; city: string; round: string; homeGoals: number | null; awayGoals: number | null;
+  actualHome: number | null; actualAway: number | null;
   homeWin: number | null; draw: number | null; awayWin: number | null; confidence: string | null;
   topScores: { home: number; away: number; probability: number }[] | null;
-  isPredicted: boolean; extraTime?: boolean; penalties?: boolean;
+  isPredicted: boolean; isFinished: boolean; extraTime?: boolean; penalties?: boolean;
   analysis?: string; homeKeyPlayers?: string[]; awayKeyPlayers?: string[];
 }
 
@@ -59,9 +60,12 @@ export default function FixturePage() {
       id: m.id, group: m.group || 'KO', date: m.date, time: m.time || '',
       homeTeam: m.homeTeam, awayTeam: m.awayTeam, venue: m.venue || '', city: m.city || '',
       round: m.round, homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null,
+      actualHome: m.actualScore?.[0] ?? null, actualAway: m.actualScore?.[1] ?? null,
       homeWin: m.homeWinPct ?? null, draw: m.drawPct ?? null, awayWin: m.awayWinPct ?? null,
       confidence: m.confidence ?? null, topScores: m.topScores ?? null,
-      isPredicted: m.predictedScore !== null, extraTime: false, penalties: false,
+      isPredicted: m.predictedScore !== null,
+      isFinished: m.actualScore != null,
+      extraTime: false, penalties: false,
       analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
     }));
 
@@ -104,7 +108,16 @@ export default function FixturePage() {
 
   const realResults = useMemo(() => {
     const resultsMap = new Map<string, RealResult>();
+    // 1. Source: simulation results
     if (simData?.success && simData.results) for (const r of simData.results) resultsMap.set(r.matchId, r);
+    // 2. Source: fixture actualScore (single source of truth from data layer)
+    for (const f of fixtures) {
+      if (f.actualHome != null && f.actualAway != null) {
+        const winner = f.actualHome > f.actualAway ? f.homeTeam : f.actualAway > f.actualHome ? f.awayTeam : 'draw';
+        resultsMap.set(f.id, { matchId: f.id, homeScore: f.actualHome, awayScore: f.actualAway, winner });
+      }
+    }
+    // 3. Source: live-scores (override with freshest data)
     if (liveData?.success && liveData.finished) {
       for (const m of liveData.finished) {
         const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
@@ -112,7 +125,7 @@ export default function FixturePage() {
       }
     }
     return resultsMap;
-  }, [simData, liveData]);
+  }, [simData, liveData, fixtures]);
 
   // Compute standings from live-scores data (real-time, no cron dependency)
   const liveStandings = useMemo(() => {
@@ -205,6 +218,16 @@ export default function FixturePage() {
 
   // Compute match status
   function getMatchStatus(match: FixtureMatch, result?: RealResult): MatchStatus {
+    // Use actualScore from fixture as source of truth
+    if (match.isFinished && match.actualHome != null && match.actualAway != null) {
+      if (match.homeGoals === null || match.awayGoals === null) return 'upcoming';
+      const pw = match.homeGoals > match.awayGoals ? 'home' : match.homeGoals < match.awayGoals ? 'away' : 'draw';
+      const rw = match.actualHome > match.actualAway ? 'home' : match.actualHome < match.actualAway ? 'away' : 'draw';
+      if (match.homeGoals === match.actualHome && match.awayGoals === match.actualAway) return 'exact';
+      if (pw === rw) return 'winner_ok';
+      return 'wrong';
+    }
+    // Fallback to live-scores result
     if (!result) return 'upcoming';
     if (match.homeGoals === null || match.awayGoals === null) return 'upcoming';
     const pw = match.homeGoals > match.awayGoals ? 'home' : match.homeGoals < match.awayGoals ? 'away' : 'draw';
@@ -429,7 +452,11 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
 }) {
   const pal = PALETTES[status];
   const isPlayed = status !== 'upcoming';
-  const realWinner = result ? (result.homeScore > result.awayScore ? 'home' : result.homeScore < result.awayScore ? 'away' : 'draw') : null;
+  // Use fixture actualScore as source of truth, fallback to live-scores result
+  const actualScore = match.isFinished && match.actualHome != null && match.actualAway != null
+    ? { homeScore: match.actualHome, awayScore: match.actualAway }
+    : result;
+  const realWinner = actualScore ? (actualScore.homeScore > actualScore.awayScore ? 'home' : actualScore.homeScore < actualScore.awayScore ? 'away' : 'draw') : null;
 
   return (
     <button onClick={onClick} className={cn("w-full text-left px-4 py-3 rounded-[var(--r-lg)] border transition-all hover:brightness-110", pal.card)}>
@@ -443,10 +470,10 @@ function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
         {/* Score Block — Vertical layout: REAL top, PRED bottom */}
         <div className="shrink-0 flex flex-col items-center gap-0.5">
           {/* REAL SCORE or TBD */}
-          {isPlayed && result ? (
+          {isPlayed && actualScore ? (
             <div className={cn("px-3 py-1 rounded-[var(--r-md)]", pal.scoreBg)}>
               <span className={cn("font-mono font-bold text-base tabular-nums", pal.scoreText)}>
-                {result.homeScore} - {result.awayScore}
+                {actualScore.homeScore} - {actualScore.awayScore}
               </span>
             </div>
           ) : (
@@ -679,8 +706,12 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
   const awayElo = ELO_RATINGS[match.awayTeam]?.elo || 1500;
   const homePower = POWER_RATINGS[match.homeTeam] || { attack: 50, defense: 50, midfield: 50 };
   const awayPower = POWER_RATINGS[match.awayTeam] || { attack: 50, defense: 50, midfield: 50 };
-  const realWinner = realResult ? (realResult.homeScore > realResult.awayScore ? 'home' : realResult.homeScore < realResult.awayScore ? 'away' : 'draw') : null;
-  const seal = (isPlayed && match.homeGoals !== null && realResult) ? computeSealStatus(match.homeGoals, match.awayGoals!, realResult.homeScore, realResult.awayScore) : null;
+  // Use fixture actualScore as source of truth, fallback to live-scores result
+  const actualScore = match.isFinished && match.actualHome != null && match.actualAway != null
+    ? { homeScore: match.actualHome, awayScore: match.actualAway }
+    : realResult;
+  const realWinner = actualScore ? (actualScore.homeScore > actualScore.awayScore ? 'home' : actualScore.homeScore < actualScore.awayScore ? 'away' : 'draw') : null;
+  const seal = (isPlayed && match.homeGoals !== null && actualScore) ? computeSealStatus(match.homeGoals, match.awayGoals!, actualScore.homeScore, actualScore.awayScore) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
@@ -711,11 +742,11 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
             </div>
 
             <div className="text-center">
-              {isPlayed && realResult ? (
+              {isPlayed && actualScore ? (
                 <div className="flex flex-col items-center gap-1">
                   {/* Real score — TOP, big */}
                   <div className={cn("px-4 py-2 rounded-[var(--r-md)]", pal.scoreBg)}>
-                    <div className={cn("text-2xl font-bold font-mono tabular-nums", pal.scoreText)}>{realResult.homeScore} - {realResult.awayScore}</div>
+                    <div className={cn("text-2xl font-bold font-mono tabular-nums", pal.scoreText)}>{actualScore.homeScore} - {actualScore.awayScore}</div>
                   </div>
                   {/* Predicted — BOTTOM, small */}
                   {match.homeGoals !== null && match.awayGoals !== null && (
