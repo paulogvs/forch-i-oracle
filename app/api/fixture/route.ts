@@ -12,6 +12,7 @@ import { getDataLayerAsync } from '@/lib/data-layer';
 import { getOrComputeTournamentResults } from '@/lib/tournament-results';
 import { buildTournamentDAG } from '@/lib/tournament-dag';
 import { fetchWC26Games, teamIdToSpanish, type WC26Game } from '@/lib/worldcup26-api';
+import { WORLD_CUP_TEAMS } from '@/lib/teams';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
 interface FixtureCacheEntry { data: unknown; expiresAt: number; }
@@ -29,45 +30,105 @@ function setFixtureCache(key: string, data: unknown): void {
   fixtureCache.set(key, { data, expiresAt: Date.now() + FIXTURE_CACHE_TTL });
 }
 
-// ═══ COLD START: Fetch fresh results from wheniskickoff.com ═══
+// ═══ COLD START: Fetch fresh results from external APIs ═══
 // On Vercel, /tmp is ephemeral — data layer loses results on cold start.
-// This function re-fetches results from the external API and ingests them.
+// This function re-fetches results from external APIs and ingests them.
+// Sources: 1) wheniskickoff.com (free) → 2) football-data.org (free tier)
 async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
   const existingResults = await db.getMatchResults();
-
-  const games = await fetchWC26Games();
-  if (!games || games.length === 0) return 0;
-
+  const existingIds = new Set(existingResults.map(r => r.matchId));
   let ingested = 0;
-  for (const game of games) {
-    if (game.finished !== 'TRUE') continue;
 
-    const homeTeam = teamIdToSpanish(game.home_team_id);
-    const awayTeam = teamIdToSpanish(game.away_team_id);
-    if (!homeTeam || !awayTeam) continue;
+  // ── Source 1: wheniskickoff.com (primary, free) ──
+  const games = await fetchWC26Games();
+  if (games && games.length > 0) {
+    for (const game of games) {
+      if (game.finished !== 'TRUE') continue;
+      const homeTeam = teamIdToSpanish(game.home_team_id);
+      const awayTeam = teamIdToSpanish(game.away_team_id);
+      if (!homeTeam || !awayTeam) continue;
+      let match = await db.getMatchByTeams(homeTeam, awayTeam);
+      if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
+      if (!match) continue;
+      if (existingIds.has(match.id)) continue;
 
-    // Find matching match in our database
-    let match = await db.getMatchByTeams(homeTeam, awayTeam);
-    if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
-    if (!match) continue;
+      const homeGoals = parseInt(game.home_score) || 0;
+      const awayGoals = parseInt(game.away_score) || 0;
+      const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+      await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+      ingested++;
+      existingIds.add(match.id);
+      existingResults.push({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+    }
+  }
 
-    // Check if already ingested
-    const alreadyIngested = existingResults.some(r => r.matchId === match!.id);
-    if (alreadyIngested) continue;
+  // ── Source 2: football-data.org (fallback, free tier) ──
+  // Catches results that wheniskickoff.com hasn't updated yet
+  if (ingested === 0 || existingIds.size < 60) {
+    try {
+      const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
+      const headers: Record<string, string> = {};
+      if (fdToken) headers['X-Auth-Token'] = fdToken;
 
-    const homeGoals = parseInt(game.home_score) || 0;
-    const awayGoals = parseInt(game.away_score) || 0;
-    const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+      const fdResp = await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED', {
+        headers,
+        signal: AbortSignal.timeout(15000),
+      });
 
-    await db.submitMatchResult({
-      matchId: match.id,
-      homeScore: homeGoals,
-      awayScore: awayGoals,
-      winner,
-    });
+      if (fdResp.ok) {
+        const fdData = await fdResp.json();
+        const fdMatches = fdData.matches || [];
 
-    ingested++;
-    existingResults.push({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+        // Name mapping: football-data.org English → our Spanish
+        const FD_NAME_MAP: Record<string, string> = {
+          'Mexico': 'México', 'South Africa': 'Sudáfrica', 'South Korea': 'Corea del Sur',
+          'Czech Republic': 'Chequia', 'Czechia': 'Chequia', 'United States': 'Estados Unidos',
+          'USA': 'Estados Unidos', 'Ivory Coast': 'Costa de Marfil', "Côte d'Ivoire": 'Costa de Marfil',
+          'Curaçao': 'Curazao', 'DR Congo': 'RD Congo', 'Congo DR': 'RD Congo',
+          'Saudi Arabia': 'Arabia Saudita', 'Iran': 'Irán', 'Iraq': 'Irak',
+          'New Zealand': 'Nueva Zelanda', 'Netherlands': 'Países Bajos', 'Tunisia': 'Túnez',
+          'Morocco': 'Marruecos', 'Egypt': 'Egipto', 'Cape Verde Islands': 'Cabo Verde',
+          'Uzbekistan': 'Uzbekistán', 'Korea Republic': 'Corea del Sur', 'Korea DR': 'Corea del Sur',
+          'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
+          'Canada': 'Canadá', 'Germany': 'Alemania', 'Spain': 'España', 'France': 'Francia',
+          'England': 'Inglaterra', 'Portugal': 'Portugal', 'Belgium': 'Bélgica', 'Norway': 'Noruega',
+          'Japan': 'Japón', 'Australia': 'Australia', 'Sweden': 'Suecia', 'Argentina': 'Argentina',
+          'Austria': 'Austria', 'Algeria': 'Argelia', 'Jordan': 'Jordania', 'Colombia': 'Colombia',
+          'Panama': 'Panamá', 'Ghana': 'Ghana', 'Croatia': 'Croacia', 'Senegal': 'Senegal',
+          'Poland': 'Polonia', 'Turkey': 'Turquía', 'Paraguay': 'Paraguay', 'Ecuador': 'Ecuador',
+          'Haiti': 'Haití', 'Scotland': 'Escocia', 'Qatar': 'Qatar',
+        };
+
+        const mapFDName = (name: string): string | null => {
+          if (FD_NAME_MAP[name]) return FD_NAME_MAP[name];
+          // Try direct lookup in WORLD_CUP_TEAMS
+          const team = WORLD_CUP_TEAMS.find(t => t.englishName.toLowerCase() === name.toLowerCase());
+          return team?.name || null;
+        }
+
+        for (const fd of fdMatches) {
+          const homeTeam = mapFDName(fd.homeTeam.name);
+          const awayTeam = mapFDName(fd.awayTeam.name);
+          if (!homeTeam || !awayTeam) continue;
+
+          let match = await db.getMatchByTeams(homeTeam, awayTeam);
+          if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
+          if (!match) continue;
+          if (existingIds.has(match.id)) continue;
+
+          const homeGoals = fd.score.fullTime.homeTeam;
+          const awayGoals = fd.score.fullTime.awayTeam;
+          if (homeGoals === null || awayGoals === null) continue;
+
+          const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+          await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+          ingested++;
+          existingIds.add(match.id);
+        }
+      }
+    } catch {
+      // Non-critical — primary source worked or will work next time
+    }
   }
 
   return ingested;
