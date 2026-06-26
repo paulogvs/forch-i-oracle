@@ -12,7 +12,7 @@ export function AutoSync() {
       setLoading(true);
       try {
         const [fixtureRes, simRes] = await Promise.all([
-          fetch('/api/fixture').then(r => r.json()),
+          fetch('/api/fixture', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.json()),
           fetch('/api/simulate-tournament').then(r => r.json())
         ]);
 
