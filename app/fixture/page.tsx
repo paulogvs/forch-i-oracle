@@ -127,7 +127,7 @@ export default function FixturePage() {
     return resultsMap;
   }, [simData, liveData, fixtures]);
 
-  // Compute standings from live-scores data (real-time, no cron dependency)
+  // Compute standings from fixture actualScore + live-scores (single source of truth)
   const liveStandings = useMemo(() => {
     if (cachedStandings && Object.keys(cachedStandings).length > 0) return cachedStandings;
 
@@ -140,32 +140,51 @@ export default function FixturePage() {
         lost: 0, gf: 0, ga: 0, gd: 0, points: 0,
       }));
     }
-    // Process finished matches from live-scores (real-time)
+
+    // Helper to apply a match result to standings
+    function applyResult(homeTeam: string, awayTeam: string, homeScore: number, awayScore: number) {
+      const match = ALL_MATCHES.find(am => am.homeTeam === homeTeam && am.awayTeam === awayTeam);
+      if (!match || match.round !== 'group' || !match.group) return;
+      const group = match.group;
+      if (!standings[group]) return;
+      const ht = standings[group].find(t => t.name === homeTeam);
+      const at = standings[group].find(t => t.name === awayTeam);
+      if (!ht || !at) return;
+      ht.played++; at.played++;
+      ht.gf += homeScore; ht.ga += awayScore;
+      at.gf += awayScore; at.ga += homeScore;
+      ht.gd = ht.gf - ht.ga;
+      at.gd = at.gf - at.ga;
+      if (homeScore > awayScore) { ht.won++; ht.points += 3; at.lost++; }
+      else if (homeScore < awayScore) { at.won++; at.points += 3; ht.lost++; }
+      else { ht.drawn++; at.drawn++; ht.points += 1; at.points += 1; }
+    }
+
+    // 1. Source: fixture actualScore (single source of truth)
+    const processedMatchIds = new Set<string>();
+    for (const f of fixtures) {
+      if (f.actualHome != null && f.actualAway != null && f.round === 'group') {
+        applyResult(f.homeTeam, f.awayTeam, f.actualHome, f.actualAway);
+        processedMatchIds.add(f.id);
+      }
+    }
+
+    // 2. Source: live-scores (override/add with freshest data)
     if (liveData?.success && liveData.finished) {
       for (const m of liveData.finished) {
         const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
-        if (!match || match.round !== 'group' || !match.group) continue;
-        const group = match.group;
-        if (!standings[group]) continue;
-        const homeTeam = standings[group].find(t => t.name === m.homeTeam);
-        const awayTeam = standings[group].find(t => t.name === m.awayTeam);
-        if (!homeTeam || !awayTeam) continue;
-        homeTeam.played++; awayTeam.played++;
-        homeTeam.gf += m.homeScore; homeTeam.ga += m.awayScore;
-        awayTeam.gf += m.awayScore; awayTeam.ga += m.homeScore;
-        homeTeam.gd = homeTeam.gf - homeTeam.ga;
-        awayTeam.gd = awayTeam.gf - awayTeam.ga;
-        if (m.homeScore > m.awayScore) { homeTeam.won++; homeTeam.points += 3; awayTeam.lost++; }
-        else if (m.homeScore < m.awayScore) { awayTeam.won++; awayTeam.points += 3; homeTeam.lost++; }
-        else { homeTeam.drawn++; awayTeam.drawn++; homeTeam.points += 1; awayTeam.points += 1; }
+        if (match && !processedMatchIds.has(match.id)) {
+          applyResult(m.homeTeam, m.awayTeam, m.homeScore, m.awayScore);
+        }
       }
     }
+
     // Sort each group by points, then GD, then GF
     for (const group of Object.keys(standings)) {
       standings[group].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
     }
     return standings;
-  }, [liveData, cachedStandings]);
+  }, [liveData, cachedStandings, fixtures]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => { if (fixtureData || simData) setLastUpdated(new Date()); }, [fixtureData, simData]);
