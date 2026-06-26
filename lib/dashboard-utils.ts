@@ -56,7 +56,8 @@ export interface UpcomingMatch {
  * Each group shows accuracy stats for that day.
  */
 export function groupResultsByDate(
-  matchDetails: MatchResultDetail[]
+  matchDetails: MatchResultDetail[],
+  reverseOrder = false
 ): DateGroup[] {
   const groups = new Map<string, MatchResultDetail[]>();
 
@@ -87,6 +88,9 @@ export function groupResultsByDate(
 
   // Sort groups chronologically
   result.sort((a, b) => a.date.localeCompare(b.date));
+
+  // Reverse to show most recent first (for Inicio page)
+  if (reverseOrder) result.reverse();
 
   return result;
 }

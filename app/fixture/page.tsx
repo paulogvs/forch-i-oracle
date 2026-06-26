@@ -235,6 +235,24 @@ export default function FixturePage() {
   })();
   const formatDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
 
+  // ─── Next 4 upcoming matches (not finished, nearest first) ───
+  const upcoming4 = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setUTCHours(0, 0, 0, 0);
+    return fixtures
+      .filter(m => !m.isFinished && m.isPredicted)
+      .filter(m => {
+        const matchDate = new Date(`${m.date}T${m.time || '00:00'}:00Z`);
+        return matchDate >= todayStart;
+      })
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return (a.time || '').localeCompare(b.time || '');
+      })
+      .slice(0, 4);
+  }, [fixtures]);
+
   // Compute match status
   function getMatchStatus(match: FixtureMatch, result?: RealResult): MatchStatus {
     // Use actualScore from fixture as source of truth
@@ -365,7 +383,32 @@ export default function FixturePage() {
               </div>
             </motion.div>
           )}
-          {Object.entries(groupedByDate).map(([date, matches]) => (
+
+          {/* ─── Próximos 4 Partidos — quick glance at upcoming predictions ─── */}
+          {phaseFilter === 'all' && upcoming4.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-2"
+            >
+              <h3 className="text-[11px] font-bold text-fg-tertiary uppercase tracking-wider flex items-center gap-2">
+                <span className="animate-pulse">⏱</span> Próximos Partidos
+              </h3>
+              <div className="space-y-2">
+                {upcoming4.map(match => {
+                  const result = realResults.get(match.id);
+                  const status = getMatchStatus(match, result);
+                  return (
+                    <MatchCard key={match.id} match={match} result={result} status={status} getFlag={getFlag} getRoundLabel={getRoundLabel} onClick={() => setSelectedMatch(match)} />
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* ─── Historial — most recent matches first ─── */}
+          {Object.entries(groupedByDate).reverse().map(([date, matches]) => (
             <div key={date}>
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="text-[11px] font-bold text-fg-tertiary uppercase tracking-wider">{formatDate(date)}</h3>

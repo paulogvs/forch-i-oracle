@@ -52,10 +52,19 @@ export function getResults(): PersistedResult[] {
 }
 
 export function saveResult(result: PersistedResult): void {
+  // Validate: scores must be numbers, not null
+  if (result.homeScore == null || result.awayScore == null) {
+    console.warn(`[file-store] Skipping result for ${result.matchId}: null scores`);
+    return;
+  }
   const results = getResults();
-  // Don't duplicate
-  if (results.find(r => r.matchId === result.matchId)) return;
-  results.push(result);
+  const existing = results.findIndex(r => r.matchId === result.matchId);
+  if (existing >= 0) {
+    // Update existing result with new data (overwrite)
+    results[existing] = result;
+  } else {
+    results.push(result);
+  }
   writeJson(RESULTS_FILE, results);
 }
 

@@ -181,7 +181,7 @@ export default function DashboardPage() {
   })();
 
   // ─── Group results by date ────────────────────────────────
-  const dateGroups = useMemo(() => groupResultsByDate(stats.matchDetails), [stats.matchDetails]);
+  const dateGroups = useMemo(() => groupResultsByDate(stats.matchDetails, true), [stats.matchDetails]);
 
   // ─── Upcoming matches (from fixture actualScore) ────────────
   const upcomingMatches = useMemo(() => {

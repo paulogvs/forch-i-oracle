@@ -37,6 +37,10 @@ function setFixtureCache(key: string, data: unknown): void {
 async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
   const existingResults = await db.getMatchResults();
   const existingIds = new Set(existingResults.map(r => r.matchId));
+  // Also track which existing results have valid (non-null) scores
+  const validScoreIds = new Set(
+    existingResults.filter(r => r.homeScore != null && r.awayScore != null).map(r => r.matchId)
+  );
   let ingested = 0;
 
   // ── Source 1: wheniskickoff.com (primary, free) ──
@@ -50,7 +54,8 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
       let match = await db.getMatchByTeams(homeTeam, awayTeam);
       if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
       if (!match) continue;
-      if (existingIds.has(match.id)) continue;
+      // Skip if already ingested with valid scores; overwrite if scores are null
+      if (existingIds.has(match.id) && validScoreIds.has(match.id)) continue;
 
       const homeGoals = parseInt(game.home_score) || 0;
       const awayGoals = parseInt(game.away_score) || 0;
@@ -63,8 +68,9 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
   }
 
   // ── Source 2: football-data.org (fallback, free tier) ──
-  // Catches results that wheniskickoff.com hasn't updated yet
-  if (ingested === 0 || existingIds.size < 60) {
+  // Always try as fallback — catches results wheniskickoff.com hasn't updated yet
+  // or when file store lost data on Vercel cold start
+  {
     try {
       const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
       const headers: Record<string, string> = {};
@@ -114,7 +120,8 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
           let match = await db.getMatchByTeams(homeTeam, awayTeam);
           if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
           if (!match) continue;
-          if (existingIds.has(match.id)) continue;
+          // Skip if already ingested with valid scores; overwrite if scores are null
+          if (existingIds.has(match.id) && validScoreIds.has(match.id)) continue;
 
           const homeGoals = fd.score.fullTime.homeTeam;
           const awayGoals = fd.score.fullTime.awayTeam;
@@ -129,6 +136,10 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     } catch {
       // Non-critical — primary source worked or will work next time
     }
+  }
+
+  if (ingested > 0) {
+    console.log(`[fixture] ensureResults: ingested ${ingested} new results (total: ${existingIds.size})`);
   }
 
   return ingested;
