@@ -4,6 +4,24 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/ingest",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/recalculate",
+      "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/simulate",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/status",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -29,6 +47,9 @@
     },
     "app/api/fixture/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/live-scores/route.ts": {
+      "maxDuration": 30
     },
     "app/api/cron/ingest/route.ts": {
       "maxDuration": 60
