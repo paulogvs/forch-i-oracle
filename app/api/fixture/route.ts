@@ -93,6 +93,11 @@ export async function POST(request: NextRequest) {
     await ensureResultsFromExternalAPI(db);
 
     const storedResults = await db.getMatchResults();
+    // Build a map of matchId → actual scores for inclusion in the response
+    const actualResultsMap = new Map<string, { homeScore: number; awayScore: number }>();
+    for (const r of storedResults) {
+      actualResultsMap.set(r.matchId, { homeScore: r.homeScore, awayScore: r.awayScore });
+    }
     const resultsHash = storedResults
       .map((r: any) => `${r.matchId}:${r.homeScore}-${r.awayScore}`)
       .join('|');
@@ -273,6 +278,7 @@ export async function POST(request: NextRequest) {
           };
         }
 
+        const actual = actualResultsMap.get(match.id);
         fixture.push({
           id: match.id,
           group: match.group,
@@ -284,6 +290,7 @@ export async function POST(request: NextRequest) {
           awayTeam: match.awayTeam,
           round: 'group',
           predictedScore: [prediction.homeGoals, prediction.awayGoals],
+          actualScore: actual ? [actual.homeScore, actual.awayScore] : null,
           confidence: prediction.confidence,
           homeWinPct: prediction.homeWin,
           drawPct: prediction.draw,
@@ -357,6 +364,7 @@ export async function POST(request: NextRequest) {
       const homeGoals = koResult ? koResult.homeScore : null;
       const awayGoals = koResult ? koResult.awayScore : null;
 
+      const koActual = actualResultsMap.get(match.id);
       fixture.push({
         id: match.id,
         group: match.group,
@@ -368,6 +376,7 @@ export async function POST(request: NextRequest) {
         awayTeam: koResult?.awayTeam || match.awayTeam,
         round: match.round,
         predictedScore: koResult && koResult.homeTeam !== 'TBD' && homeGoals !== null ? [homeGoals, awayGoals] : null,
+        actualScore: koActual ? [koActual.homeScore, koActual.awayScore] : null,
         confidence: koResult && koResult.homeWinProb != null ? (koResult.homeWinProb > 55 ? 'alta' : koResult.homeWinProb > 40 ? 'media' : 'baja') : null,
         homeWinPct: koResult ? koResult.homeWinProb : null,
         drawPct: koResult ? koResult.drawProb : null,

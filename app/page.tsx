@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { ALL_MATCHES } from '@/lib/matches';
-import { getTeamByName } from '@/lib/teams';
 import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
 import { useTournamentStore } from '@/lib/store/tournament-store';
 import { groupResultsByDate, getUpcomingMatches, getFlag, getRoundLabel } from '@/lib/dashboard-utils';
@@ -21,7 +20,8 @@ import { computeChampionProbsFromElo, type EloChampionProb } from '@/lib/elo-cha
 interface FixtureMatch {
   id: string; homeTeam: string; awayTeam: string; round: string; group: string;
   date: string; time: string;
-  predictedScore: [number, number] | null; homeWinPct: number; drawPct: number; awayWinPct: number;
+  predictedScore: [number, number] | null; actualScore?: [number, number] | null;
+  homeWinPct: number; drawPct: number; awayWinPct: number;
   confidence: string | null;
 }
 interface LiveMatch {
@@ -62,6 +62,7 @@ export default function DashboardPage() {
           id: m.id, homeTeam: m.homeTeam, awayTeam: m.awayTeam, round: m.round, group: m.group || '',
           date: (m as any).date || '', time: (m as any).time || '',
           predictedScore: (m.predictedScore || (m as any).predictedScore) ?? null,
+          actualScore: (m as any).actualScore ?? null,
           homeWinPct: (m.homeWinPct || (m as any).homeWinPct) ?? 0,
           drawPct: (m.drawPct || (m as any).drawPct) ?? 0,
           awayWinPct: (m.awayWinPct || (m as any).awayWinPct) ?? 0,
@@ -72,11 +73,10 @@ export default function DashboardPage() {
     return predMap;
   }, [fixtureData, cachedFixture]);
 
-  // ─── Finished & Live ──────────────────────────────────────
+  // ─── Finished from fixture (actualScore) & Live from live-scores ───
   const finishedMatches = useMemo(() => {
-    if (!liveData?.success) return [];
-    return liveData.finished || [];
-  }, [liveData]);
+    return Array.from(predictions.values()).filter(p => p.actualScore != null);
+  }, [predictions]);
 
   const liveNow = useMemo(() => {
     if (!liveData?.success) return [];
@@ -136,21 +136,17 @@ export default function DashboardPage() {
     return null;
   }, [simData, cachedBracket]);
 
-  // ─── Compute Stats ────────────────────────────────────────
+  // ─── Compute Stats from fixture actualScore (no cross-source matching) ───
   const stats = (() => {
     let correct = 0, wrong = 0, totalPlayed = 0;
     let over25Correct = 0, over25Total = 0, exactScores = 0;
     const matchDetails: MatchResultDetail[] = [];
 
-    for (const lm of finishedMatches) {
-      const staticMatch = ALL_MATCHES.find(m => m.homeTeam === lm.homeTeam && m.awayTeam === lm.awayTeam);
-      if (!staticMatch) continue;
-      const pred = predictions.get(staticMatch.id);
-      if (!pred?.predictedScore) continue;
+    for (const pred of finishedMatches) {
+      if (!pred.predictedScore || !pred.actualScore) continue;
 
       const [pH, pA] = pred.predictedScore;
-      const rH = lm.homeScore;
-      const rA = lm.awayScore;
+      const [rH, rA] = pred.actualScore;
       const predWinner = pH > pA ? 'home' : pH < pA ? 'away' : 'draw';
       const realWinner = rH > rA ? 'home' : rH < rA ? 'away' : 'draw';
       const isCorrect = predWinner === realWinner;
@@ -165,11 +161,11 @@ export default function DashboardPage() {
       if (isExact) exactScores++;
 
       matchDetails.push({
-        home: lm.homeTeam, away: lm.awayTeam,
+        home: pred.homeTeam, away: pred.awayTeam,
         pred: [pH, pA], real: [rH, rA],
         correct: isCorrect, exact: isExact,
-        date: staticMatch.date, time: staticMatch.time,
-        round: staticMatch.round, group: staticMatch.group,
+        date: pred.date, time: pred.time,
+        round: pred.round, group: pred.group,
         confidence: pred.confidence,
       });
     }
@@ -187,7 +183,7 @@ export default function DashboardPage() {
   // ─── Group results by date ────────────────────────────────
   const dateGroups = useMemo(() => groupResultsByDate(stats.matchDetails), [stats.matchDetails]);
 
-  // ─── Upcoming matches ─────────────────────────────────────
+  // ─── Upcoming matches (from fixture actualScore) ────────────
   const upcomingMatches = useMemo(() => {
     const finishedSet = new Set(
       finishedMatches.map(f => `${f.homeTeam}_vs_${f.awayTeam}`)
