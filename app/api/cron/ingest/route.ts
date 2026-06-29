@@ -15,7 +15,7 @@
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
-import { WORLD_CUP_TEAMS } from '@/lib/teams';
+import { WORLD_CUP_TEAMS, mapFDTeamName } from '@/lib/teams';
 import { validateCronAuth } from '@/lib/cron-auth';
 import { fetchWC26Games, teamIdToSpanish, teamEnglishToSpanish, type WC26Game } from '@/lib/worldcup26-api';
 // Note: data sources are wheniskickoff.com (primary) + openfootball (fallback)
@@ -188,48 +188,6 @@ async function fetchFootballDataOrg(diagnostics: DiagnosticLog[]): Promise<FDMat
     });
     return null;
   }
-}
-
-// Map football-data.org team names to our Spanish names
-function mapFDTeamName(fdName: string): string | null {
-  // Direct lookup in our team data
-  const team = WORLD_CUP_TEAMS.find(
-    t => t.englishName.toLowerCase() === fdName.toLowerCase() ||
-         t.name.toLowerCase() === fdName.toLowerCase() ||
-         t.code.toLowerCase() === fdName.toLowerCase()
-  );
-  if (team) return team.name;
-
-  // Common football-data.org name variations
-  const FD_NAME_MAP: Record<string, string> = {
-    'Mexico': 'México',
-    'South Africa': 'Sudáfrica',
-    'South Korea': 'Corea del Sur',
-    'Czech Republic': 'Chequia',
-    'Czechia': 'Chequia',
-    'United States': 'Estados Unidos',
-    'USA': 'Estados Unidos',
-    'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
-    'Ivory Coast': 'Costa de Marfil',
-    "Côte d'Ivoire": 'Costa de Marfil',
-    'DR Congo': 'RD Congo',
-    'Congo DR': 'RD Congo',
-    'Saudi Arabia': 'Arabia Saudita',
-    'Iran': 'Irán',
-    'Iraq': 'Irak',
-    'New Zealand': 'Nueva Zelanda',
-    'Netherlands': 'Países Bajos',
-    'Tunisia': 'Túnez',
-    'Algeria': 'Argelia',
-    'Morocco': 'Marruecos',
-    'Egypt': 'Egipto',
-    'Cape Verde': 'Cabo Verde',
-    'Uzbekistan': 'Uzbekistán',
-    'Korea Republic': 'Corea del Sur',
-    'Korea DR': 'Corea del Sur',
-  };
-
-  return FD_NAME_MAP[fdName] || null;
 }
 
 export async function GET(request: Request) {

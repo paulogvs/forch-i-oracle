@@ -290,12 +290,13 @@ export async function GET(request: Request) {
 async function persistFinishedMatch(match: ProcessedWC26Match): Promise<void> {
   try {
     const db = await getDataLayerAsync();
-    const allMatches = await db.getAllMatches();
-    const dbMatch = allMatches.find(m =>
-      match.homeTeam?.toLowerCase() === (m as any).homeTeam?.toLowerCase() &&
-      match.awayTeam?.toLowerCase() === (m as any).awayTeam?.toLowerCase()
-    );
-    if (!dbMatch) return; // Match not in our fixture list — can't persist
+    // Use getMatchByTeams which resolves team names to IDs correctly
+    let dbMatch = await db.getMatchByTeams(match.homeTeam, match.awayTeam);
+    if (!dbMatch) dbMatch = await db.getMatchByTeams(match.awayTeam, match.homeTeam);
+    if (!dbMatch) {
+      console.warn(`[live-scores] Match not found: ${match.homeTeam} vs ${match.awayTeam} — can't persist`);
+      return;
+    }
 
     // Check if already persisted
     const existing = await db.getMatchResults();

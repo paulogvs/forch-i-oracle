@@ -264,6 +264,7 @@ const ALIASES: Record<string, string> = {
   'USA': 'Estados Unidos',
   'Haití': 'Haití',
   'Mexico': 'México',
+  'Congo DR': 'RD Congo',
 };
 for (const [alias, target] of Object.entries(ALIASES)) {
   if (!_fdBase.has(alias)) _fdBase.set(alias, target);
@@ -271,11 +272,33 @@ for (const [alias, target] of Object.entries(ALIASES)) {
 
 /**
  * Map a football-data.org / openfootball English team name to our Spanish name.
+ * Also handles Spanish name passthrough (returns as-is) and FIFA code lookup.
  * Returns null if the name is unknown (team not in our database).
  */
 export function mapFDNameToSpanish(fdName: string): string | null {
-  return _fdBase.get(fdName) || null;
+  // 1. Direct alias/englishName lookup
+  const direct = _fdBase.get(fdName);
+  if (direct) return direct;
+
+  // 2. Case-insensitive match on englishName (catches subtle casing diffs)
+  const byEnglish = WORLD_CUP_TEAMS.find(t => t.englishName.toLowerCase() === fdName.toLowerCase());
+  if (byEnglish) return byEnglish.name;
+
+  // 3. Already our Spanish name? Return as-is
+  const byName = WORLD_CUP_TEAMS.find(t => t.name.toLowerCase() === fdName.toLowerCase());
+  if (byName) return byName.name;
+
+  // 4. FIFA code lookup (e.g. "KSA" → "Arabia Saudita")
+  const byCode = WORLD_CUP_TEAMS.find(t => t.code.toLowerCase() === fdName.toLowerCase());
+  if (byCode) return byCode.name;
+
+  return null;
 }
+
+/**
+ * Backward-compatible alias for mapFDNameToSpanish.
+ */
+export const mapFDTeamName = mapFDNameToSpanish;
 
 /** Get star players for a team */
 export function getTeamStarPlayers(teamName: string): string[] {

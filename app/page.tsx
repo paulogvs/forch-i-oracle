@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
-import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight, RefreshCw } from 'lucide-react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
+import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight, RefreshCw, AlertTriangle, Database } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,8 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loading = fixtureLoading && liveLoading && simLoading && storeLoading;
+  const [fixtureTriggering, setFixtureTriggering] = useState(false);
+  const [today] = useState(() => new Date().toISOString().split('T')[0]);
 
   // ─── Manual Refresh: revalidate all SWR caches ──────────
   const handleRefresh = useCallback(async () => {
@@ -64,6 +66,26 @@ export default function DashboardPage() {
       mutate(SWR_KEYS.accuracy),
     ]);
     setRefreshing(false);
+  }, []);
+
+  // ─── Fixture Trigger: force external API poll ──────────
+  const handleFixtureRefresh = useCallback(async () => {
+    setFixtureTriggering(true);
+    try {
+      const res = await fetch('/api/fixture');
+      const data = await res.json();
+      console.log('[fixture] Pipeline triggered:', data);
+      // Revalidate all caches after ingestion
+      await Promise.all([
+        mutate(SWR_KEYS.fixture),
+        mutate(SWR_KEYS.liveScores),
+        mutate(SWR_KEYS.accuracy),
+        mutate(SWR_KEYS.simulation),
+      ]);
+    } catch (err) {
+      console.error('[fixture] Pipeline error:', err);
+    }
+    setFixtureTriggering(false);
   }, []);
 
   // ─── Predictions Map ──────────────────────────────────────
@@ -227,6 +249,19 @@ export default function DashboardPage() {
     };
   })();
 
+  // ─── Data staleness check ──────────────────────────────
+  const staleness = useMemo(() => {
+    const dates = stats.matchDetails
+      .filter((m: any) => m.date)
+      .map((m: any) => m.date)
+      .sort()
+      .reverse();
+    const latest = dates.length > 0 ? dates[0] : null;
+    if (!latest) return { isStale: false, latestDate: null, daysOld: 0 };
+    const diff = Math.floor((new Date(today).getTime() - new Date(latest).getTime()) / (1000 * 60 * 60 * 24));
+    return { isStale: diff >= 2, latestDate: latest, daysOld: diff };
+  }, [stats.matchDetails, today]);
+
   // ─── Group results by date ────────────────────────────────
   const dateGroups = useMemo(() => groupResultsByDate(stats.matchDetails, true), [stats.matchDetails]);
 
@@ -252,6 +287,15 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleFixtureRefresh}
+              disabled={fixtureTriggering}
+              className="text-[10px] text-fg-tertiary hover:text-accent-emerald transition-colors flex items-center gap-1 disabled:opacity-50"
+              title="Forzar ingesta de resultados externos"
+            >
+              <Database className={`w-3 h-3 ${fixtureTriggering ? 'animate-pulse' : ''}`} />
+              {fixtureTriggering ? 'Ingestando...' : 'Fixture'}
+            </button>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -283,6 +327,33 @@ export default function DashboardPage() {
           </span>
         </div>
       </header>
+
+      {/* ═══ STALENESS WARNING ═══ */}
+      {staleness.isStale && staleness.latestDate && (
+        <div className="flex items-start gap-2 p-2.5 rounded-[var(--r-md)] bg-[var(--match-wrong-bg)]/40 border border-state-warning/30">
+          <AlertTriangle className="w-4 h-4 text-state-warning shrink-0 mt-0.5" />
+          <div className="text-[11px]">
+            <span className="font-bold text-state-warning">Datos desactualizados</span>
+            <br />
+            <span className="text-fg-tertiary">
+              Último resultado: {staleness.latestDate} (hace {staleness.daysOld} días).
+              Presiona <strong>Fixture</strong> para forzar ingesta o verifica que las APIs externas tengan datos nuevos.
+            </span>
+          </div>
+        </div>
+      )}
+      {!staleness.isStale && staleness.latestDate && stats.totalPlayed === 0 && (
+        <div className="flex items-start gap-2 p-2.5 rounded-[var(--r-md)] bg-[var(--match-gold-border)]/20 border border-accent-gold/30">
+          <Database className="w-4 h-4 text-accent-gold shrink-0 mt-0.5" />
+          <div className="text-[11px]">
+            <span className="font-bold text-accent-gold">Esperando resultados</span>
+            <br />
+            <span className="text-fg-tertiary">
+              Último dato: {staleness.latestDate}. Presiona <strong>Fixture</strong> para ingestar resultados desde las APIs externas.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* ═══ MÉTRICAS — 2x2 grid ═══ */}
       <div className="grid grid-cols-2 gap-2">
