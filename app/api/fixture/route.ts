@@ -12,7 +12,7 @@ import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensembl
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { getOrComputeTournamentResults } from '@/lib/tournament-results';
 import { buildTournamentDAG } from '@/lib/tournament-dag';
-import { fetchWC26Games, teamIdToSpanish } from '@/lib/worldcup26-api';
+import { fetchWC26Games, teamIdToSpanish, type WC26Game } from '@/lib/worldcup26-api';
 import { mapFDNameToSpanish } from '@/lib/teams';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
@@ -217,6 +217,11 @@ async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLay
 // This function re-fetches results from external APIs and ingests them.
 // Also updates team forms so the app works autonomously without cron jobs.
 // Sources: 1) openfootball (free, frequently updated) → 2) football-data.org (free tier)
+//
+// TWO-PASS INGESTION (fixes knockout bracket not resolving):
+//   Pass 1: Ingest GROUP matches first (team names match static data)
+//   Resolve: resolveKnockoutTeamNames() → bracket gets real team names from group results
+//   Pass 2: Ingest KNOCKOUT matches (getMatchByTeams now works because bracket has real names)
 async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
   // Throttle: only poll external APIs every POLL_INTERVAL_MS
   const shouldPoll = await shouldPollExternalAPIs(db);
@@ -230,40 +235,65 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
   );
   let ingested = 0;
 
-  // ── Resolve knockout slot names from existing group results ──
-  // This must happen BEFORE processing new games so getMatchByTeams
-  // works for both group AND knockout matches. If group results are
-  // already persisted, the bracket gets resolved immediately.
-  await resolveKnockoutTeamNames(db);
+  // ── Helper: ingest a single finished match ──
+  async function tryIngest(homeTeam: string, awayTeam: string, homeGoals: number, awayGoals: number): Promise<boolean> {
+    let match = await db.getMatchByTeams(homeTeam, awayTeam);
+    if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
+    if (!match) return false;
+    if (existingIds.has(match.id) && validScoreIds.has(match.id)) return true;
+    const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
+    await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+    await updateTeamFormAfterResult(db, homeTeam, awayTeam, homeGoals, awayGoals);
+    ingested++;
+    existingIds.add(match.id);
+    existingResults.push({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+    return true;
+  }
+
+  // ── Convert raw games to usable match data ──
+  interface MatchData { home: string; away: string; homeGoals: number; awayGoals: number; isGroup: boolean; }
+  function extractFinished(games: WC26Game[]): MatchData[] {
+    const out: MatchData[] = [];
+    for (const g of games) {
+      if (g.finished !== 'TRUE') continue;
+      const home = teamIdToSpanish(g.home_team_id);
+      const away = teamIdToSpanish(g.away_team_id);
+      if (!home || !away) continue;
+      out.push({
+        home, away,
+        homeGoals: parseInt(g.home_score) || 0,
+        awayGoals: parseInt(g.away_score) || 0,
+        isGroup: g.round_of === 'group',
+      });
+    }
+    return out;
+  }
 
   // ── Source 1: openfootball (primary, free) ──
   const games = await fetchWC26Games();
   if (games && games.length > 0) {
-    for (const game of games) {
-      if (game.finished !== 'TRUE') continue;
-      const homeTeam = teamIdToSpanish(game.home_team_id);
-      const awayTeam = teamIdToSpanish(game.away_team_id);
-      if (!homeTeam || !awayTeam) continue;
-      let match = await db.getMatchByTeams(homeTeam, awayTeam);
-      if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
-      if (!match) continue;
-      // Skip if already ingested with valid scores; overwrite if scores are null
-      if (existingIds.has(match.id) && validScoreIds.has(match.id)) continue;
+    const allMatches = extractFinished(games);
+    const groupMatches = allMatches.filter(m => m.isGroup);
+    const koMatches = allMatches.filter(m => !m.isGroup);
 
-      const homeGoals = parseInt(game.home_score) || 0;
-      const awayGoals = parseInt(game.away_score) || 0;
-      const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
-      await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
-      await updateTeamFormAfterResult(db, homeTeam, awayTeam, homeGoals, awayGoals);
-      ingested++;
-      existingIds.add(match.id);
-      existingResults.push({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+    // PASS 1: Ingest group matches (team names match static data directly)
+    for (const m of groupMatches) {
+      await tryIngest(m.home, m.away, m.homeGoals, m.awayGoals);
+    }
+
+    // RESOLVE: Now that group results are in, resolve bracket slots → real team names
+    await resolveKnockoutTeamNames(db);
+
+    // PASS 2: Ingest knockout matches (getMatchByTeams finds them via resolved bracket)
+    for (const m of koMatches) {
+      await tryIngest(m.home, m.away, m.homeGoals, m.awayGoals);
     }
   }
 
   // ── Source 2: football-data.org (fallback, free tier) ──
-  // Always try as fallback — catches results wheniskickoff.com hasn't updated yet
+  // Always try as fallback — catches results openfootball hasn't updated yet
   // or when file store lost data on Vercel cold start
+  // Note: bracket was already resolved above, so group AND KO matches are findable
   {
     try {
       const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
@@ -284,21 +314,11 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
           const awayTeam = mapFDNameToSpanish(fd.awayTeam.name);
           if (!homeTeam || !awayTeam) continue;
 
-          let match = await db.getMatchByTeams(homeTeam, awayTeam);
-          if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
-          if (!match) continue;
-          // Skip if already ingested with valid scores; overwrite if scores are null
-          if (existingIds.has(match.id) && validScoreIds.has(match.id)) continue;
-
           const homeGoals = fd.score.fullTime.homeTeam;
           const awayGoals = fd.score.fullTime.awayTeam;
           if (homeGoals === null || awayGoals === null) continue;
 
-          const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
-          await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
-          await updateTeamFormAfterResult(db, homeTeam, awayTeam, homeGoals, awayGoals);
-          ingested++;
-          existingIds.add(match.id);
+          await tryIngest(homeTeam, awayTeam, homeGoals, awayGoals);
         }
       }
     } catch (err) {
@@ -306,8 +326,11 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     }
   }
 
+  console.log(`[fixture] ensureResults: +${ingested} new / ${existingIds.size} total`);
   if (ingested > 0) {
-    console.log(`[fixture] ensureResults: ingested ${ingested} new results (total: ${existingIds.size})`);
+    // Log first few ingested match IDs for debugging
+    const newIds = Array.from(existingIds).slice(-ingested);
+    console.log(`[fixture] New match IDs: [${newIds.slice(0, 5).join(', ')}${newIds.length > 5 ? ', ...' : ''}]`);
   }
 
   // Mark poll time even if nothing new was ingested (avoids redundant calls)
@@ -655,6 +678,21 @@ export async function POST(request: NextRequest) {
     // Retrieve consensus bracket (it auto-calculates and heals if out-of-sync in getOrComputeTournamentResults)
     const tournamentData = await getOrComputeTournamentResults();
     const bracket = tournamentData.bracket;
+
+    // Debug: log bracket resolution status
+    const r32 = bracket?.roundOf32 || [];
+    const resolved = r32.filter((m: any) => m.homeTeam !== 'TBD' && m.awayTeam !== 'TBD').length;
+    const total = r32.length;
+    const ingestedCount = storedResults.length;
+    if (total > 0) {
+      console.log(`[fixture] Bracket status: ${resolved}/${total} R32 matches resolved, ${ingestedCount} real results ingested`);
+      if (resolved < total) {
+        const firstTbd = r32.find((m: any) => m.homeTeam === 'TBD' || m.awayTeam === 'TBD');
+        if (firstTbd) {
+          console.log(`[fixture] First TBD R32 entry: id=${firstTbd.id}, home="${firstTbd.homeTeam}", away="${firstTbd.awayTeam}"`);
+        }
+      }
+    }
 
     const knockoutMap = new Map<string, any>();
     if (bracket) {
