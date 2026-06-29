@@ -59,9 +59,8 @@ export async function getOrComputeTournamentResults() {
   }
 
   // No stored data or hash mismatch — compute fresh
-  // Request-time simulation is limited to 100 iterations to avoid timeouts.
-  // 5,000 iterations are reserved for background Cron jobs.
-  console.log('[tournament-results] Tournament simulation data out of sync or missing in DB, computing quick fallback (100 sims)...');
+  // Request-time simulation is limited to 500 iterations to balance speed/accuracy.
+  console.log('[tournament-results] Tournament simulation data out of sync or missing in DB, computing quick fallback (500 sims)...');
   const simResults = realResults.map((r: any) => ({
     matchId: r.matchId,
     homeScore: r.homeScore,
@@ -69,7 +68,7 @@ export async function getOrComputeTournamentResults() {
     winner: r.winner,
   }));
 
-  const multiResult = await simulateTournamentMulti(100, simResults, () => {});
+  const multiResult = await simulateTournamentMulti(500, simResults, () => {});
   // Use bracket from the simulation that produced the most frequent champion
   const bracket = multiResult.bracket;
 
@@ -78,7 +77,7 @@ export async function getOrComputeTournamentResults() {
     teamId: c.team,
     championProb: c.pct,
     simulationsCount: c.wins,
-    totalSimulations: 100,
+    totalSimulations: 500,
   }));
   await db.saveTournamentProbs(probs);
   await saveBracketAndPredictions(db, bracket);

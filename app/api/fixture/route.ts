@@ -1,6 +1,7 @@
 // FORCH.i ORACLE — API Route: Full Tournament Fixture Prediction (v3 Ensemble Engine)
 // Predicts ALL 128 matches using the 4-model ensemble for maximum accuracy.
 // Response is cached for 5 minutes to avoid redundant recomputation.
+// Autonomous: fetches fresh results and updates team forms on every request.
 import { NextRequest, NextResponse } from 'next/server';
 import { ALL_MATCHES, MATCHES_BY_GROUP } from '@/lib/matches';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -33,8 +34,13 @@ function setFixtureCache(key: string, data: unknown): void {
 // ═══ COLD START: Fetch fresh results from external APIs ═══
 // On Vercel, /tmp is ephemeral — data layer loses results on cold start.
 // This function re-fetches results from external APIs and ingests them.
+// Also updates team forms so the app works autonomously without cron jobs.
 // Sources: 1) wheniskickoff.com (free) → 2) football-data.org (free tier)
 async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
+  // Throttle: only poll external APIs every POLL_INTERVAL_MS
+  const shouldPoll = await shouldPollExternalAPIs(db);
+  if (!shouldPoll) return 0;
+
   const existingResults = await db.getMatchResults();
   const existingIds = new Set(existingResults.map(r => r.matchId));
   // Also track which existing results have valid (non-null) scores
@@ -61,6 +67,7 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
       const awayGoals = parseInt(game.away_score) || 0;
       const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
       await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+      await updateTeamFormAfterResult(db, homeTeam, awayTeam, homeGoals, awayGoals);
       ingested++;
       existingIds.add(match.id);
       existingResults.push({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
@@ -129,6 +136,7 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
 
           const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
           await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
+          await updateTeamFormAfterResult(db, homeTeam, awayTeam, homeGoals, awayGoals);
           ingested++;
           existingIds.add(match.id);
         }
@@ -142,7 +150,83 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     console.log(`[fixture] ensureResults: ingested ${ingested} new results (total: ${existingIds.size})`);
   }
 
+  // Mark poll time even if nothing new was ingested (avoids redundant calls)
+  await markPolled(db);
+
   return ingested;
+}
+
+// ═══ UPDATE TEAM FORMS after each result ingestion ═══
+// Keeps last-5 form, momentum, xG, and dynamic Elo in sync
+// without relying on cron jobs.
+async function updateTeamFormAfterResult(
+  db: Awaited<ReturnType<typeof getDataLayerAsync>>,
+  homeTeam: string,
+  awayTeam: string,
+  homeGoals: number,
+  awayGoals: number
+) {
+  const now = new Date().toISOString().split('T')[0];
+
+  for (const [team, goalsFor, goalsAgainst] of [
+    [homeTeam, homeGoals, awayGoals],
+    [awayTeam, awayGoals, homeGoals],
+  ] as [string, number, number][]) {
+    const existingForm = await db.getTeamForm(team);
+    const result = goalsFor > goalsAgainst ? 'W' as const : goalsFor < goalsAgainst ? 'L' as const : 'D' as const;
+
+    const last5 = [
+      ...(existingForm?.last5 || []),
+      {
+        result,
+        opponent: team === homeTeam ? awayTeam : homeTeam,
+        goalsFor,
+        goalsAgainst,
+        date: now,
+        competition: 'World Cup',
+      },
+    ].slice(-5);
+
+    const avgXG = goalsFor > 0 ? goalsFor : 0.8;
+    const momentum = last5.reduce((sum, m, i) => {
+      const weight = (i + 1) / last5.length;
+      return sum + (m.result === 'W' ? weight : m.result === 'L' ? -weight : 0);
+    }, 0) / last5.length;
+
+    const existingElo = (await db.getTeam(team))?.eloRating || 1500;
+
+    await db.saveTeamForm({
+      teamId: team,
+      last5,
+      xgFor: avgXG,
+      xgAgainst: goalsAgainst,
+      momentum,
+      matchesPlayed: (existingForm?.matchesPlayed || 0) + 1,
+      eloDynamic: existingElo + (momentum * 20),
+    });
+  }
+}
+
+// ═══ LAST POLL TRACKING — avoid redundant external API calls ═══
+// Uses the KV store to track when we last polled external APIs.
+// Only re-fetches if more than POLL_INTERVAL_MS has elapsed.
+const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+
+async function shouldPollExternalAPIs(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<boolean> {
+  try {
+    const lastPoll = await db.getKeyValue('lastExternalPoll');
+    if (!lastPoll) return true;
+    const elapsed = Date.now() - Number(lastPoll);
+    return elapsed > POLL_INTERVAL_MS;
+  } catch {
+    return true;
+  }
+}
+
+async function markPolled(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<void> {
+  try {
+    await db.setKeyValue('lastExternalPoll', String(Date.now()));
+  } catch { /* non-critical */ }
 }
 
 export async function POST(request: NextRequest) {
