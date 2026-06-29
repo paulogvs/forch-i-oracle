@@ -114,8 +114,8 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
           existingIds.add(match.id);
         }
       }
-    } catch {
-      // Non-critical — primary source worked or will work next time
+    } catch (err) {
+      console.warn('[fixture] football-data.org fallback failed:', err instanceof Error ? err.message : String(err));
     }
   }
 

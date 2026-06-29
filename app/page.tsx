@@ -72,7 +72,11 @@ export default function DashboardPage() {
   const handleFixtureRefresh = useCallback(async () => {
     setFixtureTriggering(true);
     try {
-      const res = await fetch('/api/fixture');
+      const res = await fetch('/api/fixture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
       const data = await res.json();
       console.log('[fixture] Pipeline triggered:', data);
       // Revalidate all caches after ingestion

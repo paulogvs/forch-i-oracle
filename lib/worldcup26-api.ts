@@ -396,23 +396,24 @@ async function fetchFromOpenFootball(): Promise<WC26Game[] | null> {
 
 /**
  * Fetch all World Cup 2026 games.
- * Primary: wheniskickoff.com | Fallback: openfootball/worldcup.json
+ * Primary: openfootball/worldcup.json (GitHub CDN, community-maintained, updated frequently)
+ * Fallback: wheniskickoff.com (static JSON, updated less frequently)
  * Returns WC26Game[] for backward compatibility with existing consumers.
  */
 export async function fetchWC26Games(): Promise<WC26Game[] | null> {
-  // Try primary source
-  const primary = await fetchFromWhenIsKickoff();
-  if (primary && primary.length > 0) {
-    console.log(`[worldcup-api] Fetched ${primary.length} games from wheniskickoff.com`);
-    return primary;
+  // Try openfootball first — community-maintained, more frequently updated
+  const openfootball = await fetchFromOpenFootball();
+  if (openfootball && openfootball.length > 0) {
+    console.log(`[worldcup-api] Fetched ${openfootball.length} games from openfootball`);
+    return openfootball;
   }
 
-  // Try fallback
-  console.log(`[worldcup-api] wheniskickoff unavailable, trying openfootball...`);
-  const fallback = await fetchFromOpenFootball();
-  if (fallback && fallback.length > 0) {
-    console.log(`[worldcup-api] Fetched ${fallback.length} games from openfootball`);
-    return fallback;
+  // Fallback to wheniskickoff.com
+  console.log(`[worldcup-api] openfootball unavailable, trying wheniskickoff.com...`);
+  const wheniskickoff = await fetchFromWhenIsKickoff();
+  if (wheniskickoff && wheniskickoff.length > 0) {
+    console.log(`[worldcup-api] Fetched ${wheniskickoff.length} games from wheniskickoff.com`);
+    return wheniskickoff;
   }
 
   console.error(`[worldcup-api] All data sources failed`);
