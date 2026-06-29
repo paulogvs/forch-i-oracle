@@ -137,7 +137,7 @@ export async function recalculateAfterResult(
   }));
 
   // Run tournament simulation with real results baked in
-  const simResult = await simulateTournamentMulti(100, simResults, () => {});
+  const simResult = await simulateTournamentMulti(500, simResults, () => {});
 
   // Step 4: Calculate drift for future matches
   const drifts: PredictionDrift[] = [];

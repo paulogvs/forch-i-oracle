@@ -93,6 +93,17 @@ export default function DashboardPage() {
     return resultMap;
   }, [simData]);
 
+  // ─── Live finished matches (source 3: football-data.org via live-scores) ───
+  const liveFinishedMap = useMemo(() => {
+    const map = new Map<string, { homeScore: number; awayScore: number }>();
+    if (!liveData?.success) return map;
+    for (const lm of liveData.finished || []) {
+      const key = `${lm.homeTeam}_vs_${lm.awayTeam}`;
+      map.set(key, { homeScore: lm.homeScore, awayScore: lm.awayScore });
+    }
+    return map;
+  }, [liveData]);
+
   // ─── Champion Probabilities — Monte Carlo Consensus (Single Source of Truth) ──
   const championProbs = useMemo(() => {
     // Priority: use multi-simulation consensus data (5,000 sims)
@@ -138,7 +149,7 @@ export default function DashboardPage() {
     return null;
   }, [simData, cachedBracket]);
 
-  // ─── Compute Stats from fixture actualScore + simData fallback ───
+  // ─── Compute Stats from fixture actualScore + simData + liveData fallback ───
   const stats = (() => {
     let correct = 0, wrong = 0, totalPlayed = 0;
     let over25Correct = 0, over25Total = 0, exactScores = 0;
@@ -157,15 +168,23 @@ export default function DashboardPage() {
       if (!pred.predictedScore) continue;
 
       // Priority 1: actualScore from fixture (source of truth)
-      // Priority 2: simData results (fallback for cold start / missing data)
+      // Priority 2: simData results (cold start / missing data)
+      // Priority 3: liveData.finished (football-data.org via live-scores)
       let rH: number, rA: number;
       if (withActualScore.has(pred.id)) {
         [rH, rA] = pred.actualScore!;
       } else {
         const sim = simResults.get(pred.id);
-        if (!sim) continue; // No real result available yet
-        rH = sim.homeScore;
-        rA = sim.awayScore;
+        if (sim) {
+          rH = sim.homeScore;
+          rA = sim.awayScore;
+        } else {
+          const liveKey = `${pred.homeTeam}_vs_${pred.awayTeam}`;
+          const liveResult = liveFinishedMap.get(liveKey);
+          if (!liveResult) continue; // No real result from any source
+          rH = liveResult.homeScore;
+          rA = liveResult.awayScore;
+        }
       }
 
       const [pH, pA] = pred.predictedScore;
