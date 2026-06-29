@@ -222,10 +222,10 @@ async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLay
 //   Pass 1: Ingest GROUP matches first (team names match static data)
 //   Resolve: resolveKnockoutTeamNames() → bracket gets real team names from group results
 //   Pass 2: Ingest KNOCKOUT matches (getMatchByTeams now works because bracket has real names)
-async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
+async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<{ ingested: number; throttled: boolean; fetchOk: boolean; gamesCount: number; groupMatches: number; koMatches: number; failedIngest: string[] }> {
   // Throttle: only poll external APIs every POLL_INTERVAL_MS
   const shouldPoll = await shouldPollExternalAPIs(db);
-  if (!shouldPoll) return 0;
+  if (!shouldPoll) return { ingested: 0, throttled: true, fetchOk: false, gamesCount: 0, groupMatches: 0, koMatches: 0, failedIngest: [] };
 
   const existingResults = await db.getMatchResults();
   const existingIds = new Set(existingResults.map(r => r.matchId));
@@ -234,12 +234,13 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     existingResults.filter(r => r.homeScore != null && r.awayScore != null).map(r => r.matchId)
   );
   let ingested = 0;
+  const failedIngest: string[] = [];
 
   // ── Helper: ingest a single finished match ──
   async function tryIngest(homeTeam: string, awayTeam: string, homeGoals: number, awayGoals: number): Promise<boolean> {
     let match = await db.getMatchByTeams(homeTeam, awayTeam);
     if (!match) match = await db.getMatchByTeams(awayTeam, homeTeam);
-    if (!match) return false;
+    if (!match) { failedIngest.push(`${homeTeam} vs ${awayTeam} (no match found)`); return false; }
     if (existingIds.has(match.id) && validScoreIds.has(match.id)) return true;
     const winner = homeGoals > awayGoals ? homeTeam : awayGoals > homeGoals ? awayTeam : 'draw';
     await db.submitMatchResult({ matchId: match.id, homeScore: homeGoals, awayScore: awayGoals, winner });
@@ -271,10 +272,16 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
 
   // ── Source 1: openfootball (primary, free) ──
   const games = await fetchWC26Games();
+  let gamesCount = 0;
+  let groupMatchesCount = 0;
+  let koMatchesCount = 0;
   if (games && games.length > 0) {
+    gamesCount = games.length;
     const allMatches = extractFinished(games);
     const groupMatches = allMatches.filter(m => m.isGroup);
     const koMatches = allMatches.filter(m => !m.isGroup);
+    groupMatchesCount = groupMatches.length;
+    koMatchesCount = koMatches.length;
 
     // PASS 1: Ingest group matches (team names match static data directly)
     for (const m of groupMatches) {
@@ -336,7 +343,7 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
   // Mark poll time even if nothing new was ingested (avoids redundant calls)
   await markPolled(db);
 
-  return ingested;
+  return { ingested, throttled: false, fetchOk: true, gamesCount, groupMatches: groupMatchesCount, koMatches: koMatchesCount, failedIngest: failedIngest.slice(0, 5) };
 }
 
 // ═══ UPDATE TEAM FORMS after each result ingestion ═══
@@ -428,7 +435,7 @@ export async function POST(request: NextRequest) {
     // ─── COLD START: Re-fetch results from external API if data layer is empty ───
     // On Vercel, /tmp is ephemeral — results are lost on cold start.
     // This ensures predictions always reflect real results, even after cold start.
-    await ensureResultsFromExternalAPI(db);
+    const ingestDebug = await ensureResultsFromExternalAPI(db);
 
     const storedResults = await db.getMatchResults();
     // Build a map of matchId → actual scores for inclusion in the response
@@ -679,20 +686,24 @@ export async function POST(request: NextRequest) {
     const tournamentData = await getOrComputeTournamentResults();
     const bracket = tournamentData.bracket;
 
-    // Debug: log bracket resolution status
+    // Debug: bracket resolution status (visible in browser console)
     const r32 = bracket?.roundOf32 || [];
     const resolved = r32.filter((m: any) => m.homeTeam !== 'TBD' && m.awayTeam !== 'TBD').length;
     const total = r32.length;
     const ingestedCount = storedResults.length;
-    if (total > 0) {
-      console.log(`[fixture] Bracket status: ${resolved}/${total} R32 matches resolved, ${ingestedCount} real results ingested`);
-      if (resolved < total) {
-        const firstTbd = r32.find((m: any) => m.homeTeam === 'TBD' || m.awayTeam === 'TBD');
-        if (firstTbd) {
-          console.log(`[fixture] First TBD R32 entry: id=${firstTbd.id}, home="${firstTbd.homeTeam}", away="${firstTbd.awayTeam}"`);
-        }
+    const debugInfo: any = {
+      bracketResolved: `${resolved}/${total}`,
+      storedResults: ingestedCount,
+      pollInterval: '2 min (testing)',
+      ingest: ingestDebug,
+    };
+    if (total > 0 && resolved < total) {
+      const firstTbd = r32.find((m: any) => m.homeTeam === 'TBD' || m.awayTeam === 'TBD');
+      if (firstTbd) {
+        debugInfo.firstTbd = { id: firstTbd.id, home: firstTbd.homeTeam, away: firstTbd.awayTeam };
       }
     }
+    console.log(`[fixture] Bracket status: ${resolved}/${total} R32 matches resolved, ${ingestedCount} real results ingested`);
 
     const knockoutMap = new Map<string, any>();
     if (bracket) {
@@ -802,6 +813,8 @@ export async function POST(request: NextRequest) {
         })),
         depth: dag.depth,
       },
+      // Debug info (visible in browser console)
+      debugInfo,
     };
 
     // Cache the response (skip if real results were submitted)
