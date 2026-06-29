@@ -393,7 +393,7 @@ async function updateTeamFormAfterResult(
 // ═══ LAST POLL TRACKING — avoid redundant external API calls ═══
 // Uses the KV store to track when we last polled external APIs.
 // Only re-fetches if more than POLL_INTERVAL_MS has elapsed.
-const POLL_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const POLL_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes (reduced for testing)
 
 async function shouldPollExternalAPIs(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<boolean> {
   try {
