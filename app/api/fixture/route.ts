@@ -31,11 +31,192 @@ function setFixtureCache(key: string, data: unknown): void {
   fixtureCache.set(key, { data, expiresAt: Date.now() + FIXTURE_CACHE_TTL });
 }
 
+// ═══ KNOCKOUT SLOT RESOLVER ═══
+// After group stage results are known, this resolves bracket slot names
+// (like "1A", "3B/3E/3F/3G", "W-R32-1") to actual team names in the data layer.
+// Called on every ensureResultsFromExternalAPI to keep bracket in sync.
+// Handles ALL rounds: R32 → R16 → QF → SF → 3rd → Final.
+async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
+  const allResults = await db.getMatchResults();
+  if (allResults.length === 0) return 0; // No results yet — can't resolve
+
+  const allMatches = await db.getAllMatches();
+  const resultsMap = new Map(allResults.map(r => [r.matchId, r]));
+
+  // ── Check if any knockout match still needs resolution ──
+  const slotPattern = /^[12][A-L]$|^3[A-L]|\/|^W-|^L-/;
+  const knockoutMatches = allMatches.filter(m =>
+    m.round === 'R32' || m.round === 'R16' || m.round === 'QF' || m.round === 'SF'
+  );
+  if (knockoutMatches.length === 0) return 0;
+  const needsResolve = knockoutMatches.some(m => slotPattern.test(m.homeTeamId));
+  if (!needsResolve) {
+    // Already resolved — just propagate winners if new results arrived
+    const winners = new Map<string, string>();
+    for (const m of knockoutMatches.sort((a, b) => a.id.localeCompare(b.id))) {
+      const result = resultsMap.get(m.id);
+      if (result && result.homeScore != null && result.awayScore != null) {
+        if (result.homeScore > result.awayScore) winners.set(`W-${m.id}`, m.homeTeamId);
+        else if (result.awayScore > result.homeScore) winners.set(`W-${m.id}`, m.awayTeamId);
+      }
+    }
+    // Propagate winners to later-round matches that use W- slots
+    const laterMatches = allMatches.filter(m =>
+      m.round === 'R16' || m.round === 'QF' || m.round === 'SF' || m.id === '3rd' || m.id === 'Final'
+    );
+    let updated = 0;
+    for (const m of laterMatches) {
+      const newHome = m.homeTeamId.startsWith('W-') ? (winners.get(m.homeTeamId) || m.homeTeamId) : m.homeTeamId;
+      const newAway = m.awayTeamId.startsWith('W-') ? (winners.get(m.awayTeamId) || m.awayTeamId) : m.awayTeamId;
+      if (newHome !== m.homeTeamId || newAway !== m.awayTeamId) {
+        await db.updateMatch(m.id, { homeTeamId: newHome, awayTeamId: newAway });
+        updated++;
+      }
+    }
+    return updated;
+  }
+
+  // ── Build group standings from real results ──
+  const allGroups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  const groupStandings: Record<string, any[]> = {};
+
+  for (const groupChar of allGroups) {
+    const groupMatches = allMatches.filter(m => m.groupChar === groupChar && m.round === 'group');
+    if (groupMatches.length === 0) continue;
+
+    const teamStats = new Map<string, { pts: number; gf: number; ga: number; gd: number; played: number }>();
+
+    for (const match of groupMatches) {
+      const result = resultsMap.get(match.id);
+      if (!result || result.homeScore == null) continue;
+
+      if (!teamStats.has(match.homeTeamId)) teamStats.set(match.homeTeamId, { pts: 0, gf: 0, ga: 0, gd: 0, played: 0 });
+      if (!teamStats.has(match.awayTeamId)) teamStats.set(match.awayTeamId, { pts: 0, gf: 0, ga: 0, gd: 0, played: 0 });
+
+      const home = teamStats.get(match.homeTeamId)!;
+      const away = teamStats.get(match.awayTeamId)!;
+
+      home.gf += result.homeScore; home.ga += result.awayScore; home.played++;
+      away.gf += result.awayScore; away.ga += result.homeScore; away.played++;
+
+      if (result.homeScore > result.awayScore) { home.pts += 3; }
+      else if (result.awayScore > result.homeScore) { away.pts += 3; }
+      else { home.pts += 1; away.pts += 1; }
+    }
+
+    // FIFA sort: pts → gd → gf
+    const standings = Array.from(teamStats.entries())
+      .map(([name, s]) => ({ name, pts: s.pts, gf: s.gf, ga: s.ga, gd: s.gf - s.ga }))
+      .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+
+    groupStandings[groupChar] = standings;
+  }
+
+  // ── Resolve qualified teams ──
+  const qualified = resolveGroupQualifiers(groupStandings);
+
+  // ── Resolve ALL bracket rounds in order ──
+  const winners = new Map<string, string>();
+  const losers = new Map<string, string>();
+
+  // Third-place unique assignment (same logic as simulateKnockoutPhase)
+  const usedThirdPlaces = new Set<string>();
+  const getThirdPlace = (slot: string): string => {
+    const groupLetters = slot.match(/3([A-L])/g)?.map(g => g[1]) || [];
+    for (const tp of qualified.bestThirdPlaces) {
+      const tpInfo = qualified.thirdPlaceGroups.find(t => t.name === tp);
+      if (tpInfo && groupLetters.includes(tpInfo.group) && !usedThirdPlaces.has(tp)) {
+        usedThirdPlaces.add(tp);
+        return tp;
+      }
+    }
+    for (const tp of qualified.bestThirdPlaces) {
+      if (!usedThirdPlaces.has(tp)) {
+        usedThirdPlaces.add(tp);
+        return tp;
+      }
+    }
+    return 'TBD';
+  };
+
+  // Process rounds in order
+  const roundOrder = ['R32', 'R16', 'QF', 'SF', 'F'];
+  let totalUpdated = 0;
+
+  for (const round of roundOrder) {
+    const roundMatches = allMatches.filter(m => m.round === round)
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    for (const match of roundMatches) {
+      let homeTeam = match.homeTeamId;
+      let awayTeam = match.awayTeamId;
+
+      // Resolve slot names
+      if (slotPattern.test(homeTeam)) {
+        if (homeTeam.includes('3')) {
+          homeTeam = getThirdPlace(homeTeam);
+        } else {
+          homeTeam = resolveTeamSlot(homeTeam, qualified, winners, losers);
+        }
+      }
+      if (slotPattern.test(awayTeam)) {
+        if (awayTeam.includes('3')) {
+          awayTeam = getThirdPlace(awayTeam);
+        } else {
+          awayTeam = resolveTeamSlot(awayTeam, qualified, winners, losers);
+        }
+      }
+
+      // Skip if both are still TBD
+      if (homeTeam === 'TBD' && awayTeam === 'TBD' && match.homeTeamId === homeTeam && match.awayTeamId === awayTeam) continue;
+
+      // Update match in data layer
+      if (homeTeam !== match.homeTeamId || awayTeam !== match.awayTeamId) {
+        await db.updateMatch(match.id, { homeTeamId: homeTeam, awayTeamId: awayTeam });
+        totalUpdated++;
+      }
+
+      // Propagate winners from existing results
+      if (homeTeam !== 'TBD' && awayTeam !== 'TBD') {
+        const result = resultsMap.get(match.id);
+        if (result && result.homeScore != null && result.awayScore != null) {
+          if (result.homeScore > result.awayScore) {
+            winners.set(`W-${match.id}`, homeTeam);
+          } else if (result.awayScore > result.homeScore) {
+            winners.set(`W-${match.id}`, awayTeam);
+          } else {
+            // Draw in knockout → penalties. Home wins penalty shootout by convention.
+            winners.set(`W-${match.id}`, homeTeam);
+            losers.set(`L-${match.id}`, awayTeam);
+          }
+        }
+      }
+    }
+  }
+
+  // Handle 3rd place match separately
+  const thirdMatch = allMatches.find(m => m.id === '3rd');
+  if (thirdMatch) {
+    const h = resolveTeamSlot(thirdMatch.homeTeamId, qualified, winners, losers);
+    const a = resolveTeamSlot(thirdMatch.awayTeamId, qualified, winners, losers);
+    if (h !== thirdMatch.homeTeamId || a !== thirdMatch.awayTeamId) {
+      await db.updateMatch('3rd', { homeTeamId: h, awayTeamId: a });
+      totalUpdated++;
+    }
+  }
+
+  if (totalUpdated > 0) {
+    console.log(`[fixture] resolveKnockoutTeamNames: ${totalUpdated} matches updated`);
+  }
+
+  return totalUpdated;
+}
+
 // ═══ COLD START: Fetch fresh results from external APIs ═══
 // On Vercel, /tmp is ephemeral — data layer loses results on cold start.
 // This function re-fetches results from external APIs and ingests them.
 // Also updates team forms so the app works autonomously without cron jobs.
-// Sources: 1) wheniskickoff.com (free) → 2) football-data.org (free tier)
+// Sources: 1) openfootball (free, frequently updated) → 2) football-data.org (free tier)
 async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDataLayerAsync>>): Promise<number> {
   // Throttle: only poll external APIs every POLL_INTERVAL_MS
   const shouldPoll = await shouldPollExternalAPIs(db);
@@ -49,7 +230,13 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
   );
   let ingested = 0;
 
-  // ── Source 1: wheniskickoff.com (primary, free) ──
+  // ── Resolve knockout slot names from existing group results ──
+  // This must happen BEFORE processing new games so getMatchByTeams
+  // works for both group AND knockout matches. If group results are
+  // already persisted, the bracket gets resolved immediately.
+  await resolveKnockoutTeamNames(db);
+
+  // ── Source 1: openfootball (primary, free) ──
   const games = await fetchWC26Games();
   if (games && games.length > 0) {
     for (const game of games) {
