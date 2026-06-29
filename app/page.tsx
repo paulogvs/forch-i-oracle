@@ -1,17 +1,18 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight } from 'lucide-react';
+import { useMemo, useCallback, useState } from 'react';
+import { Target, Zap, CheckCircle2, ArrowRight, TrendingUp, Activity, Trophy, BarChart3, Calendar, Clock, ChevronRight, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
 import { ALL_MATCHES } from '@/lib/matches';
-import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
+import { useFixture, useLiveScores, useSimulation, SWR_KEYS } from '@/lib/swr/hooks';
 import { useTournamentStore } from '@/lib/store/tournament-store';
 import { groupResultsByDate, getUpcomingMatches, getFlag, getRoundLabel } from '@/lib/dashboard-utils';
 import type { MatchResultDetail } from '@/lib/dashboard-utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { computeChampionProbsFromElo, type EloChampionProb } from '@/lib/elo-champion';
+import { mutate } from 'swr';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -49,8 +50,21 @@ export default function DashboardPage() {
   const { data: fixtureData, isLoading: fixtureLoading } = useFixture<FixtureResponse>();
   const { data: liveData, isLoading: liveLoading } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading } = useSimulation<SimResponse>();
+  const [refreshing, setRefreshing] = useState(false);
 
   const loading = fixtureLoading && liveLoading && simLoading && storeLoading;
+
+  // ─── Manual Refresh: revalidate all SWR caches ──────────
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      mutate(SWR_KEYS.fixture),
+      mutate(SWR_KEYS.liveScores),
+      mutate(SWR_KEYS.simulation),
+      mutate(SWR_KEYS.accuracy),
+    ]);
+    setRefreshing(false);
+  }, []);
 
   // ─── Predictions Map ──────────────────────────────────────
   const predictions = useMemo(() => {
@@ -85,15 +99,10 @@ export default function DashboardPage() {
     return liveData.live || [];
   }, [liveData]);
 
-  const simResults = useMemo(() => {
-    const resultMap = new Map<string, SimResult>();
-    if (simData?.success && simData.results) {
-      for (const r of simData.results) resultMap.set(r.matchId, r);
-    }
-    return resultMap;
-  }, [simData]);
-
-  // ─── Live finished matches (source 3: football-data.org via live-scores) ───
+  // ─── Live finished matches (source 2: football-data.org via live-scores) ───
+  // NOTE: Tournament simulation results (simData.results) are intentionally
+  // excluded from accuracy computation — they use predictions as priors and
+  // would inflate accuracy. Only real external API data is used.
   const liveFinishedMap = useMemo(() => {
     const map = new Map<string, { homeScore: number; awayScore: number }>();
     if (!liveData?.success) return map;
@@ -149,7 +158,7 @@ export default function DashboardPage() {
     return null;
   }, [simData, cachedBracket]);
 
-  // ─── Compute Stats from fixture actualScore + simData + liveData fallback ───
+  // ─── Compute Stats from fixture actualScore + liveData fallback ───
   const stats = (() => {
     let correct = 0, wrong = 0, totalPlayed = 0;
     let over25Correct = 0, over25Total = 0, exactScores = 0;
@@ -167,24 +176,21 @@ export default function DashboardPage() {
     for (const pred of allPreds) {
       if (!pred.predictedScore) continue;
 
-      // Priority 1: actualScore from fixture (source of truth)
-      // Priority 2: simData results (cold start / missing data)
-      // Priority 3: liveData.finished (football-data.org via live-scores)
+      // Priority 1: actualScore from fixture (source of truth — external API results)
+      // Priority 2: liveData.finished (football-data.org via live-scores)
+      // NOTE: simResults (tournament simulation) is intentionally excluded.
+      //       Simulated results use predictions as priors, which would inflate
+      //       accuracy if counted as "real" results. Only real external API
+      //       data is used for accuracy computation.
       let rH: number, rA: number;
       if (withActualScore.has(pred.id)) {
         [rH, rA] = pred.actualScore!;
       } else {
-        const sim = simResults.get(pred.id);
-        if (sim) {
-          rH = sim.homeScore;
-          rA = sim.awayScore;
-        } else {
-          const liveKey = `${pred.homeTeam}_vs_${pred.awayTeam}`;
-          const liveResult = liveFinishedMap.get(liveKey);
-          if (!liveResult) continue; // No real result from any source
-          rH = liveResult.homeScore;
-          rA = liveResult.awayScore;
-        }
+        const liveKey = `${pred.homeTeam}_vs_${pred.awayTeam}`;
+        const liveResult = liveFinishedMap.get(liveKey);
+        if (!liveResult) continue; // No real result from any source
+        rH = liveResult.homeScore;
+        rA = liveResult.awayScore;
       }
 
       const [pH, pA] = pred.predictedScore;
@@ -245,9 +251,20 @@ export default function DashboardPage() {
               Auto-sync
             </span>
           </div>
-          <span className="text-[10px] text-fg-tertiary tabular-nums">
-            WC2026 · {stats.predictedCount}/{stats.totalMatches}
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-[10px] text-fg-tertiary hover:text-fg-primary transition-colors flex items-center gap-1 disabled:opacity-50"
+              title="Refrescar datos"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Actualizando...' : 'Actualizar'}
+            </button>
+            <span className="text-[10px] text-fg-tertiary tabular-nums">
+              WC2026 · {stats.predictedCount}/{stats.totalMatches}
+            </span>
+          </div>
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
@@ -406,6 +423,7 @@ export default function DashboardPage() {
           <QuickLink href="/fixture" icon="⚡" title="Predicción Completa" desc={`${stats.predictedCount} partidos · Tablas · Bracket`} accent="accent-premium" />
           <QuickLink href="/live" icon="📡" title="En Vivo" desc="Resultados en tiempo real" accent="accent-emerald" highlight={liveNow.length > 0} />
           <QuickLink href="/benchmark" icon="🤖" title="Benchmark IA" desc="10 modelos compitiendo" accent="accent-secondary" />
+          <QuickLink href="/backtest" icon="📊" title="Backtest" desc="Precisión · Brier · Calibración" accent="accent-primary" />
         </div>
       </section>
     </div>

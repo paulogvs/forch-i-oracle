@@ -13,6 +13,8 @@
 import { NextResponse } from 'next/server';
 import { fetchWC26Games, convertWC26Game, type ProcessedWC26Match, type WC26Game } from '@/lib/worldcup26-api';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { mapFDNameToSpanish } from '@/lib/teams';
+import { getDataLayerAsync } from '@/lib/data-layer';
 
 // Server-side cache: 30 seconds (live data needs freshness)
 const liveCache = new Map<string, { data: any; expiresAt: number }>();
@@ -20,82 +22,6 @@ const LIVE_CACHE_TTL = 30_000;
 
 // football-data.org config
 const FD_BASE_URL = 'https://api.football-data.org/v4';
-
-// Map football-data.org team names to our Spanish names (all 48 WC2026 teams)
-// football-data.org uses English names → we map to our Spanish names
-const FD_NAME_MAP: Record<string, string> = {
-  // Group A
-  'Mexico': 'México',
-  'South Africa': 'Sudáfrica',
-  'South Korea': 'Corea del Sur',
-  'Korea Republic': 'Corea del Sur',
-  'Czech Republic': 'Chequia',
-  'Czechia': 'Chequia',
-  // Group B
-  'Canada': 'Canadá',
-  'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
-  'Bosnia & Herzegovina': 'Bosnia y Herzegovina',
-  'Qatar': 'Qatar',
-  'Switzerland': 'Suiza',
-  // Group C
-  'Brazil': 'Brasil',
-  'Morocco': 'Marruecos',
-  'Haiti': 'Haití',
-  'Haití': 'Haití',
-  'Scotland': 'Escocia',
-  // Group D
-  'United States': 'Estados Unidos',
-  'USA': 'Estados Unidos',
-  'Paraguay': 'Paraguay',
-  'Australia': 'Australia',
-  // Group E
-  'Turkey': 'Turquía',
-  'Türkiye': 'Turquía',
-  'Germany': 'Alemania',
-  'Curacao': 'Curazao',
-  'Curaçao': 'Curazao',
-  // Group F
-  'Ivory Coast': 'Costa de Marfil',
-  "Côte d'Ivoire": 'Costa de Marfil',
-  'Ecuador': 'Ecuador',
-  'Netherlands': 'Países Bajos',
-  // Group G
-  'Japan': 'Japón',
-  'Sweden': 'Suecia',
-  'Tunisia': 'Túnez',
-  'Belgium': 'Bélgica',
-  // Group H
-  'Egypt': 'Egipto',
-  'Iran': 'Irán',
-  'New Zealand': 'Nueva Zelanda',
-  // Group I
-  'Spain': 'España',
-  'Cape Verde': 'Cabo Verde',
-  'Cape Verde Islands': 'Cabo Verde',
-  'Saudi Arabia': 'Arabia Saudita',
-  'Uruguay': 'Uruguay',
-  // Group J
-  'France': 'Francia',
-  'Senegal': 'Senegal',
-  'Iraq': 'Irak',
-  'Norway': 'Noruega',
-  // Group K
-  'Argentina': 'Argentina',
-  'Algeria': 'Argelia',
-  'Austria': 'Austria',
-  'Jordan': 'Jordania',
-  // Group L
-  'Portugal': 'Portugal',
-  'DR Congo': 'RD Congo',
-  'Congo DR': 'RD Congo',
-  'Uzbekistan': 'Uzbekistán',
-  'Colombia': 'Colombia',
-  // Knockout (additional names)
-  'England': 'Inglaterra',
-  'Croatia': 'Croacia',
-  'Ghana': 'Ghana',
-  'Panama': 'Panamá',
-};
 
 interface FDMatch {
   id: number;
@@ -141,7 +67,7 @@ interface LiveScoresResponse {
 }
 
 function mapFDTeamName(fdName: string): string | null {
-  return FD_NAME_MAP[fdName] || null;
+  return mapFDNameToSpanish(fdName);
 }
 
 function mapFDStatus(status: string): 'live' | 'finished' | 'upcoming' {
@@ -242,6 +168,10 @@ export async function GET(request: Request) {
 
       if (match.isFinished) {
         finished.push(match);
+        // Persist to data layer immediately (feeds accuracy pipeline)
+        persistFinishedMatch(match).catch(e =>
+          console.warn('[live-scores] persist error:', e)
+        );
       } else if (match.isLive) {
         live.push(match);
       }
@@ -349,4 +279,42 @@ export async function GET(request: Request) {
   liveCache.set(cacheKey, { data: response, expiresAt: Date.now() + LIVE_CACHE_TTL });
 
   return NextResponse.json(response);
+}
+
+/**
+ * Persist a finished match from football-data.org to the data layer.
+ * This bridges the live-scores feed into the accuracy pipeline so that
+ * the fixture endpoint and accuracy engine see results without waiting
+ * for the fixture route's poll cycle.
+ */
+async function persistFinishedMatch(match: ProcessedWC26Match): Promise<void> {
+  try {
+    const db = await getDataLayerAsync();
+    const allMatches = await db.getAllMatches();
+    const dbMatch = allMatches.find(m =>
+      match.homeTeam?.toLowerCase() === (m as any).homeTeam?.toLowerCase() &&
+      match.awayTeam?.toLowerCase() === (m as any).awayTeam?.toLowerCase()
+    );
+    if (!dbMatch) return; // Match not in our fixture list — can't persist
+
+    // Check if already persisted
+    const existing = await db.getMatchResults();
+    if (existing.some(r => r.matchId === dbMatch.id)) return; // Already have it
+
+    const winner = match.homeScore > match.awayScore
+      ? match.homeTeam
+      : match.awayScore > match.homeScore
+        ? match.awayTeam
+        : 'draw';
+
+    await db.submitMatchResult({
+      matchId: dbMatch.id,
+      homeScore: match.homeScore,
+      awayScore: match.awayScore,
+      winner,
+    });
+    console.log(`[live-scores] Persisted result: ${match.homeTeam} ${match.homeScore}-${match.awayScore} ${match.awayTeam}`);
+  } catch (err) {
+    console.warn(`[live-scores] Failed to persist ${match.homeTeam} vs ${match.awayTeam}:`, err);
+  }
 }

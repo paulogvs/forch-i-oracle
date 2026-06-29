@@ -7,6 +7,7 @@ import { WORLD_CUP_TEAMS, ELO_RATINGS } from './teams';
 import { ALL_MATCHES } from './matches';
 import { getDataLayerAsync } from './data-layer';
 import type { EloEntry } from './teams';
+import { createRNG, samplePoisson as seededSamplePoisson } from './seeded-rng';
 
 // ─── Data Structures ──────────────────────────────────────────────────────
 
@@ -275,16 +276,8 @@ export function assignThirdsBacktracking(
 
 // ─── Team Helpers ──────────────────────────────────────────────────────────
 
-function samplePoisson(lambda: number): number {
-  if (lambda <= 0) return 0;
-  const L = Math.exp(-lambda);
-  let k = 0;
-  let p = 1;
-  do {
-    k++;
-    p *= Math.random();
-  } while (p > L);
-  return k - 1;
+function samplePoisson(lambda: number, rng: () => number = Math.random): number {
+  return seededSamplePoisson(lambda, rng);
 }
 
 function getFlag(name: string): string {
@@ -313,6 +306,7 @@ function getTeamElo(name: string): number {
 function simulatePenalties(
   homeElo: number,
   awayElo: number,
+  rng: () => number = Math.random,
 ): { winner: string; penHome: number; penAway: number } {
   // Elo advantage: every 100 points = ~3% bonus
   const eloDiff = homeElo - awayElo;
@@ -325,14 +319,14 @@ function simulatePenalties(
 
   // Regular 5 kicks
   for (let i = 0; i < 5; i++) {
-    if (Math.random() < (0.75 + homeBonus * 0.5)) penHome++; // ~75% conversion rate
-    if (Math.random() < (0.75 - homeBonus * 0.5)) penAway++;
+    if (rng() < (0.75 + homeBonus * 0.5)) penHome++; // ~75% conversion rate
+    if (rng() < (0.75 - homeBonus * 0.5)) penAway++;
   }
 
   // If still tied, sudden death
   while (penHome === penAway) {
-    if (Math.random() < (0.75 + homeBonus * 0.5)) penHome++;
-    if (Math.random() < (0.75 - homeBonus * 0.5)) penAway++;
+    if (rng() < (0.75 + homeBonus * 0.5)) penHome++;
+    if (rng() < (0.75 - homeBonus * 0.5)) penAway++;
   }
 
   return {
@@ -353,11 +347,12 @@ function simulatePenalties(
 function simulateExtraTime(
   homeLambda: number,
   awayLambda: number,
+  rng: () => number = Math.random,
 ): { homeGoals: number; awayGoals: number } {
   const ET_LAMBDA_FACTOR = 0.35; // ~35% of regular time goals
   return {
-    homeGoals: samplePoisson(homeLambda * ET_LAMBDA_FACTOR),
-    awayGoals: samplePoisson(awayLambda * ET_LAMBDA_FACTOR),
+    homeGoals: samplePoisson(homeLambda * ET_LAMBDA_FACTOR, rng),
+    awayGoals: samplePoisson(awayLambda * ET_LAMBDA_FACTOR, rng),
   };
 }
 
@@ -367,6 +362,7 @@ function simulateMatch(
   realResult?: RealMatchResult,
   knockout = false,
   round: string = 'group',
+  rng: () => number = Math.random,
 ): SimulatedMatch {
   if (realResult) {
     return {
@@ -413,8 +409,8 @@ function simulateMatch(
   // Stochastic sampling: sample from Poisson distribution using predicted lambdas
   const homeLambda = stats.homeExpectedGoals;
   const awayLambda = stats.awayExpectedGoals;
-  const homeScore = samplePoisson(homeLambda);
-  const awayScore = samplePoisson(awayLambda);
+  const homeScore = samplePoisson(homeLambda, rng);
+  const awayScore = samplePoisson(awayLambda, rng);
 
   let winner: string;
   let extraTime = false;
@@ -432,7 +428,7 @@ function simulateMatch(
     // Draw in knockout → Extra time + penalties
     if (knockout) {
       // Simulate extra time (30 min, reduced lambda)
-      const et = simulateExtraTime(homeLambda, awayLambda);
+      const et = simulateExtraTime(homeLambda, awayLambda, rng);
       finalHomeScore = homeScore + et.homeGoals;
       finalAwayScore = awayScore + et.awayGoals;
       extraTime = true;
@@ -446,7 +442,7 @@ function simulateMatch(
         penalties = true;
         const homeElo = getTeamElo(home);
         const awayElo = getTeamElo(away);
-        const penResult = simulatePenalties(homeElo, awayElo);
+        const penResult = simulatePenalties(homeElo, awayElo, rng);
         penHome = penResult.penHome;
         penAway = penResult.penAway;
         winner = penHome > penAway ? home : away;
@@ -500,7 +496,8 @@ function getGroups(): Record<string, string[]> {
 function simulateGroups(
   groups: Record<string, string[]>,
   resultByTeams: Map<string, RealMatchResult>,
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  rng: () => number = Math.random,
 ): { standings: Map<string, GroupTeamStanding[]>; matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] } {
   const standings = new Map<string, GroupTeamStanding[]>();
   const allMatchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[] = [];
@@ -525,7 +522,7 @@ function simulateGroups(
     for (const match of matchups) {
       const resultKey = `${match.home}_vs_${match.away}`;
       const realResult = resultByTeams.get(resultKey);
-      const simResult = simulateMatch(match.home, match.away, realResult, false, 'group');
+      const simResult = simulateMatch(match.home, match.away, realResult, false, 'group', rng);
 
       const homeIdx = teams.indexOf(match.home);
       const awayIdx = teams.indexOf(match.away);
@@ -563,7 +560,8 @@ function simulateKnockout(
   standings: Map<string, GroupTeamStanding[]>,
   matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[],
   resultByTeams: Map<string, RealMatchResult>,
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  rng: () => number = Math.random,
 ): {
   roundOf32: SimulatedMatch[];
   roundOf16: SimulatedMatch[];
@@ -663,7 +661,7 @@ function simulateKnockout(
     // Look up real result by team names
     const resultKey = `${homeTeam}_vs_${awayTeam}`;
     const realResult = resultByTeams.get(resultKey);
-    const m = simulateMatch(homeTeam, awayTeam, realResult, true, 'R32');
+    const m = simulateMatch(homeTeam, awayTeam, realResult, true, 'R32', rng);
     m.id = `R32-${i + 1}`;
     m.roundLabel = '1/16 Final';
     roundOf32.push(m);
@@ -690,7 +688,7 @@ function simulateKnockout(
     const [h, a] = r16def[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'R16');
+    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'R16', rng);
     m.id = `R16-${i + 1}`;
     m.roundLabel = 'Octavos de Final';
     roundOf16.push(m);
@@ -705,7 +703,7 @@ function simulateKnockout(
     const [h, a] = qfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'QF');
+    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'QF', rng);
     m.id = `QF-${i + 1}`;
     m.roundLabel = 'Cuartos de Final';
     quarters.push(m);
@@ -720,7 +718,7 @@ function simulateKnockout(
     const [h, a] = sfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'SF');
+    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'SF', rng);
     m.id = `SF-${i + 1}`;
     m.roundLabel = 'Semifinales';
     semis.push(m);
@@ -732,14 +730,14 @@ function simulateKnockout(
   const losers = semis.map((m) => m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
   const tpHome = losers[0] || 'TBD';
   const tpAway = losers[1] || 'TBD';
-  const thirdPlace = simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP');
+  const thirdPlace = simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP', rng);
   thirdPlace.id = 'TP-1';
   thirdPlace.roundLabel = 'Tercer Puesto';
 
   // Final
   const finHome = semis[0]?.winner || 'TBD';
   const finAway = semis[1]?.winner || 'TBD';
-  const final = simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F');
+  const final = simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F', rng);
   final.id = 'FINAL';
   final.roundLabel = 'La Gran Final';
 
@@ -751,12 +749,15 @@ function simulateKnockout(
 export interface SimulateTournamentOptions {
   realResults?: RealMatchResult[];
   onProgress?: (msg: string) => void;
+  /** Seed for deterministic simulation. Same seed → same results. */
+  seed?: number;
 }
 
 export async function simulateTournament(
   options: SimulateTournamentOptions = {}
 ): Promise<TournamentBracket> {
-  const { realResults = [], onProgress } = options;
+  const { realResults = [], onProgress, seed } = options;
+  const rng = seed !== undefined ? createRNG(seed) : Math.random;
 
   const resultsMap = new Map<string, RealMatchResult>();
   for (const r of realResults) {
@@ -774,7 +775,7 @@ export async function simulateTournament(
     }
   }
 
-  const { standings, matchResults } = simulateGroups(groups, resultByTeams, onProgress);
+  const { standings, matchResults } = simulateGroups(groups, resultByTeams, onProgress, rng);
 
   const groupStandings: GroupStandings[] = [];
   for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
@@ -782,7 +783,7 @@ export async function simulateTournament(
   }
 
   if (onProgress) onProgress('Simulando eliminatorias con Poisson + Elo...');
-  const knockout = simulateKnockout(standings, matchResults, resultByTeams, onProgress);
+  const knockout = simulateKnockout(standings, matchResults, resultByTeams, onProgress, rng);
 
   const champion = knockout.final.winner;
   const runnerUp = champion === knockout.final.homeTeam ? knockout.final.awayTeam : knockout.final.homeTeam;
@@ -842,7 +843,9 @@ export interface MultiSimResult {
 export async function simulateTournamentMulti(
   numSims = 100,
   realResults: RealMatchResult[] = [],
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  /** Seed for deterministic multi-simulation. Each sim number is appended to the seed for unique but reproducible streams. */
+  seed?: number,
 ): Promise<MultiSimResult> {
   // Load Elo overrides from DB (persistent updates from past match results)
   try {
@@ -902,9 +905,12 @@ export async function simulateTournamentMulti(
       onProgress(`Simulación ${i + 1}/${numSims}...`);
     }
 
+    // Each sim in the batch gets a unique seed (deterministic if base seed is provided)
+    const simRng = seed !== undefined ? createRNG(seed + i) : Math.random;
+
     try {
-      const { standings, matchResults } = simulateGroups(groups, resultByTeams);
-      const knockout = simulateKnockout(standings, matchResults, resultByTeams);
+      const { standings, matchResults } = simulateGroups(groups, resultByTeams, undefined, simRng);
+      const knockout = simulateKnockout(standings, matchResults, resultByTeams, undefined, simRng);
 
       // Track per-round appearances
       for (const m of knockout.roundOf32) {
@@ -989,7 +995,7 @@ export async function simulateTournamentMulti(
 
   if (!lastBracket) {
     if (onProgress) onProgress('Simulación de respaldo...');
-    lastBracket = await simulateTournament({ realResults, onProgress });
+    lastBracket = await simulateTournament({ realResults, onProgress, seed: seed !== undefined ? seed + 999999 : undefined });
   }
 
   if (onProgress) {

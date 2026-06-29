@@ -31,6 +31,8 @@ import {
   saveConsensusBracket as saveFileConsensusBracket,
   getKV as getFileKV,
   setKV as setFileKV,
+  getAccuracyMetricsFile,
+  saveAccuracyMetricFile,
 } from '../file-store';
 
 // ═══════════════════════════════════════════════════════════════
@@ -220,7 +222,39 @@ async function getMatchByTeams(homeTeamName: string, awayTeamName: string): Prom
 
 async function getPrediction(matchId: string): Promise<DBMatchPrediction | null> {
   ensureInitialized();
-  return predictionsStore.get(matchId) ?? null;
+  // Check in-memory first
+  const memPred = predictionsStore.get(matchId);
+  if (memPred) return memPred;
+  // Read-through from file (Vercel cold start persistence)
+  const filePreds = getFilePredictions();
+  const filePred = filePreds[matchId];
+  if (filePred) {
+    const restored: DBMatchPrediction = {
+      id: matchId,
+      matchId: filePred.matchId,
+      homeWin: filePred.homeWin,
+      draw: filePred.draw,
+      awayWin: filePred.awayWin,
+      mostLikelyScore: filePred.mostLikelyScore,
+      expectedGoalsHome: filePred.expectedGoalsHome,
+      expectedGoalsAway: filePred.expectedGoalsAway,
+      over25Probability: filePred.over25Probability,
+      bttsProbability: filePred.bttsProbability,
+      keyFactors: [],
+      confidence: filePred.confidence as 'alta' | 'media' | 'baja',
+      dataQualityScore: filePred.dataQualityScore,
+      modelVersion: filePred.modelVersion,
+      predictedAt: filePred.matchId, // placeholder — not stored in file format
+      topScores: filePred.topScores,
+      agreement: filePred.agreement,
+      uncertainty: filePred.uncertainty,
+      models: filePred.models,
+      confidenceScore: filePred.confidenceScore,
+    };
+    predictionsStore.set(matchId, restored);
+    return restored;
+  }
+  return null;
 }
 
 async function getPredictionsForMatches(matchIds: string[]): Promise<DBMatchPrediction[]> {
@@ -294,7 +328,28 @@ async function deletePrediction(matchId: string): Promise<void> {
 
 async function getTeamForm(teamId: string): Promise<DBTeamForm | null> {
   ensureInitialized();
-  return teamFormsStore.get(teamId) ?? null;
+  // Check in-memory first
+  const memForm = teamFormsStore.get(teamId);
+  if (memForm) return memForm;
+  // Read-through from file (Vercel cold start persistence)
+  const fileForms = getFileForms();
+  const fileForm = fileForms[teamId];
+  if (fileForm) {
+    const restored: DBTeamForm = {
+      id: teamId,
+      teamId: fileForm.teamId,
+      last5: fileForm.last5 as DBTeamForm['last5'],
+      xgFor: fileForm.xgFor,
+      xgAgainst: fileForm.xgAgainst,
+      momentum: fileForm.momentum,
+      matchesPlayed: fileForm.matchesPlayed,
+      eloDynamic: fileForm.eloDynamic,
+      updatedAt: fileForm.updatedAt,
+    };
+    teamFormsStore.set(teamId, restored);
+    return restored;
+  }
+  return null;
 }
 
 async function saveTeamForm(form: Omit<DBTeamForm, 'id' | 'updatedAt'>): Promise<DBTeamForm> {
@@ -453,11 +508,53 @@ async function getCronStatus(jobName: string): Promise<CronJobStatus | null> {
 
 async function getAccuracyMetrics(matchId: string): Promise<DBAccuracyMetric | null> {
   ensureInitialized();
-  return accuracyMetricsStore.get(matchId) ?? null;
+  // Check in-memory first
+  const mem = accuracyMetricsStore.get(matchId);
+  if (mem) return mem;
+  // Read-through from file (Vercel cold start persistence)
+  const file = getAccuracyMetricsFile();
+  const fileMetric = file[matchId];
+  if (fileMetric) {
+    const restored: DBAccuracyMetric = {
+      id: matchId,
+      matchId: fileMetric.matchId,
+      predictedHomeWin: fileMetric.predictedHomeWin,
+      predictedDraw: fileMetric.predictedDraw,
+      predictedAwayWin: fileMetric.predictedAwayWin,
+      actualResult: fileMetric.actualResult,
+      predictedCorrect: fileMetric.predictedCorrect,
+      brierScore: fileMetric.brierScore,
+      logLoss: fileMetric.logLoss,
+      modelVersion: fileMetric.modelVersion,
+      evaluatedAt: fileMetric.evaluatedAt,
+    };
+    accuracyMetricsStore.set(matchId, restored);
+    return restored;
+  }
+  return null;
 }
 
 async function getAllAccuracyMetrics(): Promise<DBAccuracyMetric[]> {
   ensureInitialized();
+  // If in-memory is empty, load from file
+  if (accuracyMetricsStore.size === 0) {
+    const file = getAccuracyMetricsFile();
+    for (const [matchId, m] of Object.entries(file)) {
+      accuracyMetricsStore.set(matchId, {
+        id: matchId,
+        matchId: m.matchId,
+        predictedHomeWin: m.predictedHomeWin,
+        predictedDraw: m.predictedDraw,
+        predictedAwayWin: m.predictedAwayWin,
+        actualResult: m.actualResult,
+        predictedCorrect: m.predictedCorrect,
+        brierScore: m.brierScore,
+        logLoss: m.logLoss,
+        modelVersion: m.modelVersion,
+        evaluatedAt: m.evaluatedAt,
+      });
+    }
+  }
   return Array.from(accuracyMetricsStore.values());
 }
 
@@ -470,6 +567,19 @@ async function saveAccuracyMetric(metric: Omit<DBAccuracyMetric, 'id' | 'evaluat
     evaluatedAt: now,
   };
   accuracyMetricsStore.set(metric.matchId, saved);
+  // Persist to file (survives Vercel cold starts)
+  saveAccuracyMetricFile({
+    matchId: metric.matchId,
+    predictedHomeWin: metric.predictedHomeWin,
+    predictedDraw: metric.predictedDraw,
+    predictedAwayWin: metric.predictedAwayWin,
+    actualResult: metric.actualResult,
+    predictedCorrect: metric.predictedCorrect,
+    brierScore: metric.brierScore,
+    logLoss: metric.logLoss,
+    modelVersion: metric.modelVersion,
+    evaluatedAt: now,
+  });
   return saved;
 }
 

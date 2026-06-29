@@ -12,8 +12,8 @@ import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensembl
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { getOrComputeTournamentResults } from '@/lib/tournament-results';
 import { buildTournamentDAG } from '@/lib/tournament-dag';
-import { fetchWC26Games, teamIdToSpanish, type WC26Game } from '@/lib/worldcup26-api';
-import { WORLD_CUP_TEAMS } from '@/lib/teams';
+import { fetchWC26Games, teamIdToSpanish } from '@/lib/worldcup26-api';
+import { mapFDNameToSpanish } from '@/lib/teams';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
 interface FixtureCacheEntry { data: unknown; expiresAt: number; }
@@ -92,36 +92,9 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
         const fdData = await fdResp.json();
         const fdMatches = fdData.matches || [];
 
-        // Name mapping: football-data.org English → our Spanish
-        const FD_NAME_MAP: Record<string, string> = {
-          'Mexico': 'México', 'South Africa': 'Sudáfrica', 'South Korea': 'Corea del Sur',
-          'Czech Republic': 'Chequia', 'Czechia': 'Chequia', 'United States': 'Estados Unidos',
-          'USA': 'Estados Unidos', 'Ivory Coast': 'Costa de Marfil', "Côte d'Ivoire": 'Costa de Marfil',
-          'Curaçao': 'Curazao', 'DR Congo': 'RD Congo', 'Congo DR': 'RD Congo',
-          'Saudi Arabia': 'Arabia Saudita', 'Iran': 'Irán', 'Iraq': 'Irak',
-          'New Zealand': 'Nueva Zelanda', 'Netherlands': 'Países Bajos', 'Tunisia': 'Túnez',
-          'Morocco': 'Marruecos', 'Egypt': 'Egipto', 'Cape Verde Islands': 'Cabo Verde',
-          'Uzbekistan': 'Uzbekistán', 'Korea Republic': 'Corea del Sur', 'Korea DR': 'Corea del Sur',
-          'Bosnia and Herzegovina': 'Bosnia y Herzegovina', 'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
-          'Canada': 'Canadá', 'Germany': 'Alemania', 'Spain': 'España', 'France': 'Francia',
-          'England': 'Inglaterra', 'Portugal': 'Portugal', 'Belgium': 'Bélgica', 'Norway': 'Noruega',
-          'Japan': 'Japón', 'Australia': 'Australia', 'Sweden': 'Suecia', 'Argentina': 'Argentina',
-          'Austria': 'Austria', 'Algeria': 'Argelia', 'Jordan': 'Jordania', 'Colombia': 'Colombia',
-          'Panama': 'Panamá', 'Ghana': 'Ghana', 'Croatia': 'Croacia', 'Senegal': 'Senegal',
-          'Poland': 'Polonia', 'Turkey': 'Turquía', 'Paraguay': 'Paraguay', 'Ecuador': 'Ecuador',
-          'Haiti': 'Haití', 'Scotland': 'Escocia', 'Qatar': 'Qatar',
-        };
-
-        const mapFDName = (name: string): string | null => {
-          if (FD_NAME_MAP[name]) return FD_NAME_MAP[name];
-          // Try direct lookup in WORLD_CUP_TEAMS
-          const team = WORLD_CUP_TEAMS.find(t => t.englishName.toLowerCase() === name.toLowerCase());
-          return team?.name || null;
-        }
-
         for (const fd of fdMatches) {
-          const homeTeam = mapFDName(fd.homeTeam.name);
-          const awayTeam = mapFDName(fd.awayTeam.name);
+          const homeTeam = mapFDNameToSpanish(fd.homeTeam.name);
+          const awayTeam = mapFDNameToSpanish(fd.awayTeam.name);
           if (!homeTeam || !awayTeam) continue;
 
           let match = await db.getMatchByTeams(homeTeam, awayTeam);

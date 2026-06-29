@@ -87,84 +87,12 @@ for (const [code, id] of Object.entries(FIFA_CODE_TO_ID)) {
 }
 
 // English name → Spanish name (for openfootball fallback)
-const ENGLISH_TO_SPANISH: Record<string, string> = {
-  'Mexico': 'México',
-  'South Africa': 'Sudáfrica',
-  'South Korea': 'Corea del Sur',
-  'Czech Republic': 'Chequia',
-  'Czechia': 'Chequia',
-  'Canada': 'Canadá',
-  'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
-  'Bosnia & Herzegovina': 'Bosnia y Herzegovina',
-  'Qatar': 'Qatar',
-  'Switzerland': 'Suiza',
-  'Brazil': 'Brasil',
-  'Morocco': 'Marruecos',
-  'Haiti': 'Haití',
-  'Scotland': 'Escocia',
-  'United States': 'Estados Unidos',
-  'USA': 'Estados Unidos',
-  'Paraguay': 'Paraguay',
-  'Australia': 'Australia',
-  'Turkey': 'Turquía',
-  'Turkiye': 'Turquía',
-  'Germany': 'Alemania',
-  'Curacao': 'Curazao',
-  'Curaçao': 'Curazao',
-  'Ivory Coast': 'Costa de Marfil',
-  'Ecuador': 'Ecuador',
-  'Netherlands': 'Países Bajos',
-  'Japan': 'Japón',
-  'Sweden': 'Suecia',
-  'Tunisia': 'Túnez',
-  'Belgium': 'Bélgica',
-  'Egypt': 'Egipto',
-  'Iran': 'Irán',
-  'New Zealand': 'Nueva Zelanda',
-  'Spain': 'España',
-  'Cape Verde': 'Cabo Verde',
-  'Cape Verde Islands': 'Cabo Verde',
-  'Saudi Arabia': 'Arabia Saudita',
-  'Uruguay': 'Uruguay',
-  'France': 'Francia',
-  'Senegal': 'Senegal',
-  'Iraq': 'Irak',
-  'Norway': 'Noruega',
-  'Argentina': 'Argentina',
-  'Algeria': 'Argelia',
-  'Austria': 'Austria',
-  'Jordan': 'Jordania',
-  'Portugal': 'Portugal',
-  'DR Congo': 'RD Congo',
-  'Congo DR': 'RD Congo',
-  'Uzbekistan': 'Uzbekistán',
-  'Colombia': 'Colombia',
-  'England': 'Inglaterra',
-  'Croatia': 'Croacia',
-  'Ghana': 'Ghana',
-  'Panama': 'Panamá',
-};
+// Uses unified map from lib/teams.ts
+import { mapFDNameToSpanish } from './teams';
 
-// ═══════════════════════════════════════════════════════════════
-// API TYPES (backward-compatible with existing consumers)
-// ═══════════════════════════════════════════════════════════════
-
-export interface WC26Game {
-  id: number;
-  home_team_id: number;
-  away_team_id: number;
-  home_team_name_en: string;
-  away_team_name_en: string;
-  home_score: string;
-  away_score: string;
-  finished: string; // "TRUE" | "FALSE"
-  time_elapsed: string;
-  home_scorers: string;
-  away_scorers: string;
-  group: string;
-  matchday: number;
-  round_of: string;
-  stadium: string;
+/** @deprecated Use mapFDNameToSpanish from lib/teams.ts instead */
+export function teamEnglishToSpanish(englishName: string): string | null {
+  return mapFDNameToSpanish(englishName);
 }
 
 export interface WC26Team {
@@ -191,6 +119,27 @@ export interface WC26Group {
     points: number;
     group_order: number;
   }[];
+}
+
+/**
+ * Raw match from wheniskickoff.com / openfootball
+ */
+export interface WC26Game {
+  id: number;
+  home_team_id: number;
+  away_team_id: number;
+  home_team_name_en: string;
+  away_team_name_en: string;
+  home_score: string;
+  away_score: string;
+  finished: string;
+  time_elapsed: string;
+  home_scorers: string;
+  away_scorers: string;
+  group: string;
+  matchday: number;
+  round_of: string;
+  stadium: string;
 }
 
 export interface ProcessedWC26Match {
@@ -224,16 +173,6 @@ export function teamIdToSpanish(teamId: number): string | null {
   return null;
 }
 
-/**
- * Convert an English team name to Spanish name
- */
-export function teamEnglishToSpanish(englishName: string): string | null {
-  return ENGLISH_TO_SPANISH[englishName] || null;
-}
-
-/**
- * Convert a FIFA code to Spanish name
- */
 export function fifaCodeToSpanish(code: string): string | null {
   return FIFA_CODE_TO_SPANISH[code] || null;
 }

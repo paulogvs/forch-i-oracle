@@ -16,6 +16,7 @@ import { calculateMatchProbabilitiesDixonColes, type DixonColesResult } from './
 import { calculateStatisticalPrediction, type StatisticalPrediction } from './predictor-engine';
 import { getDynamicStats, predictMatchDynamic, type DynamicPrediction } from './prediction-store';
 import { ELO_RATINGS } from './teams';
+import { calculateUncertaintyIntervals } from './wilson-ci';
 
 // ═══════════════════════════════════════════════════════════════
 // ENSEMBLE CONFIGURATION
@@ -109,41 +110,21 @@ function calculateUncertainty(
   awayWin: number,
   agreement: ModelAgreement
 ): UncertaintyInterval {
-  // Convert percentages to probabilities
+  // Shannon entropy: H = -Σ p_i * log2(p_i)
   const pH = homeWin / 100;
   const pD = draw / 100;
   const pA = awayWin / 100;
-
-  // Shannon entropy: H = -Σ p_i * log2(p_i)
   const safeLog = (p: number) => p > 0 ? Math.log2(p) : 0;
   const entropy = -(pH * safeLog(pH) + pD * safeLog(pD) + pA * safeLog(pA));
 
-  // Effective number of outcomes: 2^H
-  const effectiveOutcomes = Math.pow(2, entropy);
-
-  // Confidence interval width based on model agreement
-  // Lower agreement → wider intervals
-  const baseWidth = 8; // Base CI width in percentage points
-  const agreementFactor = 1 + (1 - agreement.agreementScore) * 1.5; // Up to 2.5x wider
-  const modelCountFactor = 1 / Math.sqrt(4); // Shrinks with more models
-  const ciWidth = baseWidth * agreementFactor * modelCountFactor * 2;
-
-  return {
-    homeWin90: {
-      low: Math.max(0, Math.round(homeWin - ciWidth)),
-      high: Math.min(100, Math.round(homeWin + ciWidth)),
-    },
-    draw90: {
-      low: Math.max(0, Math.round(draw - ciWidth)),
-      high: Math.min(100, Math.round(draw + ciWidth)),
-    },
-    awayWin90: {
-      low: Math.max(0, Math.round(awayWin - ciWidth)),
-      high: Math.min(100, Math.round(awayWin + ciWidth)),
-    },
-    entropy: Math.round(entropy * 100) / 100,
-    effectiveOutcomes: Math.round(effectiveOutcomes * 100) / 100,
-  };
+  // Use Wilson score interval for statistically sound confidence bands
+  // This replaces the old ad-hoc ciWidth calculation with proper binomial CIs
+  return calculateUncertaintyIntervals(
+    homeWin, draw, awayWin,
+    agreement.agreementScore,
+    entropy,
+    1.96 // 95% confidence level
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════

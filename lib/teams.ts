@@ -244,6 +244,39 @@ export function getTeamEnglishName(spanishName: string): string {
   return englishNameMap.get(spanishName.toLowerCase()) || spanishName;
 }
 
+// ═══ UNIFIED NAME MAP: football-data.org English → Our Spanish ═══
+// Single source of truth — derived from WORLD_CUP_TEAMS + aliases
+// Use this instead of hand-written maps in fixture/route.ts, live-scores/route.ts, etc.
+const _fdBase = new Map<string, string>(
+  WORLD_CUP_TEAMS.map((t) => [t.englishName, t.name])
+);
+// football-data.org / openfootball aliases that differ from englishName
+const ALIASES: Record<string, string> = {
+  'Türkiye': 'Turquía',
+  'Turkey': 'Turquía',
+  'Côte d\'Ivoire': 'Costa de Marfil',
+  'Bosnia & Herzegovina': 'Bosnia y Herzegovina',
+  'Czechia': 'Chequia',
+  'Cape Verde Islands': 'Cabo Verde',
+  'Curaçao': 'Curazao',
+  'Korea Republic': 'Corea del Sur',
+  'Korea DR': 'Corea del Sur',
+  'USA': 'Estados Unidos',
+  'Haití': 'Haití',
+  'Mexico': 'México',
+};
+for (const [alias, target] of Object.entries(ALIASES)) {
+  if (!_fdBase.has(alias)) _fdBase.set(alias, target);
+}
+
+/**
+ * Map a football-data.org / openfootball English team name to our Spanish name.
+ * Returns null if the name is unknown (team not in our database).
+ */
+export function mapFDNameToSpanish(fdName: string): string | null {
+  return _fdBase.get(fdName) || null;
+}
+
 /** Get star players for a team */
 export function getTeamStarPlayers(teamName: string): string[] {
   return starPlayerMap.get(teamName.toLowerCase()) || [];
