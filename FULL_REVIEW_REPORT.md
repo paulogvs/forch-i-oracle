@@ -58,7 +58,7 @@
 - **Fix:** For production, use Vercel KV or Upstash Redis. Current approach is fine for dev.
 
 ### 7. Module-Level Maps Grow Indefinitely (Memory Leak Risk)
-- 7 data-layer Maps, `rateLimit` Map, `groqCache`/`apiCache` (lazy TTL eviction only), `fixtureCache` (uncapped) — all grow without bounds on warm lambda instances.
+- 7 data-layer Maps, `rateLimit` Map, `predictionCache`/`apiCache` (lazy TTL eviction only), `fixtureCache` (uncapped) — all grow without bounds on warm lambda instances.
 - **Fix:** Add maxSize caps, periodic cleanup sweep for expired cache entries, upper bounds on `matchResultsStore`.
 
 ### 8. /api/fixture Cold-Start Recomputes 128 Ensemble Predictions

@@ -313,7 +313,7 @@ export async function GET(request: Request) {
 
       // AUTO-SIMULATE: Trigger tournament simulation after ingesting new results
       // This updates champion probabilities ~30 min after each match ends.
-      // Safe now: Groq removed, no cascade chain (just ingest → simulate = ~35s total).
+      // Lightweight flow: just ingest → simulate = ~35s total.
       try {
         const crs = process.env.CRON_SECRET || '';
         const simUrl = new URL(request.url);

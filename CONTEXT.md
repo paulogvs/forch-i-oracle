@@ -37,15 +37,11 @@
 ├─────────────────────────────────────────────────┤
 │  Data Layer (football-api.ts, teams.ts)         │
 │  API-Football (real stats), Elo fallback        │
-├─────────────────────────────────────────────────┤
-│  LLM Layer (groq.ts)                            │
-│  Narrative analysis ONLY — no number invention  │
 └─────────────────────────────────────────────────┘
 ```
 
 ## Constraints
 - API-Football free tier: 100 requests/day
-- Groq free tier: 14,400 requests/day
 - No historical World Cup data available in free tier
 - All timeouts: API-Football 5s, Groq 8s
 - Cache window: 2 hours per team pair

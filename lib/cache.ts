@@ -1,35 +1,35 @@
 // FORCH.i ORACLE — Server-side caching layer
-// Two caches: Groq predictions (2h) + API responses (5 min)
+// Two caches: statistical predictions (2h TTL) + API responses (5 min TTL)
 
 import type { Prediction } from './types/prediction';
 
-// ═══ GROQ PREDICTION CACHE (2 hours) ═══
-interface GroqCacheEntry {
+// ═══ PREDICTION CACHE (2 hours) ═══
+interface PredictionCacheEntry {
   prediction: Prediction;
   timestamp: number;
   expiresAt: number;
 }
 
-const GROQ_CACHE_WINDOW_MS = 2 * 60 * 60 * 1000;
-const groqCache = new Map<string, GroqCacheEntry>();
+const PREDICTION_CACHE_WINDOW_MS = 2 * 60 * 60 * 1000;
+const predictionCache = new Map<string, PredictionCacheEntry>();
 
-function makeGroqKey(homeTeam: string, awayTeam: string): string {
+function makePredictionKey(homeTeam: string, awayTeam: string): string {
   const sorted = [homeTeam.toLowerCase(), awayTeam.toLowerCase()].sort();
   return sorted.join('||');
 }
 
 export function getCachedPrediction(homeTeam: string, awayTeam: string): Prediction | null {
-  const key = makeGroqKey(homeTeam, awayTeam);
-  const entry = groqCache.get(key);
+  const key = makePredictionKey(homeTeam, awayTeam);
+  const entry = predictionCache.get(key);
   if (!entry) return null;
-  if (Date.now() > entry.expiresAt) { groqCache.delete(key); return null; }
+  if (Date.now() > entry.expiresAt) { predictionCache.delete(key); return null; }
   return entry.prediction;
 }
 
 export function setCachedPrediction(homeTeam: string, awayTeam: string, prediction: Prediction): void {
-  const key = makeGroqKey(homeTeam, awayTeam);
+  const key = makePredictionKey(homeTeam, awayTeam);
   const now = Date.now();
-  groqCache.set(key, { prediction, timestamp: now, expiresAt: now + GROQ_CACHE_WINDOW_MS });
+  predictionCache.set(key, { prediction, timestamp: now, expiresAt: now + PREDICTION_CACHE_WINDOW_MS });
 }
 
 // ═══ API RESPONSE CACHE (5 minutes) ═══
@@ -55,6 +55,6 @@ export function setApiResponse<T>(key: string, data: T): void {
 }
 
 export function clearCache(): void {
-  groqCache.clear();
+  predictionCache.clear();
   apiCache.clear();
 }

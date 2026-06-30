@@ -593,19 +593,40 @@ function simulateKnockout(
   // ═══════════════════════════════════════════════════════════════
 
   // FIFA 2026 bracket: each R32 slot has allowed third-place groups
+  // NOTE: Order MUST match the static matches.ts R32 IDs (R32-1..R32-8).
+  // The official WC2026 bracket uses groups in this specific interleaved order
+  // (not purely alphabetical), so static data and simulation must agree.
   const r32SlotAllowed: string[][] = [
-    ['B', 'E', 'F', 'G'],     // 1A vs 3rd
-    ['A', 'B', 'C'],           // 1B vs 3rd
-    ['A', 'B', 'C', 'D'],      // 1C vs 3rd
-    ['D', 'E', 'F'],           // 1D vs 3rd
-    ['D', 'E', 'F'],           // 1E vs 3rd
-    ['A', 'B', 'C'],           // 1F vs 3rd
-    ['C', 'G', 'H'],           // 1G vs 3rd
-    ['G', 'H', 'A'],           // 1H vs 3rd
-    ['I', 'J', 'K', 'L'],     // 1I vs 3rd
-    ['I', 'J', 'K', 'L'],     // 1J vs 3rd
-    ['I', 'J', 'K', 'L'],     // 1K vs 3rd
-    ['I', 'J', 'K', 'L'],     // 1L vs 3rd
+    ['B', 'E', 'F', 'G'],     // R32-1: 1A vs 3{from B,E,F,G}
+    ['A', 'B', 'C', 'D'],     // R32-2: 1C vs 3{from A,B,C,D}
+    ['D', 'E', 'F'],          // R32-3: 1E vs 3{from D,E,F}
+    ['C', 'G', 'H'],          // R32-4: 1G vs 3{from C,G,H}
+    ['A', 'B', 'C'],          // R32-5: 1B vs 3{from A,B,C}
+    ['D', 'E', 'F'],          // R32-6: 1D vs 3{from D,E,F}
+    ['A', 'B', 'C'],          // R32-7: 1F vs 3{from A,B,C}
+    ['G', 'H', 'A'],          // R32-8: 1H vs 3{from G,H,A}
+    ['I', 'J', 'K', 'L'],     // R32-9:  1I vs 3{from I,J,K,L}
+    ['I', 'J', 'K', 'L'],     // R32-10: 1J vs 3{from I,J,K,L}
+    ['I', 'J', 'K', 'L'],     // R32-11: 1K vs 3{from I,J,K,L}
+    ['I', 'J', 'K', 'L'],     // R32-12: 1L vs 3{from I,J,K,L}
+  ];
+
+  // Group letter for each R32 slot (matches FIFA 2026 bracket structure).
+  // Critical: this MUST align 1:1 with r32SlotAllowed above so each slot's
+  // home team matches the corresponding static matches.ts entry.
+  const slotGroupLetters: string[] = [
+    'A',  // R32-1:  1A vs 3rd
+    'C',  // R32-2:  1C vs 3rd
+    'E',  // R32-3:  1E vs 3rd
+    'G',  // R32-4:  1G vs 3rd
+    'B',  // R32-5:  1B vs 3rd
+    'D',  // R32-6:  1D vs 3rd
+    'F',  // R32-7:  1F vs 3rd
+    'H',  // R32-8:  1H vs 3rd
+    'I',  // R32-9:  1I vs 3rd
+    'J',  // R32-10: 1J vs 3rd
+    'K',  // R32-11: 1K vs 3rd
+    'L',  // R32-12: 1L vs 3rd
   ];
 
   const thirdAssignment = assignThirdsBacktracking(r32SlotAllowed, qualifiedGroups);
@@ -613,7 +634,7 @@ function simulateKnockout(
   // R32 slots: 12 1st-vs-3rd + 4 2nd-vs-2nd
   const r32Matchups: { home: string; away: string }[] = [];
 
-  const groupLetters = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  const groupLetters = slotGroupLetters;
   for (let i = 0; i < 12; i++) {
     const groupLetter = groupLetters[i];
     const thirdGroup = thirdAssignment[i];

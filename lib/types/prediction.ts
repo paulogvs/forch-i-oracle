@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — Shared Prediction type
-// Extracted from lib/groq.ts to decouple prediction contracts from LLM provider
+// Statistical prediction contract (Poisson + Elo + xG + Bayesian ensemble)
 
 export interface Prediction {
   homeWin: number;

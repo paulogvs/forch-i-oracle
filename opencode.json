@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "reference": {
+    "forchi": "D:\\OTRO DISCO\\FORCH-IA\\FORCH-IA-ECOSYSTEM"
+  },
+  "_meta": {
+    "injected_by": "forchi-app-bootstrap",
+    "injected_at": "2026-06-30T15:07:28.287Z",
+    "ecosystem_path": "D:\\OTRO DISCO\\FORCH-IA\\FORCH-IA-ECOSYSTEM",
+    "ecosystem_source": "FORCHI_PATH env var",
+    "ecosystem_tier": 1,
+    "app_path": "D:\\OTRO DISCO\\FORCH-IA\\FORCH-IA-ECOSYSTEM APPs\\forch-i-oracle",
+    "bootstrap_version": "1.0.0",
+    "_reminder": "If you move the ecosystem to another location, re-run 'forchi-app-bootstrap.js --force' to update this path."
+  }
+}

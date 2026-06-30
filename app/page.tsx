@@ -497,7 +497,6 @@ export default function DashboardPage() {
         <div className="space-y-2">
           <QuickLink href="/fixture" icon="⚡" title="Predicción Completa" desc={`${stats.predictedCount} partidos · Tablas · Bracket`} accent="accent-premium" />
           <QuickLink href="/live" icon="📡" title="En Vivo" desc="Resultados en tiempo real" accent="accent-emerald" highlight={liveNow.length > 0} />
-          <QuickLink href="/benchmark" icon="🤖" title="Benchmark IA" desc="10 modelos compitiendo" accent="accent-secondary" />
           <QuickLink href="/backtest" icon="📊" title="Backtest" desc="Precisión · Brier · Calibración" accent="accent-primary" />
         </div>
       </section>

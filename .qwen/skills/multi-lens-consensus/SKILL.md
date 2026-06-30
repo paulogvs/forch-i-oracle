@@ -34,7 +34,7 @@ Consensus aggregation:
 
 ```tsx
 // LensConsensus.tsx
-// Props: Prediction from groq.ts + homeTeam + awayTeam names
+// Props: Prediction from statistical engine + homeTeam + awayTeam names
 
 interface Lens {
   icon: string;

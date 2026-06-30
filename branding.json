@@ -1,0 +1,16 @@
+{
+  "name": "forch-i-oracle",
+  "level": "full",
+  "built_with_forch": true,
+  "public_credits": {
+    "footer_badge": "Built with FORCH.i by Paulo Velasco",
+    "show_in_readme": true,
+    "show_in_footer": true,
+    "footer_color": "#3D5BFF"
+  },
+  "ecosystem_anchor": {
+    "maintainer": "FORCH.i by Paulo Velasco",
+    "vertical": "FORCH.iA",
+    "internal_id": true
+  }
+}

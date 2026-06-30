@@ -754,7 +754,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ═══════════════════════════════════════════════════
-    // PHASE 3: Enrich with stored Groq analysis
+    // PHASE 3: Enrich with stored statistical predictions
     // ═══════════════════════════════════════════════════
     const matchIds = fixture.map((m: any) => m.id);
     let storedPredictions: any[] = [];
@@ -764,7 +764,7 @@ export async function POST(request: NextRequest) {
       // Non-critical — analysis just won't show
     }
 
-    // Build a map of matchId → stored Groq data
+    // Build a map of matchId → stored prediction data
     const analysisMap = new Map<string, { analysis: string; homeKeyPlayers: string[]; awayKeyPlayers: string[] }>();
     for (const sp of storedPredictions) {
       if (sp.analysis || sp.homeKeyPlayers?.length || sp.awayKeyPlayers?.length) {
@@ -776,7 +776,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Enrich fixture with stored Groq analysis
+    // Enrich fixture with stored prediction data
     for (const m of fixture) {
       const stored = analysisMap.get(m.id);
       if (stored) {

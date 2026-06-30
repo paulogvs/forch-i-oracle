@@ -1,15 +1,16 @@
 ---
 name: statistical-prediction-engine
-description: Build a mathematical prediction engine (Poisson + Elo + xG) where numbers come from formulas, not the LLM — the LLM only writes the narrative analysis
+description: Build a state-of-the-art mathematical prediction engine (Poisson + Elo + xG + Bayesian ensemble) for sports — numbers come from formulas only, no LLM dependency
 source: auto-skill
 extracted_at: '2026-06-10T15:35:58.162Z'
+updated_at: '2026-06-30'
 ---
 
-# Statistical Prediction Engine Pattern
+# Statistical Prediction Engine Pattern (Living — 2026)
 
-LLMs like Groq Llama 3.3 **do not do mathematical calculations**. They generate plausible text. When you need accurate probability predictions for sports (or any domain), compute the numbers with mathematical models and use the LLM **only** for the narrative analysis.
+For accurate probability predictions in sports (or any domain with historical data), compute the numbers with mathematical models — Poisson + Elo + xG + Bayesian ensemble. This app is fully statistical, with no LLM layer.
 
-## Architecture: Numbers from Math, Words from AI
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -18,8 +19,8 @@ LLMs like Groq Llama 3.3 **do not do mathematical calculations**. They generate 
 │  1. predictor-engine.calculate()  → numbers (math) │
 │  2. football-api.getMatchContext() → real data      │
 │  3. getKeyFactors(stats)           → factors (math)│
-│  4. groq.getStatsAnalysis()        → text only      │
-│  5. MERGE: stats + groq analysis = final prediction │
+│  4. enhanced-engine.ensemble()    → refinement      │
+│  5. Output: stats + factors + confidence           │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -141,35 +142,29 @@ function calculateTeamStrengths(teamName: string, isHome: boolean) {
 }
 ```
 
-## 5. LLM Prompt — Text Only
+## 5. Narrative Analysis — From Stats
 
-The LLM receives pre-calculated stats and writes only the narrative:
+When you want a brief human-readable explanation, compute it from the stats (no LLM):
 
 ```ts
-const prompt = `You are FORCH.i Oracle. Write the NARRATIVE ANALYSIS for this match.
+function generateAnalysis(stats, homeTeam, awayTeam) {
+  const lines = [];
+  const eloDiff = stats.homeElo - stats.awayElo;
 
-The probabilities and ratings are ALREADY CALCULATED by a statistical model (Poisson + Elo).
-Your job is to explain WHY these numbers make sense.
+  if (Math.abs(eloDiff) > 50) {
+    const stronger = eloDiff > 0 ? homeTeam : awayTeam;
+    lines.push(`${stronger} tiene clara ventaja en rating Elo (+${Math.abs(eloDiff)} puntos).`);
+  } else {
+    lines.push('Encuentro equilibrado según ratings Elo.');
+  }
 
-HOME: ${homeTeam}  |  AWAY: ${awayTeam}
+  if (stats.homeExpectedGoals > stats.awayExpectedGoals * 1.2) {
+    lines.push(`${homeTeam} genera más oportunidades esperadas (xG ${stats.homeExpectedGoals.toFixed(2)}).`);
+  }
 
-CALCULATED PROBABILITIES:
-- ${homeTeam} win: ${stats.homeWin}%
-- Draw: ${stats.draw}%
-- ${awayTeam} win: ${stats.awayWin}%
-- Most likely score: ${stats.predictedScoreHome}-${stats.predictedScoreAway}
-- xG ${homeTeam}: ${stats.homeExpectedGoals}  |  xG ${awayTeam}: ${stats.awayExpectedGoals}
-- Attack rating: ${stats.homeAttack}/100 vs ${stats.awayAttack}/100
-
-INSTRUCTIONS:
-- Write 3-5 sentences in Spanish.
-- Explain why ${homeTeam} has ${stats.homeWin}% probability.
-- Mention real player names, tactics, and context.
-- DO NOT invent probabilities — they are calculated above.
-
-Respond ONLY with JSON:
-{"analysis": "...", "homeKeyPlayers": ["...", "..."], "awayKeyPlayers": ["...", "..."]}
-`;
+  lines.push(`Marcador más probable: ${stats.predictedScoreHome}-${stats.predictedScoreAway}.`);
+  return lines.join(' ');
+}
 ```
 
 ## 6. Key Factors — Calculated, Not Invented
@@ -219,22 +214,22 @@ const confidence = maxProb >= 55 ? 'alta' : maxProb >= 40 ? 'media' : 'baja';
 
 ## What This Pattern Achieves
 
-| Aspect | Before (LLM-only) | After (Stat Engine + LLM) |
-|--------|-------------------|---------------------------|
-| Probabilities | LLM "guesses" | Poisson distribution |
-| Scores | LLM picks a number | Most likely from probability matrix |
-| Attack/Defense | LLM makes up 50-90 | Calculated from Elo + goals data |
-| Key factors | LLM invents | Derived from form, Elo, injuries |
-| Analysis text | LLM writes | LLM writes (informed by real stats) |
-| Reproducibility | Different each time | Same inputs = same output |
-| Accuracy | Subjective | Mathematically grounded |
+| Aspect | Method | Reproducibility |
+|--------|--------|-----------------|
+| Probabilities | Poisson distribution | Same inputs = same output |
+| Scores | Most likely from probability matrix | Deterministic |
+| Attack/Defense | Calculated from Elo + goals data | Mathematically grounded |
+| Key factors | Derived from form, Elo, injuries | Reproducible |
+| Analysis text | Built from stats (no LLM) | Deterministic phrase generation |
+| Reproducibility | 100% — pure math | Same inputs = same output |
+| Accuracy | Mathematically grounded | Subject to model assumptions |
 
 ## Gotchas
 
 | Issue | Solution |
 |-------|----------|
 | Unknown team in Elo database | Use default (Elo 1500, attack 0.7, defense 1.5) |
-| LLM still invents numbers | Pass stats as explicit context; instruct "DO NOT invent probabilities" |
 | Poisson gives unrealistic scores | Clamp λ to 0.3-4.0; matrix up to 6 goals only |
 | Home advantage over-weighted | +12% is standard; adjust per sport/league |
-| Form data unavailable | Default to 0 adjustment; LLM can still use general knowledge |
+| Form data unavailable | Default to 0 adjustment; skip form factor |
+| Out-of-date xG | Live ingest updates form from real results |

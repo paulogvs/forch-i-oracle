@@ -1,5 +1,5 @@
 'use client';
-import { LayoutDashboard, Trophy, Radio, BarChart3, BarChart2, Users } from 'lucide-react';
+import { LayoutDashboard, Trophy, Radio, BarChart2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,6 @@ const NAV = [
   { href: '/live',      label: 'nav.live',      icon: Radio, key: '3' },
   { href: '/stats',     label: 'nav.stats',     icon: BarChart2, key: '4' },
   { href: '/teams',     label: 'nav.teams',     icon: Users, key: '5' },
-  { href: '/benchmark', label: 'nav.benchmark', icon: BarChart3, key: '6' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -56,7 +55,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               '/stats': 'text-accent-emerald bg-accent-emerald/10 shadow-lg shadow-accent-emerald/10',
               '/teams': 'text-accent-premium bg-accent-premium/10 shadow-lg shadow-accent-premium/10',
               '/live': 'text-accent-emerald bg-accent-emerald/10 shadow-lg shadow-accent-emerald/10',
-              '/benchmark': 'text-accent-secondary bg-accent-secondary/10 shadow-lg shadow-accent-secondary/10',
             };
             const accentColor = accentMap[item.href] || 'text-accent-primary bg-accent-primary/10';
             const dotColor: Record<string, string> = {
@@ -66,7 +64,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               '/stats': 'bg-accent-emerald',
               '/teams': 'bg-accent-premium',
               '/live': 'bg-accent-emerald',
-              '/benchmark': 'bg-accent-secondary',
             };
             return (
               <Link
@@ -101,6 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <LanguageSelector />
           </div>
           <p className="t-micro text-fg-tertiary">FORCH.i © 2026</p>
+          <p className="t-micro text-fg-tertiary">{t('brand.badge' as any)}</p>
         </div>
       </aside>
 
@@ -133,7 +131,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               '/stats': 'text-accent-emerald',
               '/teams': 'text-accent-premium',
               '/live': 'text-accent-emerald',
-              '/benchmark': 'text-accent-secondary',
             };
             return (
               <li key={item.href} className="shrink-0 w-[72px]">

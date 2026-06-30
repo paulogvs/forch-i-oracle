@@ -72,10 +72,9 @@
 - Include "Built with FORCH.i by Paulo Velasco" badge
 - Data layer: always use `getDataLayer()` — don't import implementations directly
 - Enhanced engine: prefer `calculateEnhancedPrediction` over base engine for new features
-- All predictions: numbers from math/stats, text from Groq (Groq never invents numbers)
+- All predictions: 100% statistical (Poisson + Elo + xG + Bayesian ensemble) — no AI/LLM calls
 
 ## API Keys Required
-- `GROQ_API_KEY` — Groq Console (https://console.groq.com/keys)
 - `FOOTBALL_API_KEY` — API-Football (https://www.api-football.com/)
 
 ## Optional (for cron job protection)
