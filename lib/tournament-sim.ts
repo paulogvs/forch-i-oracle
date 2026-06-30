@@ -259,6 +259,9 @@ export function assignThirdsBacktracking(
   function backtrack(k: number): boolean {
     if (k === n) return true;
     const { i, allowed } = order[k];
+    // Skip slots with no viable groups (e.g. I-L slots when no I-L third place is top-8)
+    // This lets other slots still get assigned rather than failing the entire bracket.
+    if (allowed.length === 0) return backtrack(k + 1);
     for (const g of allowed) {
       if (used.has(g)) continue;
       used.add(g);
@@ -597,57 +600,71 @@ function simulateKnockout(
   // The official WC2026 bracket uses groups in this specific interleaved order
   // (not purely alphabetical), so static data and simulation must agree.
   const r32SlotAllowed: string[][] = [
-    ['B', 'E', 'F', 'G'],     // R32-1: 1A vs 3{from B,E,F,G}
-    ['A', 'B', 'C', 'D'],     // R32-2: 1C vs 3{from A,B,C,D}
-    ['D', 'E', 'F'],          // R32-3: 1E vs 3{from D,E,F}
-    ['C', 'G', 'H'],          // R32-4: 1G vs 3{from C,G,H}
-    ['A', 'B', 'C'],          // R32-5: 1B vs 3{from A,B,C}
-    ['D', 'E', 'F'],          // R32-6: 1D vs 3{from D,E,F}
-    ['A', 'B', 'C'],          // R32-7: 1F vs 3{from A,B,C}
-    ['G', 'H', 'A'],          // R32-8: 1H vs 3{from G,H,A}
-    ['I', 'J', 'K', 'L'],     // R32-9:  1I vs 3{from I,J,K,L}
-    ['I', 'J', 'K', 'L'],     // R32-10: 1J vs 3{from I,J,K,L}
-    ['I', 'J', 'K', 'L'],     // R32-11: 1K vs 3{from I,J,K,L}
-    ['I', 'J', 'K', 'L'],     // R32-12: 1L vs 3{from I,J,K,L}
+    // Groups A-H (8 slots → R32-1..R32-8)
+    ['B', 'E', 'F', 'G'],     // R32-1:  1A vs 3{from B,E,F,G}
+    ['A', 'B', 'C', 'D'],     // R32-2:  1C vs 3{from A,B,C,D}
+    ['D', 'E', 'F'],          // R32-3:  1E vs 3{from D,E,F}
+    ['C', 'G', 'H'],          // R32-4:  1G vs 3{from C,G,H}
+    ['A', 'B', 'C'],          // R32-5:  1B vs 3{from A,B,C}
+    ['D', 'E', 'F'],          // R32-6:  1D vs 3{from D,E,F}
+    ['A', 'B', 'C'],          // R32-7:  1F vs 3{from A,B,C}
+    ['G', 'H', 'A'],          // R32-8:  1H vs 3{from G,H,A}
+    // Groups I-L (4 slots → R32-13..R32-16, AFTER the 2nd-vs-2nd block)
+    ['I', 'J', 'K', 'L'],     // R32-13: 1I vs 3{from I,J,K,L}
+    ['I', 'J', 'K', 'L'],     // R32-14: 1J vs 3{from I,J,K,L}
+    ['K', 'L', 'I'],          // R32-15: 1K vs 3{from K,L,I}
+    ['J', 'K', 'L'],          // R32-16: 1L vs 3{from J,K,L}
   ];
 
   // Group letter for each R32 slot (matches FIFA 2026 bracket structure).
   // Critical: this MUST align 1:1 with r32SlotAllowed above so each slot's
   // home team matches the corresponding static matches.ts entry.
   const slotGroupLetters: string[] = [
-    'A',  // R32-1:  1A vs 3rd
-    'C',  // R32-2:  1C vs 3rd
-    'E',  // R32-3:  1E vs 3rd
-    'G',  // R32-4:  1G vs 3rd
-    'B',  // R32-5:  1B vs 3rd
-    'D',  // R32-6:  1D vs 3rd
-    'F',  // R32-7:  1F vs 3rd
-    'H',  // R32-8:  1H vs 3rd
-    'I',  // R32-9:  1I vs 3rd
-    'J',  // R32-10: 1J vs 3rd
-    'K',  // R32-11: 1K vs 3rd
-    'L',  // R32-12: 1L vs 3rd
+    'A',  // R32-1  (Block 1): 1A vs 3rd
+    'C',  // R32-2  (Block 1): 1C vs 3rd
+    'E',  // R32-3  (Block 1): 1E vs 3rd
+    'G',  // R32-4  (Block 1): 1G vs 3rd
+    'B',  // R32-5  (Block 1): 1B vs 3rd
+    'D',  // R32-6  (Block 1): 1D vs 3rd
+    'F',  // R32-7  (Block 1): 1F vs 3rd
+    'H',  // R32-8  (Block 1): 1H vs 3rd
+    'I',  // R32-13 (Block 3): 1I vs 3rd
+    'J',  // R32-14 (Block 3): 1J vs 3rd
+    'K',  // R32-15 (Block 3): 1K vs 3rd
+    'L',  // R32-16 (Block 3): 1L vs 3rd
   ];
 
   const thirdAssignment = assignThirdsBacktracking(r32SlotAllowed, qualifiedGroups);
 
-  // R32 slots: 12 1st-vs-3rd + 4 2nd-vs-2nd
+  // R32 slots — order MUST match static matches.ts IDs:
+  //   R32-1..R32-8: 1st-vs-3rd for groups A-H
+  //   R32-9..R32-12: 2nd-vs-2nd
+  //   R32-13..R32-16: 1st-vs-3rd for groups I-L
   const r32Matchups: { home: string; away: string }[] = [];
 
-  const groupLetters = slotGroupLetters;
-  for (let i = 0; i < 12; i++) {
-    const groupLetter = groupLetters[i];
+  // Block 1 (R32-1..R32-8): 1st-vs-3rd for groups A-H in FIFA bracket order
+  for (let i = 0; i < 8; i++) {
+    const groupLetter = slotGroupLetters[i];
     const thirdGroup = thirdAssignment[i];
     r32Matchups.push({
       home: `1${groupLetter}`,
       away: thirdGroup ? `3${thirdGroup}` : 'TBD',
     });
   }
-  // 2nd vs 2nd
+  // Block 2 (R32-9..R32-12): 2nd vs 2nd
   r32Matchups.push({ home: '2A', away: '2B' });
   r32Matchups.push({ home: '2C', away: '2D' });
   r32Matchups.push({ home: '2E', away: '2F' });
   r32Matchups.push({ home: '2G', away: '2H' });
+  // Block 3 (R32-13..R32-16): 1st-vs-3rd for groups I-L
+  for (let i = 8; i < 12; i++) {
+    const groupLetter = slotGroupLetters[i];
+    const thirdGroup = thirdAssignment[i];
+    r32Matchups.push({
+      home: `1${groupLetter}`,
+      away: thirdGroup ? `3${thirdGroup}` : 'TBD',
+    });
+  }
 
   const roundOf32: SimulatedMatch[] = [];
 
@@ -694,15 +711,17 @@ function simulateKnockout(
   // ROUND OF 16
   // ═══════════════════════════════════════════════════════════════
 
+  // R16 pairing MUST match static matches.ts R16 entries (consecutive R32 winners).
+  // This keeps the simulation bracket aligned with the fixture display and DAG.
   const r16def = [
-    'W-R32-1|W-R32-13',
-    'W-R32-5|W-R32-14',
-    'W-R32-3|W-R32-15',
-    'W-R32-7|W-R32-16',
-    'W-R32-9|W-R32-12',
-    'W-R32-2|W-R32-10',
-    'W-R32-6|W-R32-4',
-    'W-R32-11|W-R32-8',
+    'W-R32-1|W-R32-2',    // R16-1
+    'W-R32-3|W-R32-4',    // R16-2
+    'W-R32-5|W-R32-6',    // R16-3
+    'W-R32-7|W-R32-8',    // R16-4
+    'W-R32-9|W-R32-10',   // R16-5
+    'W-R32-11|W-R32-12',  // R16-6
+    'W-R32-13|W-R32-14',  // R16-7
+    'W-R32-15|W-R32-16',  // R16-8
   ];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < r16def.length; i++) {
