@@ -409,8 +409,8 @@ export default function FixturePage() {
             </motion.div>
           )}
 
-          {/* ─── Historial — most recent matches first ─── */}
-          {Object.entries(groupedByDate).reverse().map(([date, matches]) => (
+          {/* ─── Historial — chronological order (oldest first) ─── */}
+          {Object.entries(groupedByDate).map(([date, matches]) => (
             <div key={date}>
               <div className="flex items-center gap-3 mb-2">
                 <h3 className="text-[11px] font-bold text-fg-tertiary uppercase tracking-wider">{formatDate(date)}</h3>

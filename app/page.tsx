@@ -266,15 +266,15 @@ export default function DashboardPage() {
     return { isStale: diff >= 2, latestDate: latest, daysOld: diff };
   }, [stats.matchDetails, today]);
 
-  // ─── Group results by date ────────────────────────────────
-  const dateGroups = useMemo(() => groupResultsByDate(stats.matchDetails, true), [stats.matchDetails]);
+  // ─── Group results by date (chronological) ──────────────────
+  const dateGroups = useMemo(() => groupResultsByDate(stats.matchDetails, false), [stats.matchDetails]);
 
   // ─── Upcoming matches (from fixture actualScore) ────────────
   const upcomingMatches = useMemo(() => {
     const finishedSet = new Set(
       finishedMatches.map(f => `${f.homeTeam}_vs_${f.awayTeam}`)
     );
-    return getUpcomingMatches(predictions, finishedSet, 4);
+    return getUpcomingMatches(predictions, finishedSet, 100);
   }, [predictions, finishedMatches]);
 
   return (

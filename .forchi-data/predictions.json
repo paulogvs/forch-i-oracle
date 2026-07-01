@@ -1,68 +1,467 @@
 {
   "A1": {
     "matchId": "A1",
-    "homeWin": 65,
-    "draw": 21,
-    "awayWin": 14,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.25,
-    "expectedGoalsAway": 0.84,
-    "over25Probability": 56,
-    "bttsProbability": 51,
+    "homeWin": 67,
+    "draw": 20,
+    "awayWin": 13,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 2.07,
+    "expectedGoalsAway": 0.74,
+    "over25Probability": 34,
+    "bttsProbability": 28,
     "confidence": "alta",
-    "dataQualityScore": 40,
-    "modelVersion": "2.0",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
     "topScores": [
       {
+        "home": 1,
+        "away": 0,
+        "probability": 13.9
+      },
+      {
         "home": 2,
         "away": 0,
-        "probability": 11.8
+        "probability": 12.6
       },
       {
         "home": 1,
         "away": 1,
-        "probability": 10.2
+        "probability": 11.2
       },
       {
         "home": 2,
         "away": 1,
-        "probability": 9.9
+        "probability": 9.4
       },
       {
-        "home": 1,
+        "home": 0,
         "away": 0,
-        "probability": 9.7
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 8.2
+        "probability": 8.8
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.27,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 43.7,
+        "high": 83.7
+      },
+      "draw90": {
+        "low": 9,
+        "high": 45.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.2341336498322026,
+      "effectiveOutcomes": 3.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 60,
+        "draw": 24,
+        "awayWin": 16
+      },
+      "eloPoisson": {
+        "homeWin": 67,
+        "draw": 20,
+        "awayWin": 13
+      },
+      "bayesian": {
+        "homeWin": 80.8,
+        "draw": 12.9,
+        "awayWin": 6.2
+      },
+      "purePoisson": {
+        "homeWin": 61,
+        "draw": 23,
+        "awayWin": 16
+      }
+    },
+    "confidenceScore": 77
   },
   "A3": {
     "matchId": "A3",
-    "homeWin": 47,
-    "draw": 28,
-    "awayWin": 25,
+    "homeWin": 54,
+    "draw": 24,
+    "awayWin": 22,
     "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.45,
-    "expectedGoalsAway": 0.97,
-    "over25Probability": 46,
-    "bttsProbability": 29,
-    "confidence": "media",
+    "expectedGoalsHome": 1.78,
+    "expectedGoalsAway": 1.02,
+    "over25Probability": 32,
+    "bttsProbability": 30,
+    "confidence": "alta",
     "dataQualityScore": 94,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 1,
         "away": 1,
-        "probability": 13.8
+        "probability": 12.8
       },
       {
         "home": 1,
         "away": 0,
-        "probability": 11.5
+        "probability": 12.6
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.3
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.1
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 31.7,
+        "high": 72.7
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.4547509823331688,
+      "effectiveOutcomes": 4.3
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 49,
+        "draw": 27,
+        "awayWin": 24
+      },
+      "eloPoisson": {
+        "homeWin": 53,
+        "draw": 24,
+        "awayWin": 23
+      },
+      "bayesian": {
+        "homeWin": 66.1,
+        "draw": 18.2,
+        "awayWin": 15.7
+      },
+      "purePoisson": {
+        "homeWin": 49,
+        "draw": 26,
+        "awayWin": 24
+      }
+    },
+    "confidenceScore": 66
+  },
+  "A2": {
+    "matchId": "A2",
+    "homeWin": 41,
+    "draw": 26,
+    "awayWin": 33,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 1.37,
+    "expectedGoalsAway": 1.23,
+    "over25Probability": 29,
+    "bttsProbability": 29,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 13.7
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11.2
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.5
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.5
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 1.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 23.1,
+        "high": 63.7
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 15.4,
+        "high": 54
+      },
+      "entropy": 1.5604954817763368,
+      "effectiveOutcomes": 4.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 46,
+        "draw": 29,
+        "awayWin": 25
+      },
+      "eloPoisson": {
+        "homeWin": 49,
+        "draw": 26,
+        "awayWin": 25
+      },
+      "bayesian": {
+        "homeWin": 22.6,
+        "draw": 21.2,
+        "awayWin": 56.1
+      },
+      "purePoisson": {
+        "homeWin": 46,
+        "draw": 28,
+        "awayWin": 26
+      }
+    },
+    "confidenceScore": 57
+  },
+  "A4": {
+    "matchId": "A4",
+    "homeWin": 54,
+    "draw": 23,
+    "awayWin": 23,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.8,
+    "expectedGoalsAway": 1.02,
+    "over25Probability": 33,
+    "bttsProbability": 33,
+    "confidence": "alta",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.3
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.7
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 1.3,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 0,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.4553784388202258,
+      "effectiveOutcomes": 4.3
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 44,
+        "draw": 27,
+        "awayWin": 29
+      },
+      "eloPoisson": {
+        "homeWin": 47,
+        "draw": 24,
+        "awayWin": 29
+      },
+      "bayesian": {
+        "homeWin": 79.8,
+        "draw": 13.4,
+        "awayWin": 6.8
+      },
+      "purePoisson": {
+        "homeWin": 45,
+        "draw": 27,
+        "awayWin": 29
+      }
+    },
+    "confidenceScore": 65
+  },
+  "A5": {
+    "matchId": "A5",
+    "homeWin": 19,
+    "draw": 21,
+    "awayWin": 60,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 0.93,
+    "expectedGoalsAway": 2.15,
+    "over25Probability": 32,
+    "bttsProbability": 32,
+    "confidence": "alta",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.2
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.43,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "entropy": 1.3702289460717927,
+      "effectiveOutcomes": 3.9
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 24,
+        "draw": 27,
+        "awayWin": 49
+      },
+      "eloPoisson": {
+        "homeWin": 25,
+        "draw": 24,
+        "awayWin": 51
+      },
+      "bayesian": {
+        "homeWin": 2.6,
+        "draw": 6.5,
+        "awayWin": 90.9
+      },
+      "purePoisson": {
+        "homeWin": 25,
+        "draw": 26,
+        "awayWin": 49
+      }
+    },
+    "confidenceScore": 71
+  },
+  "A6": {
+    "matchId": "A6",
+    "homeWin": 26,
+    "draw": 26,
+    "awayWin": 48,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 1.03,
+    "expectedGoalsAway": 1.49,
+    "over25Probability": 28,
+    "bttsProbability": 28,
+    "confidence": "media",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 14.1
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.7
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 10.7
       },
       {
         "home": 0,
@@ -70,291 +469,260 @@
         "probability": 10.5
       },
       {
-        "home": 2,
-        "away": 0,
-        "probability": 9.7
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.1
+        "home": 1,
+        "away": 2,
+        "probability": 9
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.43,
+      "drawStdDev": 1,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 11.2,
+        "high": 46.9
+      },
+      "draw90": {
+        "low": 11.2,
+        "high": 46.9
+      },
+      "awayWin90": {
+        "low": 29.9,
+        "high": 70.1
+      },
+      "entropy": 1.5188455359952018,
+      "effectiveOutcomes": 4.6
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 21,
+        "draw": 27,
+        "awayWin": 52
+      },
+      "eloPoisson": {
+        "homeWin": 22,
+        "draw": 25,
+        "awayWin": 53
+      },
+      "bayesian": {
+        "homeWin": 39.1,
+        "draw": 25.3,
+        "awayWin": 35.6
+      },
+      "purePoisson": {
+        "homeWin": 22,
+        "draw": 27,
+        "awayWin": 52
+      }
+    },
+    "confidenceScore": 61
   },
-  "A2": {
-    "matchId": "A2",
-    "homeWin": 44,
-    "draw": 29,
+  "B1": {
+    "matchId": "B1",
+    "homeWin": 49,
+    "draw": 24,
     "awayWin": 27,
     "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.35,
-    "expectedGoalsAway": 0.98,
-    "over25Probability": 42,
-    "bttsProbability": 27,
+    "expectedGoalsHome": 1.97,
+    "expectedGoalsAway": 1.37,
+    "over25Probability": 33,
+    "bttsProbability": 32,
     "confidence": "media",
-    "dataQualityScore": 94,
+    "dataQualityScore": 96,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 1,
         "away": 1,
-        "probability": 14.3
+        "probability": 13.1
       },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.4
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.83,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.96,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 27.3,
+        "high": 68.3
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "entropy": 1.5084377404010587,
+      "effectiveOutcomes": 4.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 43,
+        "draw": 28,
+        "awayWin": 29
+      },
+      "eloPoisson": {
+        "homeWin": 45,
+        "draw": 25,
+        "awayWin": 30
+      },
+      "bayesian": {
+        "homeWin": 63.4,
+        "draw": 15.7,
+        "awayWin": 20.9
+      },
+      "purePoisson": {
+        "homeWin": 44,
+        "draw": 27,
+        "awayWin": 29
+      }
+    },
+    "confidenceScore": 62
+  },
+  "B3": {
+    "matchId": "B3",
+    "homeWin": 11,
+    "draw": 17,
+    "awayWin": 72,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 0.84,
+    "expectedGoalsAway": 3.03,
+    "over25Probability": 33,
+    "bttsProbability": 29,
+    "confidence": "alta",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.7
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 12.7
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.6
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 7.9
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.43,
+      "drawStdDev": 1,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "draw90": {
+        "low": 5.2,
+        "high": 36
+      },
+      "awayWin90": {
+        "low": 53.1,
+        "high": 88.8
+      },
+      "entropy": 1.1261040276735994,
+      "effectiveOutcomes": 3.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 14,
+        "draw": 22,
+        "awayWin": 64
+      },
+      "eloPoisson": {
+        "homeWin": 15,
+        "draw": 20,
+        "awayWin": 65
+      },
+      "bayesian": {
+        "homeWin": 1.4,
+        "draw": 3.1,
+        "awayWin": 95.5
+      },
+      "purePoisson": {
+        "homeWin": 15,
+        "draw": 22,
+        "awayWin": 64
+      }
+    },
+    "confidenceScore": 83
+  },
+  "B2": {
+    "matchId": "B2",
+    "homeWin": 66,
+    "draw": 19,
+    "awayWin": 15,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 2.61,
+    "expectedGoalsAway": 1.12,
+    "over25Probability": 38,
+    "bttsProbability": 31,
+    "confidence": "alta",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
       {
         "home": 1,
         "away": 0,
         "probability": 12.1
       },
       {
-        "home": 0,
-        "away": 0,
-        "probability": 11.8
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 9.2
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 8.9
-      }
-    ]
-  },
-  "A4": {
-    "matchId": "A4",
-    "homeWin": 43,
-    "draw": 28,
-    "awayWin": 29,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.37,
-    "expectedGoalsAway": 1.07,
-    "over25Probability": 47,
-    "bttsProbability": 29,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 14.1
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.6
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.4
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.7
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 8.5
-      }
-    ]
-  },
-  "A5": {
-    "matchId": "A5",
-    "homeWin": 28,
-    "draw": 28,
-    "awayWin": 44,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.04,
-    "expectedGoalsAway": 1.39,
-    "over25Probability": 47,
-    "bttsProbability": 29,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.7
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11.1
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.1
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 9.5
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.1
-      }
-    ]
-  },
-  "A6": {
-    "matchId": "A6",
-    "homeWin": 26,
-    "draw": 29,
-    "awayWin": 45,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 0.96,
-    "expectedGoalsAway": 1.37,
-    "over25Probability": 42,
-    "bttsProbability": 27,
-    "confidence": "media",
-    "dataQualityScore": 91,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.7
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 12.5
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 11.4
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 10.5
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9
-      }
-    ]
-  },
-  "B1": {
-    "matchId": "B1",
-    "homeWin": 42,
-    "draw": 28,
-    "awayWin": 30,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.39,
-    "expectedGoalsAway": 1.12,
-    "over25Probability": 51,
-    "bttsProbability": 31,
-    "confidence": "media",
-    "dataQualityScore": 95,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.9
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.9
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.5
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.8
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 8.1
-      }
-    ]
-  },
-  "B3": {
-    "matchId": "B3",
-    "homeWin": 20,
-    "draw": 25,
-    "awayWin": 55,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.89,
-    "expectedGoalsAway": 1.67,
-    "over25Probability": 50,
-    "bttsProbability": 28,
-    "confidence": "media",
-    "dataQualityScore": 91,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 12.6
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.5
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 8.3
-      }
-    ]
-  },
-  "B2": {
-    "matchId": "B2",
-    "homeWin": 56,
-    "draw": 25,
-    "awayWin": 19,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.73,
-    "expectedGoalsAway": 0.89,
-    "over25Probability": 52,
-    "bttsProbability": 29,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.9
-      },
-      {
         "home": 2,
         "away": 0,
         "probability": 11.7
       },
       {
         "home": 1,
-        "away": 0,
-        "probability": 10.6
+        "away": 1,
+        "probability": 11
       },
       {
         "home": 2,
@@ -364,348 +732,327 @@
       {
         "home": 0,
         "away": 0,
-        "probability": 8.3
+        "probability": 7.3
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.28,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.92,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 41,
+        "high": 80.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 5.5,
+        "high": 37.6
+      },
+      "entropy": 1.2614162541025864,
+      "effectiveOutcomes": 3.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 60,
+        "draw": 23,
+        "awayWin": 17
+      },
+      "eloPoisson": {
+        "homeWin": 65,
+        "draw": 20,
+        "awayWin": 15
+      },
+      "bayesian": {
+        "homeWin": 77.9,
+        "draw": 11.1,
+        "awayWin": 11
+      },
+      "purePoisson": {
+        "homeWin": 61,
+        "draw": 23,
+        "awayWin": 17
+      }
+    },
+    "confidenceScore": 76
   },
   "B4": {
     "matchId": "B4",
-    "homeWin": 47,
-    "draw": 28,
-    "awayWin": 25,
+    "homeWin": 61,
+    "draw": 20,
+    "awayWin": 19,
     "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.49,
-    "expectedGoalsAway": 1.01,
-    "over25Probability": 49,
+    "expectedGoalsHome": 2.53,
+    "expectedGoalsAway": 0.98,
+    "over25Probability": 33,
     "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 93,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.6
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.6
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 9.5
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.3
-      }
-    ]
-  },
-  "B5": {
-    "matchId": "B5",
-    "homeWin": 54,
-    "draw": 26,
-    "awayWin": 20,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.69,
-    "expectedGoalsAway": 0.95,
-    "over25Probability": 54,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 93,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 12.4
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 10.7
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.8
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 8.1
-      }
-    ]
-  },
-  "B6": {
-    "matchId": "B6",
-    "homeWin": 44,
-    "draw": 28,
-    "awayWin": 28,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.4,
-    "expectedGoalsAway": 1.04,
-    "over25Probability": 47,
-    "bttsProbability": 29,
-    "confidence": "media",
-    "dataQualityScore": 93,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 14
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.8
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.3
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.9
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 8.7
-      }
-    ]
-  },
-  "C1": {
-    "matchId": "C1",
-    "homeWin": 56,
-    "draw": 24,
-    "awayWin": 20,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.78,
-    "expectedGoalsAway": 0.92,
-    "over25Probability": 56,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.8
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 11.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.9
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 7.5
-      }
-    ]
-  },
-  "C3": {
-    "matchId": "C3",
-    "homeWin": 26,
-    "draw": 28,
-    "awayWin": 46,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 0.99,
-    "expectedGoalsAway": 1.41,
-    "over25Probability": 45,
-    "bttsProbability": 28,
-    "confidence": "media",
+    "confidence": "alta",
     "dataQualityScore": 94,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 1,
         "away": 1,
-        "probability": 13.6
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11.9
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.6
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 10.4
+        "probability": 12.7
       },
       {
         "home": 1,
-        "away": 2,
-        "probability": 9.2
-      }
-    ]
-  },
-  "C2": {
-    "matchId": "C2",
-    "homeWin": 20,
-    "draw": 26,
-    "awayWin": 54,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.86,
-    "expectedGoalsAway": 1.56,
-    "over25Probability": 44,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 93,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
+        "away": 0,
         "probability": 12.6
       },
       {
-        "home": 0,
-        "away": 1,
-        "probability": 12.5
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 12.3
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.1
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.4
-      }
-    ]
-  },
-  "C4": {
-    "matchId": "C4",
-    "homeWin": 75,
-    "draw": 16,
-    "awayWin": 9,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.37,
-    "expectedGoalsAway": 0.62,
-    "over25Probability": 58,
-    "bttsProbability": 23,
-    "confidence": "alta",
-    "dataQualityScore": 87,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
         "home": 2,
         "away": 0,
-        "probability": 15.2
+        "probability": 9.8
       },
       {
-        "home": 3,
+        "home": 0,
         "away": 0,
-        "probability": 12.5
+        "probability": 9.3
       },
       {
-        "home": 1,
-        "away": 0,
+        "home": 2,
+        "away": 1,
         "probability": 9.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 1.79,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.3546145673296104,
+      "effectiveOutcomes": 3.9
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 49,
+        "draw": 27,
+        "awayWin": 24
+      },
+      "eloPoisson": {
+        "homeWin": 53,
+        "draw": 24,
+        "awayWin": 23
+      },
+      "bayesian": {
+        "homeWin": 93.4,
+        "draw": 4.4,
+        "awayWin": 2.2
+      },
+      "purePoisson": {
+        "homeWin": 50,
+        "draw": 26,
+        "awayWin": 24
+      }
+    },
+    "confidenceScore": 71
+  },
+  "B5": {
+    "matchId": "B5",
+    "homeWin": 59,
+    "draw": 21,
+    "awayWin": 20,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 2.22,
+    "expectedGoalsAway": 1.22,
+    "over25Probability": 38,
+    "bttsProbability": 33,
+    "confidence": "alta",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 11.4
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.1
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 10.5
       },
       {
         "home": 2,
         "away": 1,
-        "probability": 8.5
-      },
-      {
-        "home": 4,
-        "away": 0,
-        "probability": 7.8
-      }
-    ]
-  },
-  "C5": {
-    "matchId": "C5",
-    "homeWin": 16,
-    "draw": 22,
-    "awayWin": 62,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.86,
-    "expectedGoalsAway": 1.98,
-    "over25Probability": 61,
-    "bttsProbability": 29,
-    "confidence": "media",
-    "dataQualityScore": 95,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 12
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 10
-      },
-      {
-        "home": 1,
-        "away": 2,
         "probability": 9.9
       },
       {
         "home": 0,
+        "away": 0,
+        "probability": 6.9
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1.3,
+      "agreementScore": 0.92,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.3863245128902262,
+      "effectiveOutcomes": 4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 57,
+        "draw": 24,
+        "awayWin": 19
+      },
+      "eloPoisson": {
+        "homeWin": 62,
+        "draw": 21,
+        "awayWin": 17
+      },
+      "bayesian": {
+        "homeWin": 61.1,
+        "draw": 16.6,
+        "awayWin": 22.3
+      },
+      "purePoisson": {
+        "homeWin": 57,
+        "draw": 23,
+        "awayWin": 20
+      }
+    },
+    "confidenceScore": 69
+  },
+  "B6": {
+    "matchId": "B6",
+    "homeWin": 56,
+    "draw": 22,
+    "awayWin": 22,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 2.35,
+    "expectedGoalsAway": 1.1,
+    "over25Probability": 30,
+    "bttsProbability": 30,
+    "confidence": "alta",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
         "away": 1,
-        "probability": 8.7
+        "probability": 13.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12.9
       },
       {
         "home": 0,
-        "away": 3,
-        "probability": 8.7
+        "away": 0,
+        "probability": 10.4
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 1.5,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.4295875212220555,
+      "effectiveOutcomes": 4.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 45,
+        "draw": 29,
+        "awayWin": 26
+      },
+      "eloPoisson": {
+        "homeWin": 48,
+        "draw": 25,
+        "awayWin": 27
+      },
+      "bayesian": {
+        "homeWin": 87.9,
+        "draw": 7.2,
+        "awayWin": 5
+      },
+      "purePoisson": {
+        "homeWin": 45,
+        "draw": 28,
+        "awayWin": 27
+      }
+    },
+    "confidenceScore": 67
   },
-  "C6": {
-    "matchId": "C6",
-    "homeWin": 68,
-    "draw": 21,
-    "awayWin": 11,
+  "C1": {
+    "matchId": "C1",
+    "homeWin": 64,
+    "draw": 20,
+    "awayWin": 16,
     "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.94,
-    "expectedGoalsAway": 0.6,
+    "expectedGoalsHome": 2.29,
+    "expectedGoalsAway": 1.09,
     "over25Probability": 43,
-    "bttsProbability": 20,
+    "bttsProbability": 34,
     "confidence": "alta",
     "dataQualityScore": 90,
     "modelVersion": "3.0-ensemble",
@@ -713,1393 +1060,869 @@
       {
         "home": 2,
         "away": 0,
-        "probability": 17
+        "probability": 10.6
       },
       {
-        "home": 1,
-        "away": 0,
-        "probability": 13.9
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 11.1
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.6
+        "home": 2,
+        "away": 1,
+        "probability": 10
       },
       {
         "home": 1,
         "away": 1,
+        "probability": 9.7
+      },
+      {
+        "home": 1,
+        "away": 0,
         "probability": 9.3
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 7.5
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 3,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 1.3,
+      "agreementScore": 0.9,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 38.6,
+        "high": 79.7
+      },
+      "draw90": {
+        "low": 9,
+        "high": 45.2
+      },
+      "awayWin90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "entropy": 1.2994705707972523,
+      "effectiveOutcomes": 3.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 64,
+        "draw": 21,
+        "awayWin": 15
+      },
+      "eloPoisson": {
+        "homeWin": 70,
+        "draw": 17,
+        "awayWin": 13
+      },
+      "bayesian": {
+        "homeWin": 57.7,
+        "draw": 19.8,
+        "awayWin": 22.5
+      },
+      "purePoisson": {
+        "homeWin": 64,
+        "draw": 20,
+        "awayWin": 16
+      }
+    },
+    "confidenceScore": 74
   },
-  "D1": {
-    "matchId": "D1",
-    "homeWin": 53,
-    "draw": 26,
-    "awayWin": 21,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.61,
-    "expectedGoalsAway": 0.9,
-    "over25Probability": 49,
+  "C3": {
+    "matchId": "C3",
+    "homeWin": 32,
+    "draw": 25,
+    "awayWin": 43,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 1.23,
+    "expectedGoalsAway": 1.43,
+    "over25Probability": 28,
     "bttsProbability": 28,
     "confidence": "media",
     "dataQualityScore": 94,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
+        "home": 0,
+        "away": 1,
+        "probability": 14.3
+      },
+      {
         "home": 1,
         "away": 1,
-        "probability": 12.8
+        "probability": 12.7
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 10.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.7
       },
       {
         "home": 1,
-        "away": 0,
-        "probability": 11.4
+        "away": 2,
+        "probability": 8.9
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 1.79,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 15.4,
+        "high": 54
       },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 11.2
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
       },
+      "awayWin90": {
+        "low": 23.1,
+        "high": 63.7
+      },
+      "entropy": 1.5495982978091412,
+      "effectiveOutcomes": 4.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 21,
+        "draw": 28,
+        "awayWin": 51
+      },
+      "eloPoisson": {
+        "homeWin": 21,
+        "draw": 24,
+        "awayWin": 55
+      },
+      "bayesian": {
+        "homeWin": 65,
+        "draw": 18.8,
+        "awayWin": 16.2
+      },
+      "purePoisson": {
+        "homeWin": 21,
+        "draw": 27,
+        "awayWin": 52
+      }
+    },
+    "confidenceScore": 58
+  },
+  "C2": {
+    "matchId": "C2",
+    "homeWin": 13,
+    "draw": 20,
+    "awayWin": 67,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 0.81,
+    "expectedGoalsAway": 2.19,
+    "over25Probability": 32,
+    "bttsProbability": 29,
+    "confidence": "alta",
+    "dataQualityScore": 98,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
       {
-        "home": 2,
+        "home": 0,
         "away": 1,
+        "probability": 12.9
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 12.4
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.9
+      },
+      {
+        "home": 1,
+        "away": 2,
         "probability": 9.6
       },
       {
         "home": 0,
         "away": 0,
-        "probability": 9.5
+        "probability": 7.8
       }
-    ]
-  },
-  "D3": {
-    "matchId": "D3",
-    "homeWin": 40,
-    "draw": 28,
-    "awayWin": 32,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.37,
-    "expectedGoalsAway": 1.18,
-    "over25Probability": 52,
-    "bttsProbability": 32,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.9
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 0.43,
+      "awayWinStdDev": 0,
+      "agreementScore": 0.98,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 5.2,
+        "high": 36
       },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.2
+      "draw90": {
+        "low": 8.1,
+        "high": 41.6
       },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.1
+      "awayWin90": {
+        "low": 43.3,
+        "high": 81.9
       },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.6
+      "entropy": 1.2341336498322026,
+      "effectiveOutcomes": 3.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 15,
+        "draw": 23,
+        "awayWin": 62
       },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 8.2
+      "eloPoisson": {
+        "homeWin": 16,
+        "draw": 22,
+        "awayWin": 62
+      },
+      "bayesian": {
+        "homeWin": 6.2,
+        "draw": 11.2,
+        "awayWin": 82.6
+      },
+      "purePoisson": {
+        "homeWin": 15,
+        "draw": 22,
+        "awayWin": 62
       }
-    ]
+    },
+    "confidenceScore": 79
   },
-  "D2": {
-    "matchId": "D2",
-    "homeWin": 46,
-    "draw": 28,
-    "awayWin": 26,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.46,
-    "expectedGoalsAway": 1.03,
-    "over25Probability": 49,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.7
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.6
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.7
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.2
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 9.1
-      }
-    ]
-  },
-  "D4": {
-    "matchId": "D4",
-    "homeWin": 47,
-    "draw": 27,
-    "awayWin": 26,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.49,
-    "expectedGoalsAway": 1.05,
-    "over25Probability": 51,
-    "bttsProbability": 30,
-    "confidence": "media",
+  "C4": {
+    "matchId": "C4",
+    "homeWin": 85,
+    "draw": 7,
+    "awayWin": 8,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 3.52,
+    "expectedGoalsAway": 0.56,
+    "over25Probability": 53,
+    "bttsProbability": 21,
+    "confidence": "alta",
     "dataQualityScore": 93,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
-        "home": 1,
-        "away": 1,
-        "probability": 13.6
-      },
-      {
-        "home": 1,
+        "home": 3,
         "away": 0,
-        "probability": 10.2
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.3
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.2
+        "probability": 14.8
       },
       {
         "home": 2,
         "away": 0,
-        "probability": 9.1
-      }
-    ]
-  },
-  "D5": {
-    "matchId": "D5",
-    "homeWin": 33,
-    "draw": 27,
-    "awayWin": 40,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.28,
-    "expectedGoalsAway": 1.42,
-    "over25Probability": 59,
-    "bttsProbability": 34,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
         "probability": 13.2
       },
       {
-        "home": 1,
-        "away": 2,
-        "probability": 9
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 8.1
-      },
-      {
-        "home": 0,
+        "home": 4,
         "away": 0,
-        "probability": 7.5
+        "probability": 12.5
       },
       {
-        "home": 2,
-        "away": 1,
-        "probability": 7.5
+        "home": 5,
+        "away": 0,
+        "probability": 8.4
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 7
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 2,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.93,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 62.4,
+        "high": 94.5
+      },
+      "draw90": {
+        "low": 0.9,
+        "high": 24.6
+      },
+      "awayWin90": {
+        "low": 2.9,
+        "high": 31.4
+      },
+      "entropy": 0.759359049513646,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 90,
+        "draw": 8,
+        "awayWin": 2
+      },
+      "eloPoisson": {
+        "homeWin": 94,
+        "draw": 4,
+        "awayWin": 2
+      },
+      "bayesian": {
+        "homeWin": 83.4,
+        "draw": 10.4,
+        "awayWin": 6.2
+      },
+      "purePoisson": {
+        "homeWin": 90,
+        "draw": 7,
+        "awayWin": 3
+      }
+    },
+    "confidenceScore": 93
   },
-  "D6": {
-    "matchId": "D6",
-    "homeWin": 32,
-    "draw": 30,
-    "awayWin": 38,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.07,
-    "expectedGoalsAway": 1.19,
-    "over25Probability": 40,
-    "bttsProbability": 27,
-    "confidence": "media",
-    "dataQualityScore": 95,
+  "C5": {
+    "matchId": "C5",
+    "homeWin": 4,
+    "draw": 9,
+    "awayWin": 87,
+    "mostLikelyScore": "0-3",
+    "expectedGoalsHome": 0.66,
+    "expectedGoalsAway": 3.34,
+    "over25Probability": 44,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 98,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
-        "home": 1,
-        "away": 1,
-        "probability": 14.6
-      },
-      {
         "home": 0,
-        "away": 0,
-        "probability": 12.7
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 12
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10
+        "away": 3,
+        "probability": 12.6
       },
       {
         "home": 0,
         "away": 2,
-        "probability": 8.2
+        "probability": 12.5
+      },
+      {
+        "home": 0,
+        "away": 4,
+        "probability": 9.6
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 7.7
+      },
+      {
+        "home": 1,
+        "away": 3,
+        "probability": 7.7
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0.5,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.98,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0.9,
+        "high": 23.6
+      },
+      "draw90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "awayWin90": {
+        "low": 64,
+        "high": 94.8
+      },
+      "entropy": 0.673202098256523,
+      "effectiveOutcomes": 2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 5,
+        "draw": 11,
+        "awayWin": 84
+      },
+      "eloPoisson": {
+        "homeWin": 5,
+        "draw": 10,
+        "awayWin": 85
+      },
+      "bayesian": {
+        "homeWin": 2.6,
+        "draw": 5.9,
+        "awayWin": 91.4
+      },
+      "purePoisson": {
+        "homeWin": 5,
+        "draw": 11,
+        "awayWin": 85
+      }
+    },
+    "confidenceScore": 95
   },
-  "E1": {
-    "matchId": "E1",
-    "homeWin": 74,
-    "draw": 17,
-    "awayWin": 9,
+  "C6": {
+    "matchId": "C6",
+    "homeWin": 77,
+    "draw": 16,
+    "awayWin": 7,
     "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.42,
-    "expectedGoalsAway": 0.65,
-    "over25Probability": 61,
-    "bttsProbability": 24,
+    "expectedGoalsHome": 2.39,
+    "expectedGoalsAway": 0.6,
+    "over25Probability": 38,
+    "bttsProbability": 20,
     "confidence": "alta",
     "dataQualityScore": 87,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 2,
+        "away": 0,
+        "probability": 16.8
+      },
+      {
+        "home": 1,
         "away": 0,
         "probability": 14.5
       },
       {
         "home": 3,
         "away": 0,
-        "probability": 12.3
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.6
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 8.5
-      },
-      {
-        "home": 4,
-        "away": 0,
-        "probability": 7.8
-      }
-    ]
-  },
-  "E3": {
-    "matchId": "E3",
-    "homeWin": 27,
-    "draw": 27,
-    "awayWin": 46,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.05,
-    "expectedGoalsAway": 1.48,
-    "over25Probability": 51,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.2
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 10.4
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 9.7
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.5
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9
-      }
-    ]
-  },
-  "E2": {
-    "matchId": "E2",
-    "homeWin": 70,
-    "draw": 18,
-    "awayWin": 12,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.28,
-    "expectedGoalsAway": 0.76,
-    "over25Probability": 64,
-    "bttsProbability": 28,
-    "confidence": "alta",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 12.8
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 10.3
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.4
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 8.6
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 8.1
-      }
-    ]
-  },
-  "E4": {
-    "matchId": "E4",
-    "homeWin": 64,
-    "draw": 22,
-    "awayWin": 14,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.89,
-    "expectedGoalsAway": 0.75,
-    "over25Probability": 50,
-    "bttsProbability": 25,
-    "confidence": "media",
-    "dataQualityScore": 89,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 14
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 11.5
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 10.6
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.4
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 9.2
-      }
-    ]
-  },
-  "E5": {
-    "matchId": "E5",
-    "homeWin": 28,
-    "draw": 28,
-    "awayWin": 44,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.06,
-    "expectedGoalsAway": 1.41,
-    "over25Probability": 49,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.6
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 10.8
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.8
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 9.4
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.2
-      }
-    ]
-  },
-  "E6": {
-    "matchId": "E6",
-    "homeWin": 19,
-    "draw": 23,
-    "awayWin": 58,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.96,
-    "expectedGoalsAway": 1.9,
-    "over25Probability": 62,
-    "bttsProbability": 32,
-    "confidence": "media",
-    "dataQualityScore": 91,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 11.5
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 10.1
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.9
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 8.3
-      },
-      {
-        "home": 0,
-        "away": 3,
-        "probability": 8.3
-      }
-    ]
-  },
-  "F1": {
-    "matchId": "F1",
-    "homeWin": 52,
-    "draw": 26,
-    "awayWin": 22,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.69,
-    "expectedGoalsAway": 1.01,
-    "over25Probability": 57,
-    "bttsProbability": 32,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 12.4
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 9.9
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.9
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.3
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 7.6
-      }
-    ]
-  },
-  "F3": {
-    "matchId": "F3",
-    "homeWin": 40,
-    "draw": 29,
-    "awayWin": 31,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.31,
-    "expectedGoalsAway": 1.12,
-    "over25Probability": 47,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 95,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 14.3
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.5
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.3
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 9.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.3
-      }
-    ]
-  },
-  "F2": {
-    "matchId": "F2",
-    "homeWin": 66,
-    "draw": 20,
-    "awayWin": 14,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.09,
-    "expectedGoalsAway": 0.79,
-    "over25Probability": 60,
-    "bttsProbability": 27,
-    "confidence": "media",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 12.9
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 9.8
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.7
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 9.4
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.2
-      }
-    ]
-  },
-  "F4": {
-    "matchId": "F4",
-    "homeWin": 23,
-    "draw": 27,
-    "awayWin": 50,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 0.93,
-    "expectedGoalsAway": 1.5,
-    "over25Probability": 46,
-    "bttsProbability": 27,
-    "confidence": "media",
-    "dataQualityScore": 91,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 12.9
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11.9
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 11.5
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.4
-      }
-    ]
-  },
-  "F5": {
-    "matchId": "F5",
-    "homeWin": 56,
-    "draw": 24,
-    "awayWin": 20,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.79,
-    "expectedGoalsAway": 0.92,
-    "over25Probability": 56,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.7
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 11.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.9
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 7.5
-      }
-    ]
-  },
-  "F6": {
-    "matchId": "F6",
-    "homeWin": 17,
-    "draw": 24,
-    "awayWin": 59,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.8,
-    "expectedGoalsAway": 1.79,
-    "over25Probability": 50,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 96,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 13.6
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11.1
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 10.7
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.6
-      },
-      {
-        "home": 0,
-        "away": 3,
-        "probability": 8.9
-      }
-    ]
-  },
-  "G1": {
-    "matchId": "G1",
-    "homeWin": 61,
-    "draw": 23,
-    "awayWin": 16,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.89,
-    "expectedGoalsAway": 0.85,
-    "over25Probability": 56,
-    "bttsProbability": 29,
-    "confidence": "media",
-    "dataQualityScore": 89,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 12
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.9
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.8
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 7.9
-      }
-    ]
-  },
-  "G3": {
-    "matchId": "G3",
-    "homeWin": 59,
-    "draw": 25,
-    "awayWin": 16,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.7,
-    "expectedGoalsAway": 0.77,
-    "over25Probability": 45,
-    "bttsProbability": 25,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 13.6
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 12.9
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.3
-      }
-    ]
-  },
-  "G2": {
-    "matchId": "G2",
-    "homeWin": 56,
-    "draw": 24,
-    "awayWin": 20,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.76,
-    "expectedGoalsAway": 0.91,
-    "over25Probability": 55,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 91,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 12
-      },
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 11.2
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.9
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 7.8
-      }
-    ]
-  },
-  "G4": {
-    "matchId": "G4",
-    "homeWin": 24,
-    "draw": 28,
-    "awayWin": 48,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 0.95,
-    "expectedGoalsAway": 1.44,
-    "over25Probability": 44,
-    "bttsProbability": 27,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.3
-      },
-      {
-        "home": 0,
-        "away": 1,
         "probability": 12.2
       },
       {
-        "home": 0,
-        "away": 2,
-        "probability": 11
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.7
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.2
-      }
-    ]
-  },
-  "G5": {
-    "matchId": "G5",
-    "homeWin": 35,
-    "draw": 29,
-    "awayWin": 36,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.2,
-    "expectedGoalsAway": 1.22,
-    "over25Probability": 46,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
+        "home": 2,
         "away": 1,
-        "probability": 14.4
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 10.6
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 10.1
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.3
-      },
-      {
-        "home": 1,
-        "away": 2,
         "probability": 8.1
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 7.7
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 4,
+      "drawStdDev": 2.5,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.87,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 54.8,
+        "high": 91
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.9819157088956183,
+      "effectiveOutcomes": 2.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 76,
+        "draw": 17,
+        "awayWin": 7
+      },
+      "eloPoisson": {
+        "homeWin": 84,
+        "draw": 12,
+        "awayWin": 4
+      },
+      "bayesian": {
+        "homeWin": 70.9,
+        "draw": 16.6,
+        "awayWin": 12.5
+      },
+      "purePoisson": {
+        "homeWin": 76,
+        "draw": 17,
+        "awayWin": 7
+      }
+    },
+    "confidenceScore": 86
   },
-  "G6": {
-    "matchId": "G6",
-    "homeWin": 16,
-    "draw": 23,
-    "awayWin": 61,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.78,
-    "expectedGoalsAway": 1.82,
-    "over25Probability": 50,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 95,
+  "D1": {
+    "matchId": "D1",
+    "homeWin": 61,
+    "draw": 22,
+    "awayWin": 17,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 2.08,
+    "expectedGoalsAway": 0.99,
+    "over25Probability": 35,
+    "bttsProbability": 30,
+    "confidence": "alta",
+    "dataQualityScore": 93,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
-        "home": 0,
-        "away": 2,
-        "probability": 13.6
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11.1
+        "home": 1,
+        "away": 0,
+        "probability": 12.9
       },
       {
         "home": 1,
         "away": 1,
-        "probability": 10.7
+        "probability": 11.6
       },
       {
-        "home": 1,
-        "away": 2,
+        "home": 2,
+        "away": 0,
+        "probability": 11.6
+      },
+      {
+        "home": 2,
+        "away": 1,
         "probability": 9.6
       },
       {
         "home": 0,
-        "away": 3,
-        "probability": 8.9
+        "away": 0,
+        "probability": 8.3
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 2,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.93,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 41,
+        "high": 80.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 5.5,
+        "high": 37.6
+      },
+      "entropy": 1.350162774748601,
+      "effectiveOutcomes": 3.9
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 58,
+        "draw": 25,
+        "awayWin": 17
+      },
+      "eloPoisson": {
+        "homeWin": 62,
+        "draw": 21,
+        "awayWin": 17
+      },
+      "bayesian": {
+        "homeWin": 67.6,
+        "draw": 16.3,
+        "awayWin": 16.1
+      },
+      "purePoisson": {
+        "homeWin": 58,
+        "draw": 24,
+        "awayWin": 18
+      }
+    },
+    "confidenceScore": 72
   },
-  "H1": {
-    "matchId": "H1",
-    "homeWin": 74,
-    "draw": 17,
-    "awayWin": 9,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.35,
-    "expectedGoalsAway": 0.63,
-    "over25Probability": 58,
-    "bttsProbability": 23,
-    "confidence": "alta",
-    "dataQualityScore": 89,
+  "D3": {
+    "matchId": "D3",
+    "homeWin": 41,
+    "draw": 26,
+    "awayWin": 33,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.49,
+    "expectedGoalsAway": 1.34,
+    "over25Probability": 34,
+    "bttsProbability": 34,
+    "confidence": "media",
+    "dataQualityScore": 97,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
-        "home": 2,
-        "away": 0,
-        "probability": 15.2
+        "home": 1,
+        "away": 1,
+        "probability": 13
       },
       {
-        "home": 3,
+        "home": 1,
         "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 1,
+      "drawStdDev": 1,
+      "awayWinStdDev": 0,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 21.9,
+        "high": 61.3
+      },
+      "draw90": {
+        "low": 11.2,
+        "high": 46.9
+      },
+      "awayWin90": {
+        "low": 18.1,
+        "high": 56.7
+      },
+      "entropy": 1.5604954817763368,
+      "effectiveOutcomes": 4.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 38,
+        "draw": 27,
+        "awayWin": 35
+      },
+      "eloPoisson": {
+        "homeWin": 40,
+        "draw": 25,
+        "awayWin": 35
+      },
+      "bayesian": {
+        "homeWin": 46.2,
+        "draw": 23.5,
+        "awayWin": 30.3
+      },
+      "purePoisson": {
+        "homeWin": 38,
+        "draw": 27,
+        "awayWin": 35
+      }
+    },
+    "confidenceScore": 57
+  },
+  "D2": {
+    "matchId": "D2",
+    "homeWin": 52,
+    "draw": 24,
+    "awayWin": 24,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.78,
+    "expectedGoalsAway": 1.14,
+    "over25Probability": 35,
+    "bttsProbability": 32,
+    "confidence": "media",
+    "dataQualityScore": 94,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
         "probability": 12.5
       },
       {
         "home": 1,
         "away": 0,
-        "probability": 9.2
+        "probability": 11.5
       },
       {
         "home": 2,
         "away": 1,
-        "probability": 8.5
+        "probability": 9.4
       },
       {
-        "home": 4,
+        "home": 2,
         "away": 0,
-        "probability": 7.8
+        "probability": 9.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.2
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 1.79,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 31.7,
+        "high": 72.7
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "entropy": 1.478845535995202,
+      "effectiveOutcomes": 4.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 49,
+        "draw": 26,
+        "awayWin": 25
+      },
+      "eloPoisson": {
+        "homeWin": 53,
+        "draw": 23,
+        "awayWin": 24
+      },
+      "bayesian": {
+        "homeWin": 55.4,
+        "draw": 20.7,
+        "awayWin": 23.8
+      },
+      "purePoisson": {
+        "homeWin": 50,
+        "draw": 26,
+        "awayWin": 25
+      }
+    },
+    "confidenceScore": 63
   },
-  "H3": {
-    "matchId": "H3",
-    "homeWin": 18,
+  "D4": {
+    "matchId": "D4",
+    "homeWin": 51,
     "draw": 24,
-    "awayWin": 58,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.84,
-    "expectedGoalsAway": 1.74,
-    "over25Probability": 50,
-    "bttsProbability": 27,
+    "awayWin": 25,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.75,
+    "expectedGoalsAway": 1.15,
+    "over25Probability": 35,
+    "bttsProbability": 32,
     "confidence": "media",
-    "dataQualityScore": 97,
+    "dataQualityScore": 94,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
-        "home": 0,
-        "away": 2,
-        "probability": 13
+        "home": 1,
+        "away": 1,
+        "probability": 12.5
       },
       {
         "home": 1,
-        "away": 1,
-        "probability": 11.3
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 11.1
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 8.3
-      }
-    ]
-  },
-  "H2": {
-    "matchId": "H2",
-    "homeWin": 73,
-    "draw": 17,
-    "awayWin": 10,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.39,
-    "expectedGoalsAway": 0.69,
-    "over25Probability": 63,
-    "bttsProbability": 25,
-    "confidence": "alta",
-    "dataQualityScore": 88,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 14
-      },
-      {
-        "home": 3,
         "away": 0,
         "probability": 11.9
       },
       {
         "home": 2,
-        "away": 1,
-        "probability": 8.8
-      },
-      {
-        "home": 1,
         "away": 0,
-        "probability": 8.2
+        "probability": 9.7
       },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 7.6
-      }
-    ]
-  },
-  "H4": {
-    "matchId": "H4",
-    "homeWin": 65,
-    "draw": 22,
-    "awayWin": 13,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.88,
-    "expectedGoalsAway": 0.67,
-    "over25Probability": 45,
-    "bttsProbability": 23,
-    "confidence": "media",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
       {
         "home": 2,
-        "away": 0,
-        "probability": 15.1
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 13
-      },
-      {
-        "home": 1,
         "away": 1,
-        "probability": 10.5
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 9.6
-      },
-      {
-        "home": 0,
-        "away": 0,
         "probability": 9.4
-      }
-    ]
-  },
-  "H5": {
-    "matchId": "H5",
-    "homeWin": 33,
-    "draw": 31,
-    "awayWin": 36,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.07,
-    "expectedGoalsAway": 1.11,
-    "over25Probability": 36,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 14.8
       },
       {
         "home": 0,
-        "away": 0,
-        "probability": 14
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 12.3
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 11.2
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 7.5
-      }
-    ]
-  },
-  "H6": {
-    "matchId": "H6",
-    "homeWin": 27,
-    "draw": 25,
-    "awayWin": 48,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.22,
-    "expectedGoalsAway": 1.69,
-    "over25Probability": 68,
-    "bttsProbability": 36,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.5
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.8
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 8.3
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 7.2
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 6.2
-      }
-    ]
-  },
-  "I1": {
-    "matchId": "I1",
-    "homeWin": 69,
-    "draw": 19,
-    "awayWin": 12,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.26,
-    "expectedGoalsAway": 0.77,
-    "over25Probability": 64,
-    "bttsProbability": 27,
-    "confidence": "alta",
-    "dataQualityScore": 81,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 12.8
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 9.9
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.5
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 9
-      },
-      {
-        "home": 1,
         "away": 0,
         "probability": 8.4
       }
-    ]
-  },
-  "I3": {
-    "matchId": "I3",
-    "homeWin": 21,
-    "draw": 25,
-    "awayWin": 54,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 0.96,
-    "expectedGoalsAway": 1.7,
-    "over25Probability": 55,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 90,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.6
+    ],
+    "agreement": {
+      "homeWinStdDev": 1.79,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 31.7,
+        "high": 72.7
       },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 11.4
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
       },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.9
+      "awayWin90": {
+        "low": 11.8,
+        "high": 48.8
       },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 9.8
+      "entropy": 1.4895642177525033,
+      "effectiveOutcomes": 4.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 50,
+        "draw": 26,
+        "awayWin": 24
       },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 7.4
+      "eloPoisson": {
+        "homeWin": 54,
+        "draw": 23,
+        "awayWin": 23
+      },
+      "bayesian": {
+        "homeWin": 48.7,
+        "draw": 21.7,
+        "awayWin": 29.7
+      },
+      "purePoisson": {
+        "homeWin": 51,
+        "draw": 25,
+        "awayWin": 24
       }
-    ]
+    },
+    "confidenceScore": 63
   },
-  "I2": {
-    "matchId": "I2",
-    "homeWin": 75,
-    "draw": 16,
-    "awayWin": 9,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.42,
-    "expectedGoalsAway": 0.62,
-    "over25Probability": 60,
-    "bttsProbability": 23,
-    "confidence": "alta",
-    "dataQualityScore": 89,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 15
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 12.7
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 8.8
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.4
-      },
-      {
-        "home": 4,
-        "away": 0,
-        "probability": 8.1
-      }
-    ]
-  },
-  "I4": {
-    "matchId": "I4",
-    "homeWin": 39,
-    "draw": 27,
-    "awayWin": 34,
+  "D5": {
+    "matchId": "D5",
+    "homeWin": 31,
+    "draw": 23,
+    "awayWin": 46,
     "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.39,
-    "expectedGoalsAway": 1.26,
-    "over25Probability": 57,
-    "bttsProbability": 34,
+    "expectedGoalsHome": 1.58,
+    "expectedGoalsAway": 1.99,
+    "over25Probability": 38,
+    "bttsProbability": 37,
     "confidence": "media",
     "dataQualityScore": 95,
     "modelVersion": "3.0-ensemble",
@@ -2107,345 +1930,7 @@
       {
         "home": 1,
         "away": 1,
-        "probability": 13.5
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.5
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 8.1
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 8
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 8
-      }
-    ]
-  },
-  "I5": {
-    "matchId": "I5",
-    "homeWin": 16,
-    "draw": 20,
-    "awayWin": 64,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.92,
-    "expectedGoalsAway": 2.19,
-    "over25Probability": 71,
-    "bttsProbability": 32,
-    "confidence": "alta",
-    "dataQualityScore": 97,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 11.1
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.5
-      },
-      {
-        "home": 0,
-        "away": 3,
-        "probability": 9.3
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 8.3
-      },
-      {
-        "home": 1,
-        "away": 3,
-        "probability": 8
-      }
-    ]
-  },
-  "I6": {
-    "matchId": "I6",
-    "homeWin": 60,
-    "draw": 24,
-    "awayWin": 16,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.77,
-    "expectedGoalsAway": 0.79,
-    "over25Probability": 48,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 93,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 13.3
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 11.9
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.4
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.5
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9
-      }
-    ]
-  },
-  "J1": {
-    "matchId": "J1",
-    "homeWin": 70,
-    "draw": 19,
-    "awayWin": 11,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.18,
-    "expectedGoalsAway": 0.66,
-    "over25Probability": 54,
-    "bttsProbability": 24,
-    "confidence": "alta",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 15.1
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 11.3
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.3
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 8.7
-      }
-    ]
-  },
-  "J3": {
-    "matchId": "J3",
-    "homeWin": 58,
-    "draw": 24,
-    "awayWin": 18,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.8,
-    "expectedGoalsAway": 0.86,
-    "over25Probability": 54,
-    "bttsProbability": 28,
-    "confidence": "media",
-    "dataQualityScore": 91,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 12
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.6
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.5
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.8
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 7.9
-      }
-    ]
-  },
-  "J2": {
-    "matchId": "J2",
-    "homeWin": 69,
-    "draw": 19,
-    "awayWin": 12,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.26,
-    "expectedGoalsAway": 0.78,
-    "over25Probability": 65,
-    "bttsProbability": 28,
-    "confidence": "alta",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 12.6
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 10.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.5
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 8.7
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 8
-      }
-    ]
-  },
-  "J4": {
-    "matchId": "J4",
-    "homeWin": 28,
-    "draw": 30,
-    "awayWin": 42,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 0.98,
-    "expectedGoalsAway": 1.3,
-    "over25Probability": 40,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 92,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 14.2
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 12.7
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 12.3
-      },
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 9.7
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 8.8
-      }
-    ]
-  },
-  "J5": {
-    "matchId": "J5",
-    "homeWin": 33,
-    "draw": 28,
-    "awayWin": 39,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.19,
-    "expectedGoalsAway": 1.35,
-    "over25Probability": 52,
-    "bttsProbability": 32,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13.8
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 9.4
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 9.1
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 8.8
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 7.9
-      }
-    ]
-  },
-  "J6": {
-    "matchId": "J6",
-    "homeWin": 12,
-    "draw": 20,
-    "awayWin": 68,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.67,
-    "expectedGoalsAway": 2.05,
-    "over25Probability": 52,
-    "bttsProbability": 24,
-    "confidence": "alta",
-    "dataQualityScore": 97,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 0,
-        "away": 2,
-        "probability": 15.2
-      },
-      {
-        "home": 0,
-        "away": 3,
-        "probability": 11.4
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 10.5
+        "probability": 12.1
       },
       {
         "home": 1,
@@ -2453,204 +1938,9 @@
         "probability": 8.9
       },
       {
-        "home": 1,
-        "away": 1,
-        "probability": 8.8
-      }
-    ]
-  },
-  "K1": {
-    "matchId": "K1",
-    "homeWin": 73,
-    "draw": 17,
-    "awayWin": 10,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.31,
-    "expectedGoalsAway": 0.65,
-    "over25Probability": 58,
-    "bttsProbability": 24,
-    "confidence": "alta",
-    "dataQualityScore": 88,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 14.8
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 11.9
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.4
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 8.8
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 8.1
-      }
-    ]
-  },
-  "K3": {
-    "matchId": "K3",
-    "homeWin": 16,
-    "draw": 23,
-    "awayWin": 61,
-    "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.78,
-    "expectedGoalsAway": 1.87,
-    "over25Probability": 52,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 95,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
         "home": 0,
-        "away": 2,
-        "probability": 13.6
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 10.7
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 10.4
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9.6
-      },
-      {
-        "home": 0,
-        "away": 3,
-        "probability": 9.2
-      }
-    ]
-  },
-  "K2": {
-    "matchId": "K2",
-    "homeWin": 71,
-    "draw": 18,
-    "awayWin": 11,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.25,
-    "expectedGoalsAway": 0.68,
-    "over25Probability": 58,
-    "bttsProbability": 25,
-    "confidence": "alta",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 14.4
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 11.2
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 9.5
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9.1
-      },
-      {
-        "home": 1,
         "away": 1,
         "probability": 8.6
-      }
-    ]
-  },
-  "K4": {
-    "matchId": "K4",
-    "homeWin": 70,
-    "draw": 19,
-    "awayWin": 11,
-    "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.12,
-    "expectedGoalsAway": 0.66,
-    "over25Probability": 53,
-    "bttsProbability": 23,
-    "confidence": "alta",
-    "dataQualityScore": 86,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 2,
-        "away": 0,
-        "probability": 15.2
-      },
-      {
-        "home": 3,
-        "away": 0,
-        "probability": 11
-      },
-      {
-        "home": 1,
-        "away": 0,
-        "probability": 10.8
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 9.1
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9
-      }
-    ]
-  },
-  "K5": {
-    "matchId": "K5",
-    "homeWin": 34,
-    "draw": 27,
-    "awayWin": 39,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.31,
-    "expectedGoalsAway": 1.42,
-    "over25Probability": 61,
-    "bttsProbability": 35,
-    "confidence": "media",
-    "dataQualityScore": 94,
-    "modelVersion": "3.0-ensemble",
-    "topScores": [
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 13
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9
-      },
-      {
-        "home": 0,
-        "away": 1,
-        "probability": 7.8
       },
       {
         "home": 2,
@@ -2658,81 +1948,1560 @@
         "probability": 7.7
       },
       {
-        "home": 0,
+        "home": 1,
         "away": 0,
-        "probability": 7.2
+        "probability": 7.5
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.43,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 15.4,
+        "high": 54
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 27.3,
+        "high": 68.3
+      },
+      "entropy": 1.5267975838754544,
+      "effectiveOutcomes": 4.6
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 32,
+        "draw": 26,
+        "awayWin": 42
+      },
+      "eloPoisson": {
+        "homeWin": 33,
+        "draw": 23,
+        "awayWin": 44
+      },
+      "bayesian": {
+        "homeWin": 26.6,
+        "draw": 17.3,
+        "awayWin": 56.1
+      },
+      "purePoisson": {
+        "homeWin": 33,
+        "draw": 25,
+        "awayWin": 42
+      }
+    },
+    "confidenceScore": 61
   },
-  "K6": {
-    "matchId": "K6",
-    "homeWin": 36,
+  "D6": {
+    "matchId": "D6",
+    "homeWin": 30,
     "draw": 29,
-    "awayWin": 35,
+    "awayWin": 41,
     "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.21,
-    "expectedGoalsAway": 1.17,
-    "over25Probability": 45,
+    "expectedGoalsHome": 1.03,
+    "expectedGoalsAway": 1.28,
+    "over25Probability": 27,
     "bttsProbability": 29,
     "confidence": "media",
-    "dataQualityScore": 94,
+    "dataQualityScore": 95,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 1,
         "away": 1,
-        "probability": 14.5
-      },
-      {
-        "home": 0,
-        "away": 0,
-        "probability": 11.1
+        "probability": 13.7
       },
       {
         "home": 0,
         "away": 1,
-        "probability": 10.1
+        "probability": 13.3
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11.9
       },
       {
         "home": 1,
         "away": 0,
-        "probability": 10
+        "probability": 10.8
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 8.3
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 15.4,
+        "high": 54
+      },
+      "draw90": {
+        "low": 15.4,
+        "high": 54
+      },
+      "awayWin90": {
+        "low": 23.1,
+        "high": 63.7
+      },
+      "entropy": 1.5663782006117586,
+      "effectiveOutcomes": 4.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 29,
+        "draw": 30,
+        "awayWin": 41
+      },
+      "eloPoisson": {
+        "homeWin": 30,
+        "draw": 27,
+        "awayWin": 43
+      },
+      "bayesian": {
+        "homeWin": 31.1,
+        "draw": 28,
+        "awayWin": 40.8
+      },
+      "purePoisson": {
+        "homeWin": 29,
+        "draw": 29,
+        "awayWin": 41
+      }
+    },
+    "confidenceScore": 55
+  },
+  "E1": {
+    "matchId": "E1",
+    "homeWin": 85,
+    "draw": 6,
+    "awayWin": 9,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 4.28,
+    "expectedGoalsAway": 0.55,
+    "over25Probability": 53,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 14
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.4
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 11.9
+      },
+      {
+        "home": 5,
+        "away": 0,
+        "probability": 8
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 7.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.5,
+      "drawStdDev": 2,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.92,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 62.4,
+        "high": 94.5
+      },
+      "draw90": {
+        "low": 0.9,
+        "high": 24.6
+      },
+      "awayWin90": {
+        "low": 2.9,
+        "high": 31.4
+      },
+      "entropy": 0.7554828938846007,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 89,
+        "draw": 8,
+        "awayWin": 3
+      },
+      "eloPoisson": {
+        "homeWin": 94,
+        "draw": 4,
+        "awayWin": 2
+      },
+      "bayesian": {
+        "homeWin": 97.3,
+        "draw": 2,
+        "awayWin": 0.7
+      },
+      "purePoisson": {
+        "homeWin": 89,
+        "draw": 8,
+        "awayWin": 3
+      }
+    },
+    "confidenceScore": 93
+  },
+  "E3": {
+    "matchId": "E3",
+    "homeWin": 27,
+    "draw": 25,
+    "awayWin": 48,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.17,
+    "expectedGoalsAway": 1.64,
+    "over25Probability": 33,
+    "bttsProbability": 33,
+    "confidence": "media",
+    "dataQualityScore": 96,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.3
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.3
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.5
       },
       {
         "home": 1,
         "away": 2,
+        "probability": 9.5
+      },
+      {
+        "home": 0,
+        "away": 0,
         "probability": 7.8
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1.3,
+      "agreementScore": 0.96,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 27.3,
+        "high": 68.3
+      },
+      "entropy": 1.518290516400752,
+      "effectiveOutcomes": 4.6
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 24,
+        "draw": 26,
+        "awayWin": 50
+      },
+      "eloPoisson": {
+        "homeWin": 24,
+        "draw": 23,
+        "awayWin": 53
+      },
+      "bayesian": {
+        "homeWin": 37.6,
+        "draw": 24.3,
+        "awayWin": 38.1
+      },
+      "purePoisson": {
+        "homeWin": 24,
+        "draw": 25,
+        "awayWin": 51
+      }
+    },
+    "confidenceScore": 61
   },
-  "L1": {
-    "matchId": "L1",
-    "homeWin": 57,
-    "draw": 24,
-    "awayWin": 19,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.79,
-    "expectedGoalsAway": 0.92,
-    "over25Probability": 56,
-    "bttsProbability": 30,
-    "confidence": "media",
-    "dataQualityScore": 94,
+  "E2": {
+    "matchId": "E2",
+    "homeWin": 78,
+    "draw": 12,
+    "awayWin": 10,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 3.07,
+    "expectedGoalsAway": 0.94,
+    "over25Probability": 51,
+    "bttsProbability": 29,
+    "confidence": "alta",
+    "dataQualityScore": 87,
     "modelVersion": "3.0-ensemble",
     "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.3
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.2
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 8.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.2
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 8.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 4,
+      "drawStdDev": 2.5,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.87,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 54.8,
+        "high": 91
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 0.9788541494868961,
+      "effectiveOutcomes": 2.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 82,
+        "draw": 12,
+        "awayWin": 6
+      },
+      "eloPoisson": {
+        "homeWin": 90,
+        "draw": 7,
+        "awayWin": 3
+      },
+      "bayesian": {
+        "homeWin": 58.7,
+        "draw": 18.1,
+        "awayWin": 23.2
+      },
+      "purePoisson": {
+        "homeWin": 82,
+        "draw": 12,
+        "awayWin": 6
+      }
+    },
+    "confidenceScore": 85
+  },
+  "E4": {
+    "matchId": "E4",
+    "homeWin": 76,
+    "draw": 16,
+    "awayWin": 8,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.61,
+    "expectedGoalsAway": 0.63,
+    "over25Probability": 38,
+    "bttsProbability": 26,
+    "confidence": "alta",
+    "dataQualityScore": 87,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14.2
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 13.4
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.6
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.5
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.3
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.77,
+      "drawStdDev": 2.28,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.87,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 54.8,
+        "high": 91
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 1.0154312795575997,
+      "effectiveOutcomes": 2.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 68,
+        "draw": 21,
+        "awayWin": 11
+      },
+      "eloPoisson": {
+        "homeWin": 76,
+        "draw": 16,
+        "awayWin": 8
+      },
+      "bayesian": {
+        "homeWin": 92.5,
+        "draw": 5.5,
+        "awayWin": 2
+      },
+      "purePoisson": {
+        "homeWin": 69,
+        "draw": 20,
+        "awayWin": 11
+      }
+    },
+    "confidenceScore": 85
+  },
+  "E5": {
+    "matchId": "E5",
+    "homeWin": 19,
+    "draw": 22,
+    "awayWin": 59,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 0.9,
+    "expectedGoalsAway": 2.01,
+    "over25Probability": 30,
+    "bttsProbability": 30,
+    "confidence": "alta",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 13
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.9
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.7
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.1
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "entropy": 1.3849156069967516,
+      "effectiveOutcomes": 4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 24,
+        "draw": 27,
+        "awayWin": 49
+      },
+      "eloPoisson": {
+        "homeWin": 24,
+        "draw": 24,
+        "awayWin": 52
+      },
+      "bayesian": {
+        "homeWin": 4,
+        "draw": 8.7,
+        "awayWin": 87.3
+      },
+      "purePoisson": {
+        "homeWin": 24,
+        "draw": 27,
+        "awayWin": 49
+      }
+    },
+    "confidenceScore": 70
+  },
+  "E6": {
+    "matchId": "E6",
+    "homeWin": 18,
+    "draw": 18,
+    "awayWin": 64,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 1.23,
+    "expectedGoalsAway": 2.45,
+    "over25Probability": 42,
+    "bttsProbability": 35,
+    "confidence": "alta",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 10.6
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 8.6
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.1
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 0.83,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 8.1,
+        "high": 41.6
+      },
+      "draw90": {
+        "low": 8.1,
+        "high": 41.6
+      },
+      "awayWin90": {
+        "low": 38.7,
+        "high": 78.1
+      },
+      "entropy": 1.3026831892554922,
+      "effectiveOutcomes": 3.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 12,
+        "draw": 18,
+        "awayWin": 70
+      },
+      "eloPoisson": {
+        "homeWin": 13,
+        "draw": 16,
+        "awayWin": 71
+      },
+      "bayesian": {
+        "homeWin": 35.2,
+        "draw": 20.1,
+        "awayWin": 44.7
+      },
+      "purePoisson": {
+        "homeWin": 12,
+        "draw": 17,
+        "awayWin": 71
+      }
+    },
+    "confidenceScore": 74
+  },
+  "F1": {
+    "matchId": "F1",
+    "homeWin": 58,
+    "draw": 20,
+    "awayWin": 22,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 2.44,
+    "expectedGoalsAway": 1.46,
+    "over25Probability": 42,
+    "bttsProbability": 36,
+    "confidence": "alta",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.6
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 10
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 9.2
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 6.4
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.28,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.92,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.400766637523055,
+      "effectiveOutcomes": 4.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 56,
+        "draw": 23,
+        "awayWin": 21
+      },
+      "eloPoisson": {
+        "homeWin": 61,
+        "draw": 20,
+        "awayWin": 19
+      },
+      "bayesian": {
+        "homeWin": 58.3,
+        "draw": 16.3,
+        "awayWin": 25.4
+      },
+      "purePoisson": {
+        "homeWin": 57,
+        "draw": 22,
+        "awayWin": 21
+      }
+    },
+    "confidenceScore": 69
+  },
+  "F3": {
+    "matchId": "F3",
+    "homeWin": 52,
+    "draw": 23,
+    "awayWin": 25,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 2.41,
+    "expectedGoalsAway": 1.35,
+    "over25Probability": 32,
+    "bttsProbability": 32,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 11.5
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.4
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.6
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 1,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 31.7,
+        "high": 72.7
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "entropy": 1.4782442390045627,
+      "effectiveOutcomes": 4.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 42,
+        "draw": 28,
+        "awayWin": 30
+      },
+      "eloPoisson": {
+        "homeWin": 44,
+        "draw": 25,
+        "awayWin": 31
+      },
+      "bayesian": {
+        "homeWin": 81.1,
+        "draw": 9.7,
+        "awayWin": 9.1
+      },
+      "purePoisson": {
+        "homeWin": 42,
+        "draw": 27,
+        "awayWin": 30
+      }
+    },
+    "confidenceScore": 64
+  },
+  "F2": {
+    "matchId": "F2",
+    "homeWin": 79,
+    "draw": 13,
+    "awayWin": 8,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 3.64,
+    "expectedGoalsAway": 1.08,
+    "over25Probability": 46,
+    "bttsProbability": 31,
+    "confidence": "alta",
+    "dataQualityScore": 87,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.7
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.6
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.7
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 7.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.77,
+      "drawStdDev": 2.28,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.87,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 60.8,
+        "high": 94.2
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.9428122353564714,
+      "effectiveOutcomes": 2.6
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 73,
+        "draw": 17,
+        "awayWin": 10
+      },
+      "eloPoisson": {
+        "homeWin": 81,
+        "draw": 12,
+        "awayWin": 7
+      },
+      "bayesian": {
+        "homeWin": 87.3,
+        "draw": 7.1,
+        "awayWin": 5.5
+      },
+      "purePoisson": {
+        "homeWin": 74,
+        "draw": 16,
+        "awayWin": 10
+      }
+    },
+    "confidenceScore": 87
+  },
+  "F4": {
+    "matchId": "F4",
+    "homeWin": 14,
+    "draw": 19,
+    "awayWin": 67,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 0.96,
+    "expectedGoalsAway": 2.86,
+    "over25Probability": 32,
+    "bttsProbability": 30,
+    "confidence": "alta",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 12.7
+      },
       {
         "home": 1,
         "away": 1,
         "probability": 11.6
       },
       {
+        "home": 0,
+        "away": 2,
+        "probability": 11.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 8.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 1,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 5.2,
+        "high": 36
+      },
+      "draw90": {
+        "low": 8.1,
+        "high": 41.6
+      },
+      "awayWin90": {
+        "low": 43.3,
+        "high": 81.9
+      },
+      "entropy": 1.2394405155256714,
+      "effectiveOutcomes": 3.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 18,
+        "draw": 24,
+        "awayWin": 58
+      },
+      "eloPoisson": {
+        "homeWin": 18,
+        "draw": 22,
+        "awayWin": 60
+      },
+      "bayesian": {
+        "homeWin": 2.6,
+        "draw": 4.5,
+        "awayWin": 92.9
+      },
+      "purePoisson": {
+        "homeWin": 18,
+        "draw": 24,
+        "awayWin": 58
+      }
+    },
+    "confidenceScore": 78
+  },
+  "F5": {
+    "matchId": "F5",
+    "homeWin": 66,
+    "draw": 18,
+    "awayWin": 16,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 2.69,
+    "expectedGoalsAway": 1.17,
+    "over25Probability": 40,
+    "bttsProbability": 33,
+    "confidence": "alta",
+    "dataQualityScore": 90,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.7
+      },
+      {
         "home": 2,
         "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 10
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 6.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.9,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 43.7,
+        "high": 83.7
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "entropy": 1.2639695707385292,
+      "effectiveOutcomes": 3.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 60,
+        "draw": 22,
+        "awayWin": 18
+      },
+      "eloPoisson": {
+        "homeWin": 66,
+        "draw": 19,
+        "awayWin": 15
+      },
+      "bayesian": {
+        "homeWin": 79.2,
+        "draw": 10.7,
+        "awayWin": 10.1
+      },
+      "purePoisson": {
+        "homeWin": 60,
+        "draw": 22,
+        "awayWin": 18
+      }
+    },
+    "confidenceScore": 75
+  },
+  "F6": {
+    "matchId": "F6",
+    "homeWin": 6,
+    "draw": 12,
+    "awayWin": 82,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.83,
+    "expectedGoalsAway": 4.05,
+    "over25Probability": 38,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 100,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 13.8
+      },
+      {
+        "home": 0,
+        "away": 3,
         "probability": 11.4
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.4
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8.9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 7.4
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0,
+      "awayWinStdDev": 0,
+      "agreementScore": 1,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0.9,
+        "high": 23.6
+      },
+      "draw90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "awayWin90": {
+        "low": 64,
+        "high": 94.8
+      },
+      "entropy": 0.845370295858088,
+      "effectiveOutcomes": 2.3
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 8,
+        "draw": 15,
+        "awayWin": 77
+      },
+      "eloPoisson": {
+        "homeWin": 8,
+        "draw": 15,
+        "awayWin": 77
+      },
+      "bayesian": {
+        "homeWin": 1.2,
+        "draw": 2.4,
+        "awayWin": 96.4
+      },
+      "purePoisson": {
+        "homeWin": 8,
+        "draw": 15,
+        "awayWin": 77
+      }
+    },
+    "confidenceScore": 93
+  },
+  "G1": {
+    "matchId": "G1",
+    "homeWin": 70,
+    "draw": 18,
+    "awayWin": 12,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.49,
+    "expectedGoalsAway": 0.96,
+    "over25Probability": 42,
+    "bttsProbability": 32,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.3
       },
       {
         "home": 2,
         "away": 1,
         "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.6
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 8.3
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.27,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 49.1,
+        "high": 87.5
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.172576077567093,
+      "effectiveOutcomes": 3.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 66,
+        "draw": 20,
+        "awayWin": 14
+      },
+      "eloPoisson": {
+        "homeWin": 73,
+        "draw": 16,
+        "awayWin": 11
+      },
+      "bayesian": {
+        "homeWin": 73.7,
+        "draw": 14.1,
+        "awayWin": 12.2
+      },
+      "purePoisson": {
+        "homeWin": 67,
+        "draw": 20,
+        "awayWin": 14
+      }
+    },
+    "confidenceScore": 79
+  },
+  "G3": {
+    "matchId": "G3",
+    "homeWin": 70,
+    "draw": 19,
+    "awayWin": 11,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 2.36,
+    "expectedGoalsAway": 0.8,
+    "over25Probability": 34,
+    "bttsProbability": 26,
+    "confidence": "alta",
+    "dataQualityScore": 90,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 14.7
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13.7
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.7
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.2
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 9.1
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.77,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.9,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 49.1,
+        "high": 87.5
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.1657143723088643,
+      "effectiveOutcomes": 3.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 63,
+        "draw": 23,
+        "awayWin": 14
+      },
+      "eloPoisson": {
+        "homeWin": 69,
+        "draw": 19,
+        "awayWin": 12
+      },
+      "bayesian": {
+        "homeWin": 83,
+        "draw": 10.1,
+        "awayWin": 6.9
+      },
+      "purePoisson": {
+        "homeWin": 64,
+        "draw": 23,
+        "awayWin": 14
+      }
+    },
+    "confidenceScore": 80
+  },
+  "G2": {
+    "matchId": "G2",
+    "homeWin": 67,
+    "draw": 19,
+    "awayWin": 14,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.35,
+    "expectedGoalsAway": 0.96,
+    "over25Probability": 40,
+    "bttsProbability": 33,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 10.8
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 10.4
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 10
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 7.1
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.27,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 43.7,
+        "high": 83.7
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "entropy": 1.2394405155256714,
+      "effectiveOutcomes": 3.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 61,
+        "draw": 22,
+        "awayWin": 17
+      },
+      "eloPoisson": {
+        "homeWin": 68,
+        "draw": 18,
+        "awayWin": 14
+      },
+      "bayesian": {
+        "homeWin": 77,
+        "draw": 13.4,
+        "awayWin": 9.6
+      },
+      "purePoisson": {
+        "homeWin": 62,
+        "draw": 21,
+        "awayWin": 17
+      }
+    },
+    "confidenceScore": 76
+  },
+  "G4": {
+    "matchId": "G4",
+    "homeWin": 17,
+    "draw": 22,
+    "awayWin": 61,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 0.95,
+    "expectedGoalsAway": 2.24,
+    "over25Probability": 29,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 96,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 14.3
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.3
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11.4
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.2
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.1
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1.3,
+      "agreementScore": 0.96,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 5.5,
+        "high": 37.6
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 41,
+        "high": 80.9
+      },
+      "entropy": 1.350162774748601,
+      "effectiveOutcomes": 3.9
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 20,
+        "draw": 27,
+        "awayWin": 53
+      },
+      "eloPoisson": {
+        "homeWin": 20,
+        "draw": 24,
+        "awayWin": 56
+      },
+      "bayesian": {
+        "homeWin": 7.2,
+        "draw": 9.6,
+        "awayWin": 83.2
+      },
+      "purePoisson": {
+        "homeWin": 20,
+        "draw": 26,
+        "awayWin": 54
+      }
+    },
+    "confidenceScore": 73
+  },
+  "G5": {
+    "matchId": "G5",
+    "homeWin": 38,
+    "draw": 26,
+    "awayWin": 36,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.41,
+    "expectedGoalsAway": 1.37,
+    "over25Probability": 33,
+    "bttsProbability": 33,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.3
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.5
       },
       {
         "home": 1,
@@ -2742,22 +3511,2161 @@
       {
         "home": 0,
         "away": 0,
-        "probability": 7.5
+        "probability": 9
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8.2
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 19.1,
+        "high": 59
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 19.1,
+        "high": 59
+      },
+      "entropy": 1.5663564074302458,
+      "effectiveOutcomes": 4.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 34,
+        "draw": 28,
+        "awayWin": 38
+      },
+      "eloPoisson": {
+        "homeWin": 35,
+        "draw": 25,
+        "awayWin": 40
+      },
+      "bayesian": {
+        "homeWin": 48.2,
+        "draw": 22.8,
+        "awayWin": 29
+      },
+      "purePoisson": {
+        "homeWin": 34,
+        "draw": 27,
+        "awayWin": 38
+      }
+    },
+    "confidenceScore": 55
   },
-  "L3": {
-    "matchId": "L3",
-    "homeWin": 47,
+  "G6": {
+    "matchId": "G6",
+    "homeWin": 4,
+    "draw": 10,
+    "awayWin": 86,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.61,
+    "expectedGoalsAway": 3.69,
+    "over25Probability": 38,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 99,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 15.7
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 13.8
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11
+      },
+      {
+        "home": 0,
+        "away": 4,
+        "probability": 9
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 7.6
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0.43,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.99,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0.9,
+        "high": 23.6
+      },
+      "draw90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "awayWin90": {
+        "low": 64,
+        "high": 94.8
+      },
+      "entropy": 0.7050756912421843,
+      "effectiveOutcomes": 2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 5,
+        "draw": 13,
+        "awayWin": 82
+      },
+      "eloPoisson": {
+        "homeWin": 5,
+        "draw": 12,
+        "awayWin": 83
+      },
+      "bayesian": {
+        "homeWin": 1.1,
+        "draw": 2.5,
+        "awayWin": 96.4
+      },
+      "purePoisson": {
+        "homeWin": 5,
+        "draw": 12,
+        "awayWin": 83
+      }
+    },
+    "confidenceScore": 95
+  },
+  "H1": {
+    "matchId": "H1",
+    "homeWin": 85,
+    "draw": 9,
+    "awayWin": 6,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 3.26,
+    "expectedGoalsAway": 0.49,
+    "over25Probability": 53,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 14
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 11.8
+      },
+      {
+        "home": 5,
+        "away": 0,
+        "probability": 7.9
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 7.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.5,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.92,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 62.4,
+        "high": 94.5
+      },
+      "draw90": {
+        "low": 2.9,
+        "high": 31.4
+      },
+      "awayWin90": {
+        "low": 0.9,
+        "high": 24.6
+      },
+      "entropy": 0.7554828938846007,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 89,
+        "draw": 8,
+        "awayWin": 3
+      },
+      "eloPoisson": {
+        "homeWin": 94,
+        "draw": 5,
+        "awayWin": 1
+      },
+      "bayesian": {
+        "homeWin": 80.7,
+        "draw": 13.8,
+        "awayWin": 5.4
+      },
+      "purePoisson": {
+        "homeWin": 89,
+        "draw": 8,
+        "awayWin": 3
+      }
+    },
+    "confidenceScore": 93
+  },
+  "H3": {
+    "matchId": "H3",
+    "homeWin": 12,
+    "draw": 18,
+    "awayWin": 70,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.83,
+    "expectedGoalsAway": 2.29,
+    "over25Probability": 36,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 99,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 13.7
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.3
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 10.3
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.3
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8.5
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0.43,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.99,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "draw90": {
+        "low": 8.1,
+        "high": 41.6
+      },
+      "awayWin90": {
+        "low": 48.1,
+        "high": 85.5
+      },
+      "entropy": 1.1725760775670933,
+      "effectiveOutcomes": 3.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 10,
+        "draw": 18,
+        "awayWin": 72
+      },
+      "eloPoisson": {
+        "homeWin": 10,
+        "draw": 17,
+        "awayWin": 73
+      },
+      "bayesian": {
+        "homeWin": 18.5,
+        "draw": 19.5,
+        "awayWin": 62.1
+      },
+      "purePoisson": {
+        "homeWin": 10,
+        "draw": 17,
+        "awayWin": 73
+      }
+    },
+    "confidenceScore": 81
+  },
+  "H2": {
+    "matchId": "H2",
+    "homeWin": 85,
+    "draw": 8,
+    "awayWin": 7,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 3.51,
+    "expectedGoalsAway": 0.56,
+    "over25Probability": 53,
+    "bttsProbability": 26,
+    "confidence": "alta",
+    "dataQualityScore": 90,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.6
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 10.2
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 7.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 7.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3,
+      "drawStdDev": 1.79,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.9,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 67.2,
+        "high": 96.9
+      },
+      "draw90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.759359049513646,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 86,
+        "draw": 10,
+        "awayWin": 4
+      },
+      "eloPoisson": {
+        "homeWin": 92,
+        "draw": 6,
+        "awayWin": 2
+      },
+      "bayesian": {
+        "homeWin": 92.7,
+        "draw": 5.6,
+        "awayWin": 1.7
+      },
+      "purePoisson": {
+        "homeWin": 86,
+        "draw": 9,
+        "awayWin": 4
+      }
+    },
+    "confidenceScore": 92
+  },
+  "H4": {
+    "matchId": "H4",
+    "homeWin": 70,
+    "draw": 18,
+    "awayWin": 12,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.24,
+    "expectedGoalsAway": 0.72,
+    "over25Probability": 41,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 87,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 15.2
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 11.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.7
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 4,
+      "drawStdDev": 2.5,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.87,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 49.1,
+        "high": 87.5
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.172576077567093,
+      "effectiveOutcomes": 3.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 75,
+        "draw": 17,
+        "awayWin": 8
+      },
+      "eloPoisson": {
+        "homeWin": 83,
+        "draw": 12,
+        "awayWin": 5
+      },
+      "bayesian": {
+        "homeWin": 48.5,
+        "draw": 24.3,
+        "awayWin": 27.2
+      },
+      "purePoisson": {
+        "homeWin": 75,
+        "draw": 17,
+        "awayWin": 8
+      }
+    },
+    "confidenceScore": 79
+  },
+  "H5": {
+    "matchId": "H5",
+    "homeWin": 37,
     "draw": 28,
-    "awayWin": 25,
-    "mostLikelyScore": "1-1",
-    "expectedGoalsHome": 1.44,
-    "expectedGoalsAway": 0.95,
+    "awayWin": 35,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 1.17,
+    "expectedGoalsAway": 1.09,
+    "over25Probability": 25,
+    "bttsProbability": 27,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 14
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 13.7
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 7.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.43,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 19.1,
+        "high": 59
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 19.1,
+        "high": 59
+      },
+      "entropy": 1.575050010385146,
+      "effectiveOutcomes": 4.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 30,
+        "draw": 31,
+        "awayWin": 39
+      },
+      "eloPoisson": {
+        "homeWin": 31,
+        "draw": 28,
+        "awayWin": 41
+      },
+      "bayesian": {
+        "homeWin": 57.3,
+        "draw": 23.7,
+        "awayWin": 19
+      },
+      "purePoisson": {
+        "homeWin": 31,
+        "draw": 31,
+        "awayWin": 39
+      }
+    },
+    "confidenceScore": 54
+  },
+  "H6": {
+    "matchId": "H6",
+    "homeWin": 19,
+    "draw": 19,
+    "awayWin": 62,
+    "mostLikelyScore": "1-2",
+    "expectedGoalsHome": 1.25,
+    "expectedGoalsAway": 2.36,
     "over25Probability": 44,
+    "bttsProbability": 41,
+    "confidence": "alta",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.3
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 7.4
+      },
+      {
+        "home": 1,
+        "away": 3,
+        "probability": 6.8
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 6.5
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 36.3,
+        "high": 76.9
+      },
+      "entropy": 1.3380420222262996,
+      "effectiveOutcomes": 3.8
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 23,
+        "draw": 21,
+        "awayWin": 56
+      },
+      "eloPoisson": {
+        "homeWin": 22,
+        "draw": 19,
+        "awayWin": 59
+      },
+      "bayesian": {
+        "homeWin": 9.2,
+        "draw": 14.7,
+        "awayWin": 76
+      },
+      "purePoisson": {
+        "homeWin": 23,
+        "draw": 21,
+        "awayWin": 56
+      }
+    },
+    "confidenceScore": 72
+  },
+  "I1": {
+    "matchId": "I1",
+    "homeWin": 81,
+    "draw": 11,
+    "awayWin": 8,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 3.73,
+    "expectedGoalsAway": 1.11,
+    "over25Probability": 51,
+    "bttsProbability": 31,
+    "confidence": "alta",
+    "dataQualityScore": 84,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 10.6
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 10.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.7
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 8.3
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 7.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 4.76,
+      "drawStdDev": 2.77,
+      "awayWinStdDev": 2,
+      "agreementScore": 0.84,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 59,
+        "high": 93.8
+      },
+      "draw90": {
+        "low": 3.3,
+        "high": 34.3
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 27
+      },
+      "entropy": 0.8880402093880759,
+      "effectiveOutcomes": 2.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 78,
+        "draw": 14,
+        "awayWin": 8
+      },
+      "eloPoisson": {
+        "homeWin": 88,
+        "draw": 8,
+        "awayWin": 4
+      },
+      "bayesian": {
+        "homeWin": 81.2,
+        "draw": 9.7,
+        "awayWin": 9.1
+      },
+      "purePoisson": {
+        "homeWin": 79,
+        "draw": 13,
+        "awayWin": 8
+      }
+    },
+    "confidenceScore": 88
+  },
+  "I3": {
+    "matchId": "I3",
+    "homeWin": 12,
+    "draw": 17,
+    "awayWin": 71,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.98,
+    "expectedGoalsAway": 3.1,
+    "over25Probability": 35,
+    "bttsProbability": 31,
+    "confidence": "alta",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 11.9
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 11.4
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.3
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.8
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 7.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0.83,
+      "awayWinStdDev": 0.83,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "draw90": {
+        "low": 5.2,
+        "high": 36
+      },
+      "awayWin90": {
+        "low": 53.1,
+        "high": 88.8
+      },
+      "entropy": 1.152471551827304,
+      "effectiveOutcomes": 3.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 15,
+        "draw": 22,
+        "awayWin": 63
+      },
+      "eloPoisson": {
+        "homeWin": 15,
+        "draw": 20,
+        "awayWin": 65
+      },
+      "bayesian": {
+        "homeWin": 2.8,
+        "draw": 4.7,
+        "awayWin": 92.6
+      },
+      "purePoisson": {
+        "homeWin": 15,
+        "draw": 21,
+        "awayWin": 64
+      }
+    },
+    "confidenceScore": 82
+  },
+  "I2": {
+    "matchId": "I2",
+    "homeWin": 85,
+    "draw": 5,
+    "awayWin": 10,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 5.54,
+    "expectedGoalsAway": 0.48,
+    "over25Probability": 55,
+    "bttsProbability": 23,
+    "confidence": "alta",
+    "dataQualityScore": 92,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 14
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 12.6
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 11.8
+      },
+      {
+        "home": 5,
+        "away": 0,
+        "probability": 9
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 7
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.28,
+      "drawStdDev": 1.5,
+      "awayWinStdDev": 0.83,
+      "agreementScore": 0.92,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 62.4,
+        "high": 94.5
+      },
+      "draw90": {
+        "low": 0.9,
+        "high": 24.6
+      },
+      "awayWin90": {
+        "low": 2.9,
+        "high": 31.4
+      },
+      "entropy": 0.747584679824574,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 90,
+        "draw": 7,
+        "awayWin": 3
+      },
+      "eloPoisson": {
+        "homeWin": 95,
+        "draw": 4,
+        "awayWin": 1
+      },
+      "bayesian": {
+        "homeWin": 99.7,
+        "draw": 0.2,
+        "awayWin": 0.1
+      },
+      "purePoisson": {
+        "homeWin": 91,
+        "draw": 7,
+        "awayWin": 2
+      }
+    },
+    "confidenceScore": 94
+  },
+  "I4": {
+    "matchId": "I4",
+    "homeWin": 38,
+    "draw": 23,
+    "awayWin": 39,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 2.09,
+    "expectedGoalsAway": 2.32,
+    "over25Probability": 38,
+    "bttsProbability": 37,
+    "confidence": "media",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.8
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.6
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 7.8
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 7.6
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 1,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 19.1,
+        "high": 59
+      },
+      "draw90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "awayWin90": {
+        "low": 19.1,
+        "high": 59
+      },
+      "entropy": 1.5479176194167725,
+      "effectiveOutcomes": 4.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 41,
+        "draw": 26,
+        "awayWin": 33
+      },
+      "eloPoisson": {
+        "homeWin": 43,
+        "draw": 23,
+        "awayWin": 34
+      },
+      "bayesian": {
+        "homeWin": 27.3,
+        "draw": 16.6,
+        "awayWin": 56.1
+      },
+      "purePoisson": {
+        "homeWin": 41,
+        "draw": 25,
+        "awayWin": 34
+      }
+    },
+    "confidenceScore": 57
+  },
+  "I5": {
+    "matchId": "I5",
+    "homeWin": 7,
+    "draw": 11,
+    "awayWin": 82,
+    "mostLikelyScore": "0-3",
+    "expectedGoalsHome": 1.12,
+    "expectedGoalsAway": 3.86,
+    "over25Probability": 47,
+    "bttsProbability": 35,
+    "confidence": "alta",
+    "dataQualityScore": 98,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 10
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.6
+      },
+      {
+        "home": 1,
+        "away": 3,
+        "probability": 8.5
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 8.1
+      },
+      {
+        "home": 0,
+        "away": 4,
+        "probability": 7.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 0,
+      "awayWinStdDev": 0.5,
+      "agreementScore": 0.98,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0.9,
+        "high": 23.6
+      },
+      "draw90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "awayWin90": {
+        "low": 64,
+        "high": 94.8
+      },
+      "entropy": 0.8536112233937612,
+      "effectiveOutcomes": 2.3
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 7,
+        "draw": 12,
+        "awayWin": 81
+      },
+      "eloPoisson": {
+        "homeWin": 8,
+        "draw": 12,
+        "awayWin": 80
+      },
+      "bayesian": {
+        "homeWin": 5.8,
+        "draw": 7.3,
+        "awayWin": 86.9
+      },
+      "purePoisson": {
+        "homeWin": 7,
+        "draw": 12,
+        "awayWin": 81
+      }
+    },
+    "confidenceScore": 92
+  },
+  "I6": {
+    "matchId": "I6",
+    "homeWin": 74,
+    "draw": 16,
+    "awayWin": 10,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 3.79,
+    "expectedGoalsAway": 0.79,
+    "over25Probability": 37,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 13.4
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13.3
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.5
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 8.3
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.27,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 49.1,
+        "high": 87.5
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.0766678897205657,
+      "effectiveOutcomes": 2.9
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 64,
+        "draw": 22,
+        "awayWin": 14
+      },
+      "eloPoisson": {
+        "homeWin": 71,
+        "draw": 18,
+        "awayWin": 11
+      },
+      "bayesian": {
+        "homeWin": 98.2,
+        "draw": 1.3,
+        "awayWin": 0.5
+      },
+      "purePoisson": {
+        "homeWin": 65,
+        "draw": 22,
+        "awayWin": 14
+      }
+    },
+    "confidenceScore": 83
+  },
+  "J1": {
+    "matchId": "J1",
+    "homeWin": 85,
+    "draw": 9,
+    "awayWin": 6,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 3.8,
+    "expectedGoalsAway": 0.69,
+    "over25Probability": 49,
+    "bttsProbability": 26,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 13
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 9.1
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 8.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 7.9
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.5,
+      "drawStdDev": 2.28,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 60.8,
+        "high": 94.2
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.7554828938846007,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 83,
+        "draw": 12,
+        "awayWin": 5
+      },
+      "eloPoisson": {
+        "homeWin": 90,
+        "draw": 7,
+        "awayWin": 3
+      },
+      "bayesian": {
+        "homeWin": 94.2,
+        "draw": 3.9,
+        "awayWin": 1.9
+      },
+      "purePoisson": {
+        "homeWin": 83,
+        "draw": 11,
+        "awayWin": 5
+      }
+    },
+    "confidenceScore": 93
+  },
+  "J3": {
+    "matchId": "J3",
+    "homeWin": 71,
+    "draw": 17,
+    "awayWin": 12,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.8,
+    "expectedGoalsAway": 0.99,
+    "over25Probability": 39,
+    "bttsProbability": 29,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.5
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 12
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.2
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 9.7
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 8.1
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.27,
+      "drawStdDev": 2.28,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 49.1,
+        "high": 87.5
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.152471551827304,
+      "effectiveOutcomes": 3.2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 64,
+        "draw": 22,
+        "awayWin": 14
+      },
+      "eloPoisson": {
+        "homeWin": 71,
+        "draw": 17,
+        "awayWin": 12
+      },
+      "bayesian": {
+        "homeWin": 84.5,
+        "draw": 8.6,
+        "awayWin": 6.9
+      },
+      "purePoisson": {
+        "homeWin": 65,
+        "draw": 21,
+        "awayWin": 14
+      }
+    },
+    "confidenceScore": 80
+  },
+  "J2": {
+    "matchId": "J2",
+    "homeWin": 82,
+    "draw": 11,
+    "awayWin": 7,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 3.56,
+    "expectedGoalsAway": 0.95,
+    "over25Probability": 50,
+    "bttsProbability": 33,
+    "confidence": "alta",
+    "dataQualityScore": 88,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 10.5
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 9.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8.9
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 8.3
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 6.9
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.5,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.88,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 60.8,
+        "high": 94.2
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.8536112233937612,
+      "effectiveOutcomes": 2.3
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 77,
+        "draw": 14,
+        "awayWin": 9
+      },
+      "eloPoisson": {
+        "homeWin": 84,
+        "draw": 10,
+        "awayWin": 6
+      },
+      "bayesian": {
+        "homeWin": 89.8,
+        "draw": 6.2,
+        "awayWin": 4
+      },
+      "purePoisson": {
+        "homeWin": 77,
+        "draw": 14,
+        "awayWin": 9
+      }
+    },
+    "confidenceScore": 90
+  },
+  "J4": {
+    "matchId": "J4",
+    "homeWin": 23,
+    "draw": 25,
+    "awayWin": 52,
+    "mostLikelyScore": "0-1",
+    "expectedGoalsHome": 1.17,
+    "expectedGoalsAway": 1.94,
+    "over25Probability": 27,
     "bttsProbability": 28,
     "confidence": "media",
-    "dataQualityScore": 92,
+    "dataQualityScore": 96,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 14.2
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 13.2
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 11.5
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.4
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.83,
+      "agreementScore": 0.96,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 31.7,
+        "high": 72.7
+      },
+      "entropy": 1.4782442390045627,
+      "effectiveOutcomes": 4.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 24,
+        "draw": 29,
+        "awayWin": 47
+      },
+      "eloPoisson": {
+        "homeWin": 25,
+        "draw": 26,
+        "awayWin": 49
+      },
+      "bayesian": {
+        "homeWin": 18.6,
+        "draw": 15.1,
+        "awayWin": 66.3
+      },
+      "purePoisson": {
+        "homeWin": 24,
+        "draw": 28,
+        "awayWin": 48
+      }
+    },
+    "confidenceScore": 64
+  },
+  "J5": {
+    "matchId": "J5",
+    "homeWin": 29,
+    "draw": 24,
+    "awayWin": 47,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.65,
+    "expectedGoalsAway": 2.13,
+    "over25Probability": 35,
+    "bttsProbability": 34,
+    "confidence": "media",
+    "dataQualityScore": 96,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 10.4
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.2
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 8.1
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 7.9
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.43,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.83,
+      "agreementScore": 0.96,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 15.4,
+        "high": 54
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 27.3,
+        "high": 68.3
+      },
+      "entropy": 1.5239939407261618,
+      "effectiveOutcomes": 4.6
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 28,
+        "draw": 27,
+        "awayWin": 45
+      },
+      "eloPoisson": {
+        "homeWin": 29,
+        "draw": 24,
+        "awayWin": 47
+      },
+      "bayesian": {
+        "homeWin": 32.1,
+        "draw": 17,
+        "awayWin": 50.9
+      },
+      "purePoisson": {
+        "homeWin": 29,
+        "draw": 26,
+        "awayWin": 46
+      }
+    },
+    "confidenceScore": 61
+  },
+  "J6": {
+    "matchId": "J6",
+    "homeWin": 2,
+    "draw": 7,
+    "awayWin": 91,
+    "mostLikelyScore": "0-3",
+    "expectedGoalsHome": 0.51,
+    "expectedGoalsAway": 3.99,
+    "over25Probability": 44,
+    "bttsProbability": 22,
+    "confidence": "alta",
+    "dataQualityScore": 95,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 15
+      },
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 14.3
+      },
+      {
+        "home": 0,
+        "away": 4,
+        "probability": 11.8
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 8.2
+      },
+      {
+        "home": 0,
+        "away": 5,
+        "probability": 7.5
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1,
+      "awayWinStdDev": 1.3,
+      "agreementScore": 0.95,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0,
+        "high": 16.8
+      },
+      "draw90": {
+        "low": 0.9,
+        "high": 24.6
+      },
+      "awayWin90": {
+        "low": 75.4,
+        "high": 99.1
+      },
+      "entropy": 0.5052482226498788,
+      "effectiveOutcomes": 1.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 3,
+        "draw": 9,
+        "awayWin": 88
+      },
+      "eloPoisson": {
+        "homeWin": 2,
+        "draw": 7,
+        "awayWin": 91
+      },
+      "bayesian": {
+        "homeWin": 0.7,
+        "draw": 2.1,
+        "awayWin": 97.2
+      },
+      "purePoisson": {
+        "homeWin": 3,
+        "draw": 9,
+        "awayWin": 89
+      }
+    },
+    "confidenceScore": 95
+  },
+  "K1": {
+    "matchId": "K1",
+    "homeWin": 85,
+    "draw": 9,
+    "awayWin": 6,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 3.26,
+    "expectedGoalsAway": 0.58,
+    "over25Probability": 52,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 90,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 13.7
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.9
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 11
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 7.3
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 7.3
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.9,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 60.8,
+        "high": 94.2
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.7554828938846007,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 87,
+        "draw": 9,
+        "awayWin": 4
+      },
+      "eloPoisson": {
+        "homeWin": 93,
+        "draw": 5,
+        "awayWin": 2
+      },
+      "bayesian": {
+        "homeWin": 80.3,
+        "draw": 12.7,
+        "awayWin": 7
+      },
+      "purePoisson": {
+        "homeWin": 87,
+        "draw": 9,
+        "awayWin": 4
+      }
+    },
+    "confidenceScore": 93
+  },
+  "K3": {
+    "matchId": "K3",
+    "homeWin": 4,
+    "draw": 10,
+    "awayWin": 86,
+    "mostLikelyScore": "0-2",
+    "expectedGoalsHome": 0.55,
+    "expectedGoalsAway": 3.24,
+    "over25Probability": 39,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 100,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 0,
+        "away": 2,
+        "probability": 14.8
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 13.5
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 0,
+        "away": 4,
+        "probability": 9.3
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 7.7
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0,
+      "awayWinStdDev": 0,
+      "agreementScore": 1,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0.9,
+        "high": 23.6
+      },
+      "draw90": {
+        "low": 2.8,
+        "high": 30.1
+      },
+      "awayWin90": {
+        "low": 64,
+        "high": 94.8
+      },
+      "entropy": 0.7050756912421843,
+      "effectiveOutcomes": 2
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 5,
+        "draw": 12,
+        "awayWin": 83
+      },
+      "eloPoisson": {
+        "homeWin": 5,
+        "draw": 12,
+        "awayWin": 83
+      },
+      "bayesian": {
+        "homeWin": 1.3,
+        "draw": 3.7,
+        "awayWin": 95
+      },
+      "purePoisson": {
+        "homeWin": 5,
+        "draw": 12,
+        "awayWin": 83
+      }
+    },
+    "confidenceScore": 95
+  },
+  "K2": {
+    "matchId": "K2",
+    "homeWin": 85,
+    "draw": 7,
+    "awayWin": 8,
+    "mostLikelyScore": "3-0",
+    "expectedGoalsHome": 4.14,
+    "expectedGoalsAway": 0.54,
+    "over25Probability": 51,
+    "bttsProbability": 25,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 13.1
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.7
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 10.1
+      },
+      {
+        "home": 3,
+        "away": 1,
+        "probability": 7.6
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 7.5
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.27,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1.3,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 67.2,
+        "high": 96.9
+      },
+      "draw90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.759359049513646,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 85,
+        "draw": 10,
+        "awayWin": 5
+      },
+      "eloPoisson": {
+        "homeWin": 92,
+        "draw": 6,
+        "awayWin": 2
+      },
+      "bayesian": {
+        "homeWin": 98.5,
+        "draw": 1.2,
+        "awayWin": 0.3
+      },
+      "purePoisson": {
+        "homeWin": 86,
+        "draw": 10,
+        "awayWin": 4
+      }
+    },
+    "confidenceScore": 92
+  },
+  "K4": {
+    "matchId": "K4",
+    "homeWin": 81,
+    "draw": 13,
+    "awayWin": 6,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 2.73,
+    "expectedGoalsAway": 0.6,
+    "over25Probability": 47,
+    "bttsProbability": 24,
+    "confidence": "alta",
+    "dataQualityScore": 89,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 14.4
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 13
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.8
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 8.8
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.5,
+      "drawStdDev": 2.28,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.89,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 60.8,
+        "high": 94.2
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.8724227740365672,
+      "effectiveOutcomes": 2.4
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 82,
+        "draw": 13,
+        "awayWin": 5
+      },
+      "eloPoisson": {
+        "homeWin": 89,
+        "draw": 8,
+        "awayWin": 3
+      },
+      "bayesian": {
+        "homeWin": 70.9,
+        "draw": 17.9,
+        "awayWin": 11.3
+      },
+      "purePoisson": {
+        "homeWin": 82,
+        "draw": 12,
+        "awayWin": 5
+      }
+    },
+    "confidenceScore": 90
+  },
+  "K5": {
+    "matchId": "K5",
+    "homeWin": 32,
+    "draw": 24,
+    "awayWin": 44,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.44,
+    "expectedGoalsAway": 1.71,
+    "over25Probability": 42,
+    "bttsProbability": 40,
+    "confidence": "media",
+    "dataQualityScore": 97,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 10.9
+      },
+      {
+        "home": 1,
+        "away": 2,
+        "probability": 9.1
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 7.6
+      },
+      {
+        "home": 0,
+        "away": 1,
+        "probability": 7
+      },
+      {
+        "home": 2,
+        "away": 2,
+        "probability": 6.5
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 1,
+      "awayWinStdDev": 1,
+      "agreementScore": 0.97,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 14.5,
+        "high": 51.9
+      },
+      "draw90": {
+        "low": 11.2,
+        "high": 46.9
+      },
+      "awayWin90": {
+        "low": 25.8,
+        "high": 65.8
+      },
+      "entropy": 1.5413152774012366,
+      "effectiveOutcomes": 4.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 32,
+        "draw": 24,
+        "awayWin": 44
+      },
+      "eloPoisson": {
+        "homeWin": 32,
+        "draw": 22,
+        "awayWin": 46
+      },
+      "bayesian": {
+        "homeWin": 32,
+        "draw": 26.6,
+        "awayWin": 41.4
+      },
+      "purePoisson": {
+        "homeWin": 32,
+        "draw": 24,
+        "awayWin": 44
+      }
+    },
+    "confidenceScore": 60
+  },
+  "K6": {
+    "matchId": "K6",
+    "homeWin": 48,
+    "draw": 24,
+    "awayWin": 28,
+    "mostLikelyScore": "1-1",
+    "expectedGoalsHome": 1.87,
+    "expectedGoalsAway": 1.14,
+    "over25Probability": 29,
+    "bttsProbability": 30,
+    "confidence": "media",
+    "dataQualityScore": 96,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
@@ -2766,121 +5674,433 @@
         "probability": 13.8
       },
       {
+        "home": 0,
+        "away": 1,
+        "probability": 11.7
+      },
+      {
         "home": 1,
         "away": 0,
-        "probability": 11.9
+        "probability": 11.5
       },
       {
         "home": 0,
         "away": 0,
-        "probability": 11
+        "probability": 11.2
       },
       {
-        "home": 2,
-        "away": 0,
-        "probability": 9.9
-      },
-      {
-        "home": 2,
-        "away": 1,
-        "probability": 9
+        "home": 1,
+        "away": 2,
+        "probability": 7.5
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.83,
+      "agreementScore": 0.96,
+      "unanimousWinner": false
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 27.3,
+        "high": 68.3
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "entropy": 1.516623811079363,
+      "effectiveOutcomes": 4.6
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 35,
+        "draw": 30,
+        "awayWin": 35
+      },
+      "eloPoisson": {
+        "homeWin": 36,
+        "draw": 27,
+        "awayWin": 37
+      },
+      "bayesian": {
+        "homeWin": 86.6,
+        "draw": 8.4,
+        "awayWin": 5
+      },
+      "purePoisson": {
+        "homeWin": 35,
+        "draw": 29,
+        "awayWin": 36
+      }
+    },
+    "confidenceScore": 62
   },
-  "L2": {
-    "matchId": "L2",
-    "homeWin": 70,
-    "draw": 19,
-    "awayWin": 11,
+  "L1": {
+    "matchId": "L1",
+    "homeWin": 66,
+    "draw": 18,
+    "awayWin": 16,
     "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 2.19,
-    "expectedGoalsAway": 0.67,
-    "over25Probability": 56,
-    "bttsProbability": 24,
+    "expectedGoalsHome": 2.52,
+    "expectedGoalsAway": 1.15,
+    "over25Probability": 43,
+    "bttsProbability": 34,
     "confidence": "alta",
-    "dataQualityScore": 86,
+    "dataQualityScore": 91,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 2,
         "away": 0,
-        "probability": 14.5
+        "probability": 10.4
+      },
+      {
+        "home": 2,
+        "away": 1,
+        "probability": 10
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 9.9
+      },
+      {
+        "home": 1,
+        "away": 0,
+        "probability": 9.4
       },
       {
         "home": 3,
         "away": 0,
-        "probability": 10.9
+        "probability": 7.2
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2.77,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.91,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 46,
+        "high": 84.6
       },
+      "draw90": {
+        "low": 5.5,
+        "high": 37.6
+      },
+      "awayWin90": {
+        "low": 5.5,
+        "high": 37.6
+      },
+      "entropy": 1.2639695707385292,
+      "effectiveOutcomes": 3.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 62,
+        "draw": 21,
+        "awayWin": 17
+      },
+      "eloPoisson": {
+        "homeWin": 68,
+        "draw": 18,
+        "awayWin": 14
+      },
+      "bayesian": {
+        "homeWin": 71.4,
+        "draw": 14.1,
+        "awayWin": 14.5
+      },
+      "purePoisson": {
+        "homeWin": 63,
+        "draw": 20,
+        "awayWin": 17
+      }
+    },
+    "confidenceScore": 75
+  },
+  "L3": {
+    "matchId": "L3",
+    "homeWin": 52,
+    "draw": 28,
+    "awayWin": 20,
+    "mostLikelyScore": "1-0",
+    "expectedGoalsHome": 1.45,
+    "expectedGoalsAway": 0.8,
+    "over25Probability": 30,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 93,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
       {
         "home": 1,
         "away": 0,
-        "probability": 10
+        "probability": 14.1
+      },
+      {
+        "home": 1,
+        "away": 1,
+        "probability": 12.9
+      },
+      {
+        "home": 0,
+        "away": 0,
+        "probability": 10.9
+      },
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 10.4
       },
       {
         "home": 2,
         "away": 1,
-        "probability": 9.2
+        "probability": 8.8
+      }
+    ],
+    "agreement": {
+      "homeWinStdDev": 2,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 0.83,
+      "agreementScore": 0.93,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 31.7,
+        "high": 72.7
+      },
+      "draw90": {
+        "low": 11.8,
+        "high": 48.8
+      },
+      "awayWin90": {
+        "low": 8.5,
+        "high": 43.3
+      },
+      "entropy": 1.469182539187755,
+      "effectiveOutcomes": 4.3
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 50,
+        "draw": 28,
+        "awayWin": 22
+      },
+      "eloPoisson": {
+        "homeWin": 54,
+        "draw": 25,
+        "awayWin": 21
+      },
+      "bayesian": {
+        "homeWin": 55,
+        "draw": 29.9,
+        "awayWin": 15
+      },
+      "purePoisson": {
+        "homeWin": 50,
+        "draw": 27,
+        "awayWin": 23
+      }
+    },
+    "confidenceScore": 65
+  },
+  "L2": {
+    "matchId": "L2",
+    "homeWin": 85,
+    "draw": 10,
+    "awayWin": 5,
+    "mostLikelyScore": "2-0",
+    "expectedGoalsHome": 3.09,
+    "expectedGoalsAway": 0.57,
+    "over25Probability": 50,
+    "bttsProbability": 26,
+    "confidence": "alta",
+    "dataQualityScore": 88,
+    "modelVersion": "3.0-ensemble",
+    "topScores": [
+      {
+        "home": 2,
+        "away": 0,
+        "probability": 12.9
+      },
+      {
+        "home": 3,
+        "away": 0,
+        "probability": 12.8
+      },
+      {
+        "home": 4,
+        "away": 0,
+        "probability": 9.6
       },
       {
         "home": 1,
+        "away": 0,
+        "probability": 7.9
+      },
+      {
+        "home": 2,
         "away": 1,
-        "probability": 8.9
+        "probability": 7.7
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 3.5,
+      "drawStdDev": 2,
+      "awayWinStdDev": 1.5,
+      "agreementScore": 0.88,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 60.8,
+        "high": 94.2
+      },
+      "draw90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "awayWin90": {
+        "low": 1,
+        "high": 25.8
+      },
+      "entropy": 0.747584679824574,
+      "effectiveOutcomes": 2.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 84,
+        "draw": 11,
+        "awayWin": 5
+      },
+      "eloPoisson": {
+        "homeWin": 91,
+        "draw": 7,
+        "awayWin": 2
+      },
+      "bayesian": {
+        "homeWin": 83.4,
+        "draw": 11.7,
+        "awayWin": 4.9
+      },
+      "purePoisson": {
+        "homeWin": 84,
+        "draw": 11,
+        "awayWin": 5
+      }
+    },
+    "confidenceScore": 93
   },
   "L4": {
     "matchId": "L4",
-    "homeWin": 16,
-    "draw": 24,
-    "awayWin": 60,
+    "homeWin": 6,
+    "draw": 14,
+    "awayWin": 80,
     "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.75,
-    "expectedGoalsAway": 1.72,
-    "over25Probability": 45,
-    "bttsProbability": 24,
-    "confidence": "media",
-    "dataQualityScore": 95,
+    "expectedGoalsHome": 0.54,
+    "expectedGoalsAway": 2.59,
+    "over25Probability": 34,
+    "bttsProbability": 22,
+    "confidence": "alta",
+    "dataQualityScore": 99,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 0,
         "away": 2,
-        "probability": 14
+        "probability": 16.7
+      },
+      {
+        "home": 0,
+        "away": 3,
+        "probability": 13.3
       },
       {
         "home": 0,
         "away": 1,
-        "probability": 12.6
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.3
+        "probability": 12.9
       },
       {
         "home": 0,
-        "away": 0,
-        "probability": 9.5
+        "away": 4,
+        "probability": 8
       },
       {
         "home": 1,
         "away": 2,
-        "probability": 9.3
+        "probability": 7.8
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0,
+      "drawStdDev": 0.43,
+      "awayWinStdDev": 0.43,
+      "agreementScore": 0.99,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0.9,
+        "high": 23.6
+      },
+      "draw90": {
+        "low": 5.2,
+        "high": 36
+      },
+      "awayWin90": {
+        "low": 58.4,
+        "high": 91.9
+      },
+      "entropy": 0.898186274733501,
+      "effectiveOutcomes": 2.5
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 6,
+        "draw": 15,
+        "awayWin": 79
+      },
+      "eloPoisson": {
+        "homeWin": 6,
+        "draw": 14,
+        "awayWin": 80
+      },
+      "bayesian": {
+        "homeWin": 5.2,
+        "draw": 10.6,
+        "awayWin": 84.1
+      },
+      "purePoisson": {
+        "homeWin": 6,
+        "draw": 14,
+        "awayWin": 80
+      }
+    },
+    "confidenceScore": 91
   },
   "L5": {
     "matchId": "L5",
-    "homeWin": 12,
-    "draw": 21,
-    "awayWin": 67,
+    "homeWin": 2,
+    "draw": 8,
+    "awayWin": 90,
     "mostLikelyScore": "0-2",
-    "expectedGoalsHome": 0.67,
-    "expectedGoalsAway": 2,
-    "over25Probability": 50,
-    "bttsProbability": 23,
+    "expectedGoalsHome": 0.43,
+    "expectedGoalsAway": 3.21,
+    "over25Probability": 42,
+    "bttsProbability": 21,
     "confidence": "alta",
-    "dataQualityScore": 96,
+    "dataQualityScore": 94,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
@@ -2891,64 +6111,156 @@
       {
         "home": 0,
         "away": 3,
-        "probability": 11.1
+        "probability": 15.2
+      },
+      {
+        "home": 0,
+        "away": 4,
+        "probability": 11.3
       },
       {
         "home": 0,
         "away": 1,
-        "probability": 11
+        "probability": 9.4
       },
       {
-        "home": 1,
-        "away": 1,
-        "probability": 9.1
-      },
-      {
-        "home": 1,
-        "away": 2,
-        "probability": 9
+        "home": 0,
+        "away": 5,
+        "probability": 6.7
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 0.5,
+      "drawStdDev": 1.3,
+      "awayWinStdDev": 2,
+      "agreementScore": 0.94,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 0,
+        "high": 16.8
+      },
+      "draw90": {
+        "low": 2.9,
+        "high": 31.4
+      },
+      "awayWin90": {
+        "low": 68.6,
+        "high": 97.1
+      },
+      "entropy": 0.5411884030780174,
+      "effectiveOutcomes": 1.7
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 3,
+        "draw": 10,
+        "awayWin": 87
+      },
+      "eloPoisson": {
+        "homeWin": 2,
+        "draw": 7,
+        "awayWin": 91
+      },
+      "bayesian": {
+        "homeWin": 1.9,
+        "draw": 6.4,
+        "awayWin": 91.7
+      },
+      "purePoisson": {
+        "homeWin": 3,
+        "draw": 9,
+        "awayWin": 87
+      }
+    },
+    "confidenceScore": 95
   },
   "L6": {
     "matchId": "L6",
-    "homeWin": 62,
-    "draw": 23,
-    "awayWin": 15,
+    "homeWin": 71,
+    "draw": 18,
+    "awayWin": 11,
     "mostLikelyScore": "2-0",
-    "expectedGoalsHome": 1.87,
-    "expectedGoalsAway": 0.75,
-    "over25Probability": 50,
-    "bttsProbability": 26,
-    "confidence": "media",
-    "dataQualityScore": 85,
+    "expectedGoalsHome": 2.32,
+    "expectedGoalsAway": 0.78,
+    "over25Probability": 40,
+    "bttsProbability": 28,
+    "confidence": "alta",
+    "dataQualityScore": 86,
     "modelVersion": "3.0-ensemble",
     "topScores": [
       {
         "home": 2,
         "away": 0,
-        "probability": 13.5
+        "probability": 13.1
       },
       {
         "home": 1,
         "away": 0,
-        "probability": 11.5
-      },
-      {
-        "home": 1,
-        "away": 1,
-        "probability": 11.1
+        "probability": 11.7
       },
       {
         "home": 2,
         "away": 1,
-        "probability": 9.5
+        "probability": 9.6
       },
       {
-        "home": 0,
+        "home": 1,
+        "away": 1,
+        "probability": 9.4
+      },
+      {
+        "home": 3,
         "away": 0,
-        "probability": 8.5
+        "probability": 9.2
       }
-    ]
+    ],
+    "agreement": {
+      "homeWinStdDev": 4.26,
+      "drawStdDev": 2.28,
+      "awayWinStdDev": 2,
+      "agreementScore": 0.86,
+      "unanimousWinner": true
+    },
+    "uncertainty": {
+      "homeWin90": {
+        "low": 49.1,
+        "high": 87.5
+      },
+      "draw90": {
+        "low": 5.8,
+        "high": 39.2
+      },
+      "awayWin90": {
+        "low": 3.1,
+        "high": 32.8
+      },
+      "entropy": 1.1464117566166816,
+      "effectiveOutcomes": 3.1
+    },
+    "models": {
+      "dixonColes": {
+        "homeWin": 68,
+        "draw": 20,
+        "awayWin": 12
+      },
+      "eloPoisson": {
+        "homeWin": 77,
+        "draw": 15,
+        "awayWin": 8
+      },
+      "bayesian": {
+        "homeWin": 70.5,
+        "draw": 16.9,
+        "awayWin": 12.6
+      },
+      "purePoisson": {
+        "homeWin": 69,
+        "draw": 19,
+        "awayWin": 12
+      }
+    },
+    "confidenceScore": 80
   }
 }
