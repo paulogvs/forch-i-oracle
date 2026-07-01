@@ -8,6 +8,7 @@ export const SWR_KEYS = {
   accuracy:   '/api/accuracy',
   simulation: '/api/simulate-tournament',
   liveScores: '/api/live-scores',
+  predictedBracket: '/api/predicted-bracket',
 } as const;
 
 export function useFixture<T = unknown>() {
@@ -48,6 +49,15 @@ export function useSimulation<T = unknown>() {
 export function useLiveScores<T = unknown>(active = true) {
   return useSWR<T>(active ? SWR_KEYS.liveScores : null, jsonFetcher, {
     refreshInterval: active ? 30 * 1000 : 0,
+    revalidateOnFocus: true,
+    refreshWhenHidden: false,
+    keepPreviousData: true,
+  });
+}
+
+export function usePredictedBracket<T = unknown>() {
+  return useSWR<T>(SWR_KEYS.predictedBracket, jsonFetcher, {
+    refreshInterval: getRefreshInterval,
     revalidateOnFocus: true,
     refreshWhenHidden: false,
     keepPreviousData: true,

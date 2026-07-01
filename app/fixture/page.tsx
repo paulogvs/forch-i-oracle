@@ -9,7 +9,7 @@ import MatchSeal, { computeSealStatus } from '@/components/MatchSeal';
 import DriftSparkline from '@/components/DriftSparkline';
 import { AnimatedCheck, AnimatedX, AnimatedZap, AnimatedClock, AnimatedLiveDot } from '@/components/icons/animated-icons';
 import { motion, AnimatePresence } from 'motion/react';
-import { useFixture, useLiveScores, useSimulation } from '@/lib/swr/hooks';
+import { useFixture, useLiveScores, useSimulation, usePredictedBracket } from '@/lib/swr/hooks';
 import { WORLD_CUP_TEAMS } from '@/lib/teams';
 import { useTournamentStore } from '@/lib/store/tournament-store';
 import { MatchCardSkeleton, StatCardSkeleton, GroupTableSkeleton } from '@/components/Skeleton';
@@ -34,6 +34,7 @@ interface RealResult { matchId: string; homeScore: number; awayScore: number; wi
 interface FixtureResponse { success: boolean; fixture: FixtureMatch[]; }
 interface LiveResponse { success: boolean; finished: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number }[]; }
 interface SimResponse { success: boolean; results: { matchId: string; homeScore: number; awayScore: number; winner: string }[]; top8: any[]; bracket: any; liveStandings: Record<string, any[]>; }
+interface PredictedBracketResponse { success: boolean; champion: string | null; championFlag: string; championProb: number | null; runnerUp: string | null; thirdPlace: string | null; bracket: { roundOf32: any[]; roundOf16: any[]; quarters: any[]; semis: any[]; thirdPlace: any; final: any; } | null; championPath: any[]; stats: { total: number; played: number; correct: number; exact: number; wrong: number; accuracy: number | null; }; }
 
 export default function FixturePage() {
   const [mainTab, setMainTab] = useState<MainTab>('partidos');
@@ -45,6 +46,7 @@ export default function FixturePage() {
   const { data: fixtureData, isLoading: fixtureLoading, error: fixtureError } = useFixture<FixtureResponse>();
   const { data: liveData } = useLiveScores<LiveResponse>();
   const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
+  const { data: predBracketData } = usePredictedBracket<PredictedBracketResponse>();
 
   const loading = fixtureLoading && simLoading && storeLoading; // Only show global loading when ALL are loading
   const allFailed = fixtureError && simError && !cachedFixture; // Only show error when ALL fail
@@ -448,9 +450,18 @@ export default function FixturePage() {
           <Top8Tab top8={top8} getFlag={getFlag} />
         </motion.div>
       )}
-      {!loading && !allFailed && mainTab === 'bracket' && bracket && (
+      {!loading && !allFailed && mainTab === 'bracket' && (predBracketData?.bracket || bracket) && (
         <motion.div key="bracket" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-          <BracketTab bracket={bracket} getFlag={getFlag} />
+          <BracketTab
+            bracket={predBracketData?.bracket || bracket}
+            legacyBracket={bracket}
+            championPath={predBracketData?.championPath || []}
+            champion={predBracketData?.champion || bracket?.champion || null}
+            championFlag={predBracketData?.championFlag || bracket?.championFlag || ''}
+            championProb={predBracketData?.championProb ?? null}
+            stats={predBracketData?.stats || null}
+            getFlag={getFlag}
+          />
         </motion.div>
       )}
 
@@ -636,26 +647,136 @@ function Top8Tab({ top8, getFlag }: { top8: any[]; getFlag: (n: string) => strin
   );
 }
 
-function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) => string }) {
-  if (!bracket) return <div className="p-8 text-center rounded-[var(--r-lg)] bg-[var(--match-card-scheduled)] border border-border-subtle"><p className="text-xs text-fg-tertiary">📐 El bracket se generará con las simulaciones del torneo</p></div>;
+// ═══════════════════════════════════════════════════════════════
+// CHAMPION PATH — "Camino al campeón" (Phase 4)
+// ═══════════════════════════════════════════════════════════════
+function ChampionPathBanner({ championPath, champion, championFlag, championProb, getFlag }: {
+  championPath: any[]; champion: string | null; championFlag: string; championProb: number | null; getFlag: (n: string) => string;
+}) {
+  if (!champion || championPath.length === 0) return null;
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent-premium/10 via-surface to-accent-premium/5 border border-accent-premium/20">
+      <div className="p-4 sm:p-5">
+        {/* Champion header */}
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-3xl">{championFlag || '🏆'}</span>
+          <div>
+            <div className="text-xl font-black text-accent-premium">{champion}</div>
+            <div className="text-[10px] text-fg-tertiary flex items-center gap-2">
+              <span>Campeón proyectado</span>
+              {championProb != null && (
+                <span className="px-1.5 py-0.5 rounded-md bg-accent-premium/15 text-accent-premium font-bold text-[9px]">
+                  {championProb}%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
-  const isPlayed = (m: any) => m?.isPlayed || m?.homeScore != null;
+        {/* Path steps */}
+        <div className="flex items-center gap-0.5 overflow-x-auto pb-1 scrollbar-none">
+          {championPath.map((step, i) => (
+            <div key={step.round} className="flex items-center gap-0.5 shrink-0">
+              {/* Connector arrow between steps */}
+              {i > 0 && (
+                <svg className="w-4 h-4 text-fg-tertiary/40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 5l7 7-7 7" />
+                </svg>
+              )}
+              <div className={cn(
+                "flex items-center gap-1.5 px-2 py-1.5 rounded-lg border text-[10px] min-w-0",
+                step.isPlayed
+                  ? 'bg-surface/80 border-border-subtle'
+                  : 'bg-[var(--match-card-scheduled)]/60 border-border-subtle/40',
+              )}>
+                <span className="text-fg-tertiary font-semibold shrink-0 w-[2.2rem] text-right">{step.label}</span>
+                <div className="flex items-center gap-1 min-w-0">
+                  <span className="text-xs shrink-0">{getFlag(step.opponent)}</span>
+                  <span className="text-fg-secondary truncate max-w-[4rem]">{step.opponent}</span>
+                </div>
+                <div className="flex flex-col items-center leading-tight shrink-0">
+                  {/* Predicted score */}
+                  <span className="font-mono font-bold text-fg-primary text-[11px]">
+                    {step.championPredictedScore}-{step.opponentPredictedScore}
+                  </span>
+                  {/* Actual score if played */}
+                  {step.isPlayed && step.actualChampionScore != null && (
+                    <span className={cn(
+                      "font-mono text-[9px]",
+                      step.actualChampionScore > step.actualOpponentScore!
+                        ? 'text-state-success'
+                        : 'text-state-danger',
+                    )}>
+                      Real: {step.actualChampionScore}-{step.actualOpponentScore}
+                    </span>
+                  )}
+                </div>
+                {/* Status indicator */}
+                {step.isPlayed && (
+                  step.actualChampionScore! > step.actualOpponentScore!
+                    ? <span className="text-state-success shrink-0">✓</span>
+                    : <span className="text-state-danger shrink-0">✗</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED BRACKET TAB (Phase 2 + 3)
+// ═══════════════════════════════════════════════════════════════
+function BracketTab({ bracket, legacyBracket, championPath, champion, championFlag, championProb, stats, getFlag }: {
+  bracket: any; legacyBracket: any; championPath: any[]; champion: string | null;
+  championFlag: string; championProb: number | null; stats: any; getFlag: (n: string) => string;
+}) {
+  if (!bracket && !legacyBracket) return (
+    <div className="p-8 text-center rounded-[var(--r-lg)] bg-[var(--match-card-scheduled)] border border-border-subtle">
+      <p className="text-xs text-fg-tertiary">📐 El bracket se generará con las simulaciones del torneo</p>
+    </div>
+  );
+
+  // Use predicted bracket data if available, otherwise fall back to sim bracket
+  const bracketData = bracket || legacyBracket;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Phase 4: Champion Path */}
+      <ChampionPathBanner
+        championPath={championPath}
+        champion={champion}
+        championFlag={championFlag}
+        championProb={championProb}
+        getFlag={getFlag}
+      />
+
+      {/* Accuracy stats bar */}
+      {stats && stats.played > 0 && (
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--match-card-scheduled)]/60 border border-border-subtle text-[10px]">
+          <span className="text-fg-secondary font-semibold">Precisión Bracket:</span>
+          <span className="text-state-success font-bold">{stats.correct}/{stats.played}</span>
+          <span className="text-fg-tertiary">({stats.accuracy != null ? `${stats.accuracy}%` : '—'})</span>
+          <span className="text-accent-premium font-mono">{stats.exact} 🎯</span>
+          <span className="text-state-danger font-mono">{stats.wrong} ✗</span>
+          <div className="flex-1 h-1.5 bg-raised rounded-full overflow-hidden hidden sm:block">
+            <div className="h-full bg-gradient-to-r from-state-success to-accent-premium rounded-full transition-all" style={{ width: `${stats.accuracy || 0}%` }} />
+          </div>
+        </div>
+      )}
+
       {/* Champion reveal */}
-      {bracket.champion && (
-        <div className="relative overflow-hidden p-6 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9MSBmaWxsPSIjODU0RDBFIiBmaWxsLW9wYWNpdHk9IjAuMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgZmlsbD0idXJsKCNnKSIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==')] opacity-50" />
+      {champion && (
+        <div className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50">
+          <div className="absolute inset-0 bg-gradient-to-br from-accent-premium/5 to-transparent pointer-events-none" />
           <div className="relative text-center">
-            <div className="text-5xl mb-2 animate-bounce">{bracket.championFlag || '🏆'}</div>
-            <div className="text-2xl font-black text-accent-premium tracking-wide">{bracket.champion}</div>
+            <div className="text-4xl mb-1 animate-bounce">{championFlag || '🏆'}</div>
+            <div className="text-xl font-black text-accent-premium tracking-wide">{champion}</div>
             <div className="text-[10px] text-[var(--match-gold-border)] uppercase tracking-[0.2em] mt-1">Campeón Mundial 2026</div>
-                {bracket.runnerUp && (
-              <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-                <span className="text-fg-secondary">🥈 {bracket.runnerUp}</span>
-                {bracket.thirdPlaceTeam && <span className="text-[var(--accent-premium)]">🥉 {bracket.thirdPlaceTeam}</span>}
-              </div>
+            {championProb != null && (
+              <div className="mt-1 text-[10px] text-accent-premium/80">{championProb}% de probabilidad</div>
             )}
           </div>
         </div>
@@ -663,31 +784,51 @@ function BracketTab({ bracket, getFlag }: { bracket: any; getFlag: (n: string) =
 
       {/* Bracket rounds — visual flow */}
       <div className="space-y-4">
-        {bracket.roundOf32?.length > 0 && (
-          <BracketRoundAesthetic title="1/16 Final" subtitle="32 equipos" matches={bracket.roundOf32} getFlag={getFlag} roundColor="from-accent-primary/20 to-accent-secondary/10" />
+        {bracketData.roundOf32?.length > 0 && (
+          <BracketRoundAesthetic
+            title="1/16 Final" subtitle="32 equipos"
+            matches={bracketData.roundOf32}
+            getFlag={getFlag}
+            roundColor="from-accent-primary/20 to-accent-secondary/10"
+          />
         )}
-        {bracket.roundOf16?.length > 0 && (
-          <BracketRoundAesthetic title="Octavos de Final" subtitle="16 equipos" matches={bracket.roundOf16} getFlag={getFlag} roundColor="from-accent-secondary/20 to-accent-primary/10" />
+        {bracketData.roundOf16?.length > 0 && (
+          <BracketRoundAesthetic
+            title="Octavos de Final" subtitle="16 equipos"
+            matches={bracketData.roundOf16}
+            getFlag={getFlag}
+            roundColor="from-accent-secondary/20 to-accent-primary/10"
+          />
         )}
-        {bracket.quarters?.length > 0 && (
-          <BracketRoundAesthetic title="Cuartos de Final" subtitle="8 equipos" matches={bracket.quarters} getFlag={getFlag} roundColor="from-accent-primary/20 to-accent-premium/10" />
+        {bracketData.quarters?.length > 0 && (
+          <BracketRoundAesthetic
+            title="Cuartos de Final" subtitle="8 equipos"
+            matches={bracketData.quarters}
+            getFlag={getFlag}
+            roundColor="from-accent-primary/20 to-accent-premium/10"
+          />
         )}
-        {bracket.semis?.length > 0 && (
-          <BracketRoundAesthetic title="Semifinales" subtitle="4 equipos" matches={bracket.semis} getFlag={getFlag} roundColor="from-accent-premium/20 to-accent-primary/10" />
+        {bracketData.semis?.length > 0 && (
+          <BracketRoundAesthetic
+            title="Semifinales" subtitle="4 equipos"
+            matches={bracketData.semis}
+            getFlag={getFlag}
+            roundColor="from-accent-premium/20 to-accent-primary/10"
+          />
         )}
-        {bracket.thirdPlace && (
+        {bracketData.thirdPlace && (
           <div className="p-4 rounded-xl bg-gradient-to-r from-accent-premium/10 to-state-warning/10 border border-accent-premium/20">
             <div className="text-[10px] text-accent-premium uppercase tracking-wider font-semibold mb-2">🥉 Tercer Puesto</div>
-            <BracketMatchCard match={bracket.thirdPlace} getFlag={getFlag} />
+            <PredictedBracketMatchCard match={bracketData.thirdPlace} getFlag={getFlag} />
           </div>
         )}
-        {bracket.final && (
+        {bracketData.final && (
           <div className="p-5 rounded-xl bg-gradient-to-r from-accent-premium/10 via-accent-premium/15 to-accent-premium/10 border border-accent-premium/30">
             <div className="text-center mb-3">
               <span className="text-xl">🏆</span>
               <div className="text-[10px] text-accent-premium uppercase tracking-[0.2em] font-bold">La Gran Final</div>
             </div>
-            <BracketMatchCard match={bracket.final} getFlag={getFlag} isFinal />
+            <PredictedBracketMatchCard match={bracketData.final} getFlag={getFlag} isFinal />
           </div>
         )}
       </div>
@@ -708,48 +849,99 @@ function BracketRoundAesthetic({ title, subtitle, matches, getFlag, roundColor }
         <span className="text-[10px] text-fg-tertiary font-mono">{matches.length} partidos</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {matches.map((m: any) => m && <BracketMatchCard key={m.id} match={m} getFlag={getFlag} />)}
+        {matches.map((m: any) => m && <PredictedBracketMatchCard key={m.id || Math.random()} match={m} getFlag={getFlag} />)}
       </div>
     </div>
   );
 }
 
-function BracketMatchCard({ match: m, getFlag, isFinal = false }: { match: any; getFlag: (n: string) => string; isFinal?: boolean }) {
+// ═══════════════════════════════════════════════════════════════
+// PREDICTED BRACKET MATCH CARD (Phase 2) — shows predicted + actual side-by-side
+// ═══════════════════════════════════════════════════════════════
+function PredictedBracketMatchCard({ match: m, getFlag, isFinal = false }: { match: any; getFlag: (n: string) => string; isFinal?: boolean }) {
   if (!m) return null;
-  const played = m.isPlayed || m.homeScore != null;
-  const homeWin = played && m.winner === m.homeTeam;
-  const awayWin = played && m.winner === m.awayTeam;
+
+  // Determine which fields to use: predicted-bracket format vs legacy sim format
+  const usesPredictedFormat = m.predictedHomeScore !== undefined;
+
+  const homeTeam = m.homeTeam;
+  const awayTeam = m.awayTeam;
+  const predHome = usesPredictedFormat ? m.predictedHomeScore : m.homeScore;
+  const predAway = usesPredictedFormat ? m.predictedAwayScore : m.awayScore;
+  const actualHome = usesPredictedFormat ? m.actualHomeScore : (m.isPlayed ? m.homeScore : null);
+  const actualAway = usesPredictedFormat ? m.actualAwayScore : (m.isPlayed ? m.awayScore : null);
+  const isPlayed = usesPredictedFormat ? m.isPlayed : (m.isPlayed || m.homeScore != null);
+  const status = usesPredictedFormat ? m.status : 'predicted';
+  const predictedWinner = usesPredictedFormat ? m.predictedWinner : null;
+
+  const homeWin = isPlayed && (actualHome! > actualAway!);
+  const awayWin = isPlayed && (actualAway! > actualHome!);
+
+  // Card styling based on status
+  const getCardStyle = () => {
+    if (isFinal) return 'bg-[var(--match-gold-bg)]/80 border-[var(--match-gold-border)]/40';
+    if (!isPlayed) return 'bg-[var(--match-card-scheduled)]/60 border-border-subtle/60';
+    switch (status) {
+      case 'exact': return 'bg-[var(--match-correct-bg)]/50 border-[var(--match-correct-border)]/40';
+      case 'correct': return 'bg-[var(--match-partial-bg)]/50 border-[var(--match-partial-border)]/40';
+      case 'wrong': return 'bg-[var(--match-wrong-bg)]/50 border-[var(--match-wrong-border)]/40';
+      default: return 'bg-surface/80 border-border-subtle';
+    }
+  };
 
   return (
-    <div className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${
-      isFinal ? 'bg-[var(--match-gold-bg)]/80 border-[var(--match-gold-border)]/40' :
-      played ? 'bg-surface/80 border-border-subtle' : 'bg-[var(--match-card-scheduled)]/60 border-border-subtle/60'
-    }`}>
-      <div className="flex items-center gap-1.5 min-w-0 w-[40%]">
-        <span className="text-base shrink-0">{getFlag(m.homeTeam)}</span>
-        <span className={`truncate ${homeWin ? 'font-bold text-[var(--match-correct-text)]' : played && !homeWin ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
-          {m.homeTeam}
+    <div className={`flex items-center justify-between p-2.5 rounded-lg border text-xs ${getCardStyle()}`}>
+      {/* Home team */}
+      <div className="flex items-center gap-1.5 min-w-0 w-[36%]">
+        <span className="text-base shrink-0">{getFlag(homeTeam)}</span>
+        <span className={`truncate ${homeWin ? 'font-bold text-[var(--match-correct-text)]' : isPlayed && !homeWin ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
+          {homeTeam}
         </span>
       </div>
-      <div className="shrink-0 px-2 text-center">
-        {played ? (
-          <span className={`font-mono font-bold ${isFinal ? 'text-lg text-accent-premium' : 'text-sm'} ${
-            homeWin ? 'text-[var(--match-correct-text)]' : awayWin ? 'text-[var(--match-correct-text)]' : 'text-state-warning'
-          }`}>
-            {m.homeScore} - {m.awayScore}
+
+      {/* Score block — vertical: predicted + actual */}
+      <div className="shrink-0 px-1 text-center flex flex-col items-center gap-0.5">
+        {/* Actual score (if played) */}
+        {isPlayed && actualHome != null && actualAway != null ? (
+          <span className={cn(
+            "font-mono font-bold text-sm px-2 py-0.5 rounded-[var(--r-sm)]",
+            isFinal ? 'text-lg text-accent-premium' : 'text-sm',
+            homeWin ? 'bg-[var(--match-correct-score)]/30 text-[var(--match-correct-text)]' : awayWin ? 'bg-[var(--match-correct-score)]/30 text-[var(--match-correct-text)]' : 'bg-raised text-fg-primary',
+          )}>
+            {actualHome} - {actualAway}
           </span>
         ) : (
-          <span className="text-fg-disabled font-mono">vs</span>
+          <span className="text-fg-disabled font-mono text-sm">vs</span>
         )}
-        {!played && m.homeWinProb != null && (
-          <div className="text-[9px] text-fg-tertiary mt-0.5">{m.homeWinProb}%</div>
+
+        {/* Predicted score (always shown) */}
+        {predHome != null && predAway != null && (
+          <span className={`text-[9px] font-mono tabular-nums ${isPlayed ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
+            {isPlayed ? `Pred: ${predHome}-${predAway}` : `${predHome}-${predAway}`}
+          </span>
+        )}
+
+        {/* Probability for unplayed matches */}
+        {!isPlayed && m.homeWinProb != null && (
+          <span className="text-[9px] text-fg-tertiary">{m.homeWinProb}%</span>
         )}
       </div>
-      <div className="flex items-center gap-1.5 min-w-0 w-[40%] justify-end">
-        <span className={`truncate text-right ${awayWin ? 'font-bold text-[var(--match-correct-text)]' : played && !awayWin ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
-          {m.awayTeam}
+
+      {/* Status icon for played matches */}
+      {isPlayed && (
+        <div className="shrink-0">
+          {status === 'exact' && <span className="text-state-success text-sm">✓</span>}
+          {status === 'correct' && <span className="text-state-success/70 text-sm">~</span>}
+          {status === 'wrong' && <span className="text-state-danger text-sm">✗</span>}
+        </div>
+      )}
+
+      {/* Away team */}
+      <div className="flex items-center gap-1.5 min-w-0 w-[36%] justify-end">
+        <span className={`truncate text-right ${awayWin ? 'font-bold text-[var(--match-correct-text)]' : isPlayed && !awayWin ? 'text-fg-tertiary' : 'text-fg-secondary'}`}>
+          {awayTeam}
         </span>
-        <span className="text-base shrink-0">{getFlag(m.awayTeam)}</span>
+        <span className="text-base shrink-0">{getFlag(awayTeam)}</span>
       </div>
     </div>
   );
