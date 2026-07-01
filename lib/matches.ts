@@ -200,55 +200,84 @@ const GROUP_L: Match[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// KNOCKOUT STAGE — Round of 32 (48 teams → 24 + 8 best 3rd)
+// KNOCKOUT STAGE — Round of 32
+// BRACKET ALINEADO CON FIFA API (fuente única de verdad)
+// Emparejamientos según PlaceHolderA/PlaceHolderB de la API
+// ═══════════════════════════════════════════════════════════════
+//
+// Ordenado por cascada: R32-1+R32-2 → R16-1, R32-3+R32-4 → R16-2 ...
+//
+// R16-1 = W-R32-1(1E vs 3ABCDF)   vs W-R32-2(1I vs 3CDFGH)    [FIFA R16-89]
+// R16-2 = W-R32-3(2A vs 2B)       vs W-R32-4(1F vs 2C)        [FIFA R16-90]
+// R16-3 = W-R32-5(1C vs 2F)       vs W-R32-6(2E vs 2I)        [FIFA R16-91]
+// R16-4 = W-R32-7(1A vs 3CEFHI)   vs W-R32-8(1L vs 3EHIJK)    [FIFA R16-92]
+// R16-5 = W-R32-9(2K vs 2L)       vs W-R32-10(1H vs 2J)       [FIFA R16-93]
+// R16-6 = W-R32-11(1D vs 3BEFIJ)  vs W-R32-12(1G vs 3AEHIJ)   [FIFA R16-94]
+// R16-7 = W-R32-13(1J vs 2H)      vs W-R32-14(2D vs 2G)       [FIFA R16-95]
+// R16-8 = W-R32-15(1B vs 3EFGIJ)  vs W-R32-16(1K vs 3DEIJL)   [FIFA R16-96]
+//
+// QF-1 = W-R16-1 vs W-R16-2   QF-2 = W-R16-5 vs W-R16-6
+// QF-3 = W-R16-3 vs W-R16-4   QF-4 = W-R16-7 vs W-R16-8
+// (QF-2 y QF-3 intercambiados vs viejo bracket para coincidir con FIFA)
 // ═══════════════════════════════════════════════════════════════
 
 const ROUND_OF_32: Match[] = [
-  // June 28-29: R32-1 to R32-8
-  { id: 'R32-1', group: 'R32', matchday: 1, date: '2026-06-28', time: '16:00', homeTeam: '1A', awayTeam: '3B/3E/3F/3G', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
-  { id: 'R32-2', group: 'R32', matchday: 1, date: '2026-06-28', time: '18:00', homeTeam: '1C', awayTeam: '3A/3B/3C/3D', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
-  { id: 'R32-3', group: 'R32', matchday: 1, date: '2026-06-28', time: '20:00', homeTeam: '1E', awayTeam: '3D/3E/3F', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-32' },
-  { id: 'R32-4', group: 'R32', matchday: 1, date: '2026-06-28', time: '22:00', homeTeam: '1G', awayTeam: '3C/3G/3H', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-32' },
-  { id: 'R32-5', group: 'R32', matchday: 1, date: '2026-06-29', time: '16:00', homeTeam: '1B', awayTeam: '3A/3B/3C', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-32' },
-  { id: 'R32-6', group: 'R32', matchday: 1, date: '2026-06-29', time: '18:00', homeTeam: '1D', awayTeam: '3D/3E/3F', homeCode: '', awayCode: '', venue: 'Lincoln Financial Field', city: 'Philadelphia', round: 'round-32' },
-  { id: 'R32-7', group: 'R32', matchday: 1, date: '2026-06-29', time: '20:00', homeTeam: '1F', awayTeam: '3A/3B/3C', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'round-32' },
-  { id: 'R32-8', group: 'R32', matchday: 1, date: '2026-06-29', time: '22:00', homeTeam: '1H', awayTeam: '3G/3H/3A', homeCode: '', awayCode: '', venue: 'Estadio Azteca', city: 'Mexico City', round: 'round-32' },
-
-  // June 30 - July 1: R32-9 to R32-16
-  { id: 'R32-9', group: 'R32', matchday: 2, date: '2026-06-30', time: '16:00', homeTeam: '2A', awayTeam: '2B', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
-  { id: 'R32-10', group: 'R32', matchday: 2, date: '2026-06-30', time: '18:00', homeTeam: '2C', awayTeam: '2D', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
-  { id: 'R32-11', group: 'R32', matchday: 2, date: '2026-06-30', time: '20:00', homeTeam: '2E', awayTeam: '2F', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-32' },
-  { id: 'R32-12', group: 'R32', matchday: 2, date: '2026-06-30', time: '22:00', homeTeam: '2G', awayTeam: '2H', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-32' },
-  { id: 'R32-13', group: 'R32', matchday: 2, date: '2026-07-01', time: '16:00', homeTeam: '1I', awayTeam: '3I/3J/3K/3L', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-32' },
-  { id: 'R32-14', group: 'R32', matchday: 2, date: '2026-07-01', time: '18:00', homeTeam: '1J', awayTeam: '3I/3J/3K/3L', homeCode: '', awayCode: '', venue: 'Arrowhead Stadium', city: 'Kansas City', round: 'round-32' },
-  { id: 'R32-15', group: 'R32', matchday: 2, date: '2026-07-01', time: '20:00', homeTeam: '1K', awayTeam: '3K/3L/3I', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-32' },
-  { id: 'R32-16', group: 'R32', matchday: 2, date: '2026-07-01', time: '22:00', homeTeam: '1L', awayTeam: '3J/3K/3L', homeCode: '', awayCode: '', venue: 'BMO Field', city: 'Toronto', round: 'round-32' },
+  // ── Ronda 1: 1E+3ABCDF vs 1I+3CDFGH (ganadores → R16-1) ──
+  { id: 'R32-1', group: 'R32', matchday: 1, date: '2026-06-29', time: '20:30', homeTeam: '1E', awayTeam: '3ABCDF', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
+  { id: 'R32-2', group: 'R32', matchday: 1, date: '2026-06-30', time: '21:00', homeTeam: '1I', awayTeam: '3CDFGH', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
+  // ── Ronda 2: 2A+2B vs 1F+2C (ganadores → R16-2) ──
+  { id: 'R32-3', group: 'R32', matchday: 1, date: '2026-06-28', time: '19:00', homeTeam: '2A', awayTeam: '2B', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
+  { id: 'R32-4', group: 'R32', matchday: 1, date: '2026-06-30', time: '01:00', homeTeam: '1F', awayTeam: '2C', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-32' },
+  // ── Ronda 3: 1C+2F vs 2E+2I (ganadores → R16-3) ──
+  { id: 'R32-5', group: 'R32', matchday: 1, date: '2026-06-29', time: '17:00', homeTeam: '1C', awayTeam: '2F', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-32' },
+  { id: 'R32-6', group: 'R32', matchday: 1, date: '2026-06-30', time: '17:00', homeTeam: '2E', awayTeam: '2I', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
+  // ── Ronda 4: 1A+3CEFHI vs 1L+3EHIJK (ganadores → R16-4) ──
+  { id: 'R32-7', group: 'R32', matchday: 2, date: '2026-07-01', time: '02:00', homeTeam: '1A', awayTeam: '3CEFHI', homeCode: '', awayCode: '', venue: 'Estadio Azteca', city: 'Mexico City', round: 'round-32' },
+  { id: 'R32-8', group: 'R32', matchday: 2, date: '2026-07-01', time: '16:00', homeTeam: '1L', awayTeam: '3EHIJK', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-32' },
+  // ── Ronda 5: 2K+2L vs 1H+2J (ganadores → R16-5) ──
+  { id: 'R32-9', group: 'R32', matchday: 2, date: '2026-07-02', time: '23:00', homeTeam: '2K', awayTeam: '2L', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-32' },
+  { id: 'R32-10', group: 'R32', matchday: 2, date: '2026-07-02', time: '19:00', homeTeam: '1H', awayTeam: '2J', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
+  // ── Ronda 6: 1D+3BEFIJ vs 1G+3AEHIJ (ganadores → R16-6) ──
+  { id: 'R32-11', group: 'R32', matchday: 2, date: '2026-07-02', time: '00:00', homeTeam: '1D', awayTeam: '3BEFIJ', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-32' },
+  { id: 'R32-12', group: 'R32', matchday: 2, date: '2026-07-01', time: '20:00', homeTeam: '1G', awayTeam: '3AEHIJ', homeCode: '', awayCode: '', venue: 'Lumen Field', city: 'Seattle', round: 'round-32' },
+  // ── Ronda 7: 1J+2H vs 2D+2G (ganadores → R16-7) ──
+  { id: 'R32-13', group: 'R32', matchday: 2, date: '2026-07-03', time: '22:00', homeTeam: '1J', awayTeam: '2H', homeCode: '', awayCode: '', venue: 'Arrowhead Stadium', city: 'Kansas City', round: 'round-32' },
+  { id: 'R32-14', group: 'R32', matchday: 2, date: '2026-07-03', time: '18:00', homeTeam: '2D', awayTeam: '2G', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-32' },
+  // ── Ronda 8: 1B+3EFGIJ vs 1K+3DEIJL (ganadores → R16-8) ──
+  { id: 'R32-15', group: 'R32', matchday: 2, date: '2026-07-03', time: '03:00', homeTeam: '1B', awayTeam: '3EFGIJ', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-32' },
+  { id: 'R32-16', group: 'R32', matchday: 2, date: '2026-07-04', time: '01:30', homeTeam: '1K', awayTeam: '3DEIJL', homeCode: '', awayCode: '', venue: 'Arrowhead Stadium', city: 'Kansas City', round: 'round-32' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// ROUND OF 16 (16 matches → 8 winners)
+// ROUND OF 16
 // ═══════════════════════════════════════════════════════════════
 
 const ROUND_OF_16: Match[] = [
-  { id: 'R16-1', group: 'R16', matchday: 1, date: '2026-07-04', time: '16:00', homeTeam: 'W-R32-1', awayTeam: 'W-R32-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-16' },
-  { id: 'R16-2', group: 'R16', matchday: 1, date: '2026-07-04', time: '18:00', homeTeam: 'W-R32-3', awayTeam: 'W-R32-4', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-16' },
-  { id: 'R16-3', group: 'R16', matchday: 1, date: '2026-07-04', time: '20:00', homeTeam: 'W-R32-5', awayTeam: 'W-R32-6', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-16' },
-  { id: 'R16-4', group: 'R16', matchday: 1, date: '2026-07-04', time: '22:00', homeTeam: 'W-R32-7', awayTeam: 'W-R32-8', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'round-16' },
-  { id: 'R16-5', group: 'R16', matchday: 1, date: '2026-07-05', time: '16:00', homeTeam: 'W-R32-9', awayTeam: 'W-R32-10', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-16' },
-  { id: 'R16-6', group: 'R16', matchday: 1, date: '2026-07-05', time: '18:00', homeTeam: 'W-R32-11', awayTeam: 'W-R32-12', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-16' },
-  { id: 'R16-7', group: 'R16', matchday: 1, date: '2026-07-05', time: '20:00', homeTeam: 'W-R32-13', awayTeam: 'W-R32-14', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-16' },
-  { id: 'R16-8', group: 'R16', matchday: 1, date: '2026-07-05', time: '22:00', homeTeam: 'W-R32-15', awayTeam: 'W-R32-16', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-16' },
+  { id: 'R16-1', group: 'R16', matchday: 1, date: '2026-07-04', time: '21:00', homeTeam: 'W-R32-1', awayTeam: 'W-R32-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-16' },
+  { id: 'R16-2', group: 'R16', matchday: 1, date: '2026-07-04', time: '17:00', homeTeam: 'W-R32-3', awayTeam: 'W-R32-4', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-16' },
+  { id: 'R16-3', group: 'R16', matchday: 1, date: '2026-07-05', time: '20:00', homeTeam: 'W-R32-5', awayTeam: 'W-R32-6', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-16' },
+  { id: 'R16-4', group: 'R16', matchday: 1, date: '2026-07-06', time: '00:00', homeTeam: 'W-R32-7', awayTeam: 'W-R32-8', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'round-16' },
+  { id: 'R16-5', group: 'R16', matchday: 1, date: '2026-07-06', time: '19:00', homeTeam: 'W-R32-9', awayTeam: 'W-R32-10', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-16' },
+  { id: 'R16-6', group: 'R16', matchday: 1, date: '2026-07-07', time: '00:00', homeTeam: 'W-R32-11', awayTeam: 'W-R32-12', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-16' },
+  { id: 'R16-7', group: 'R16', matchday: 1, date: '2026-07-07', time: '16:00', homeTeam: 'W-R32-13', awayTeam: 'W-R32-14', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-16' },
+  { id: 'R16-8', group: 'R16', matchday: 1, date: '2026-07-07', time: '20:00', homeTeam: 'W-R32-15', awayTeam: 'W-R32-16', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-16' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// QUARTERFINALS (4 matches → 4 winners)
+// QUARTERFINALS
+// NOTA: QF-2 y QF-3 intercambiados respecto al bracket viejo
+// para coincidir con la cascada real de la FIFA:
+//   QF-1 = W-R16-1 vs W-R16-2  → W97
+//   QF-2 = W-R16-5 vs W-R16-6  → W98  (swap!)
+//   QF-3 = W-R16-3 vs W-R16-4  → W99  (swap!)
+//   QF-4 = W-R16-7 vs W-R16-8  → W100
 // ═══════════════════════════════════════════════════════════════
 
 const QUARTERFINALS: Match[] = [
-  { id: 'QF-1', group: 'QF', matchday: 1, date: '2026-07-09', time: '19:00', homeTeam: 'W-R16-1', awayTeam: 'W-R16-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'quarter' },
-  { id: 'QF-2', group: 'QF', matchday: 1, date: '2026-07-09', time: '22:00', homeTeam: 'W-R16-3', awayTeam: 'W-R16-4', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'quarter' },
-  { id: 'QF-3', group: 'QF', matchday: 1, date: '2026-07-10', time: '19:00', homeTeam: 'W-R16-5', awayTeam: 'W-R16-6', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'quarter' },
-  { id: 'QF-4', group: 'QF', matchday: 1, date: '2026-07-10', time: '22:00', homeTeam: 'W-R16-7', awayTeam: 'W-R16-8', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'quarter' },
+  { id: 'QF-1', group: 'QF', matchday: 1, date: '2026-07-09', time: '20:00', homeTeam: 'W-R16-1', awayTeam: 'W-R16-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'quarter' },
+  { id: 'QF-2', group: 'QF', matchday: 1, date: '2026-07-10', time: '19:00', homeTeam: 'W-R16-5', awayTeam: 'W-R16-6', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'quarter' },
+  { id: 'QF-3', group: 'QF', matchday: 1, date: '2026-07-11', time: '21:00', homeTeam: 'W-R16-3', awayTeam: 'W-R16-4', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'quarter' },
+  { id: 'QF-4', group: 'QF', matchday: 1, date: '2026-07-12', time: '01:00', homeTeam: 'W-R16-7', awayTeam: 'W-R16-8', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'quarter' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -265,11 +294,11 @@ const SEMIFINALS: Match[] = [
 // ═══════════════════════════════════════════════════════════════
 
 const THIRD_PLACE: Match[] = [
-  { id: '3rd', group: 'Final', matchday: 1, date: '2026-07-18', time: '18:00', homeTeam: 'L-SF-1', awayTeam: 'L-SF-2', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'third' },
+  { id: '3rd', group: 'Final', matchday: 1, date: '2026-07-18', time: '21:00', homeTeam: 'L-SF-1', awayTeam: 'L-SF-2', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'third' },
 ];
 
 const FINAL: Match[] = [
-  { id: 'Final', group: 'Final', matchday: 1, date: '2026-07-19', time: '17:00', homeTeam: 'W-SF-1', awayTeam: 'W-SF-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'final' },
+  { id: 'Final', group: 'Final', matchday: 1, date: '2026-07-19', time: '19:00', homeTeam: 'W-SF-1', awayTeam: 'W-SF-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'final' },
 ];
 
 // ═══════════════════════════════════════════════════════════════

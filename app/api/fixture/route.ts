@@ -1028,23 +1028,25 @@ function simulateKnockoutPhase(
   // ROUND OF 32 — 16 matches
   // ═══════════════════════════════════════════════════
 
+  // ALINEADO CON FIFA API — bracket cascade real de WC2026
+  // Ordenado por cascada: R32-1+R32-2 → R16-1, R32-3+R32-4 → R16-2 ...
   const r32Slots = [
-    { id: 'R32-1', home: '1A', away: '3B/3E/3F/3G' },
-    { id: 'R32-2', home: '1C', away: '3A/3B/3C/3D' },
-    { id: 'R32-3', home: '1E', away: '3D/3E/3F' },
-    { id: 'R32-4', home: '1G', away: '3C/3G/3H' },
-    { id: 'R32-5', home: '1B', away: '3A/3B/3C' },
-    { id: 'R32-6', home: '1D', away: '3D/3E/3F' },
-    { id: 'R32-7', home: '1F', away: '3A/3B/3C' },
-    { id: 'R32-8', home: '1H', away: '3G/3H/3A' },
-    { id: 'R32-9', home: '2A', away: '2B' },
-    { id: 'R32-10', home: '2C', away: '2D' },
-    { id: 'R32-11', home: '2E', away: '2F' },
-    { id: 'R32-12', home: '2G', away: '2H' },
-    { id: 'R32-13', home: '1I', away: '3I/3J/3K/3L' },
-    { id: 'R32-14', home: '1J', away: '3I/3J/3K/3L' },
-    { id: 'R32-15', home: '1K', away: '3K/3L/3I' },
-    { id: 'R32-16', home: '1L', away: '3J/3K/3L' },
+    { id: 'R32-1', home: '1E', away: '3ABCDF' },
+    { id: 'R32-2', home: '1I', away: '3CDFGH' },
+    { id: 'R32-3', home: '2A', away: '2B' },
+    { id: 'R32-4', home: '1F', away: '2C' },
+    { id: 'R32-5', home: '1C', away: '2F' },
+    { id: 'R32-6', home: '2E', away: '2I' },
+    { id: 'R32-7', home: '1A', away: '3CEFHI' },
+    { id: 'R32-8', home: '1L', away: '3EHIJK' },
+    { id: 'R32-9', home: '2K', away: '2L' },
+    { id: 'R32-10', home: '1H', away: '2J' },
+    { id: 'R32-11', home: '1D', away: '3BEFIJ' },
+    { id: 'R32-12', home: '1G', away: '3AEHIJ' },
+    { id: 'R32-13', home: '1J', away: '2H' },
+    { id: 'R32-14', home: '2D', away: '2G' },
+    { id: 'R32-15', home: '1B', away: '3EFGIJ' },
+    { id: 'R32-16', home: '1K', away: '3DEIJL' },
   ];
 
   for (const slot of r32Slots) {
@@ -1101,10 +1103,11 @@ function simulateKnockoutPhase(
   // QUARTERFINALS — 4 matches
   // ═══════════════════════════════════════════════════
 
+  // ALINEADO CON FIFA API: QF-2 = W-R16-5/6, QF-3 = W-R16-3/4 (swap!)
   const qfSlots = [
     { id: 'QF-1', home: 'W-R16-1', away: 'W-R16-2' },
-    { id: 'QF-2', home: 'W-R16-3', away: 'W-R16-4' },
-    { id: 'QF-3', home: 'W-R16-5', away: 'W-R16-6' },
+    { id: 'QF-2', home: 'W-R16-5', away: 'W-R16-6' },
+    { id: 'QF-3', home: 'W-R16-3', away: 'W-R16-4' },
     { id: 'QF-4', home: 'W-R16-7', away: 'W-R16-8' },
   ];
 
