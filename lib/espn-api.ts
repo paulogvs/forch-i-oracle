@@ -2,51 +2,15 @@
 // Free, no API key required
 // Source: https://github.com/pseudo-r/Public-ESPN-API
 // Covers: live scores, standings, odds, play-by-play, rosters, injuries
+//
+// NAME MAPPING: Usa mapToSpanish() y mapToCode() de lib/teams.ts
+// (fuente única de verdad — NO mantener mapas locales)
+
+import { mapToSpanish, mapToCode } from './teams';
 
 const ESPN_SITE = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 const ESPN_CORE = 'https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world';
 const ESPN_STANDINGS = 'https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings';
-
-// ═══════════════════════════════════════════════════════════════
-// TEAM NAME NORMALIZATION (ESPN English → Spanish)
-// ═══════════════════════════════════════════════════════════════
-
-const ESPN_TO_SPANISH: Record<string, string> = {
-  'Mexico': 'México', 'South Africa': 'Sudáfrica', 'South Korea': 'Corea del Sur',
-  'Czechia': 'Chequia', 'Czech Republic': 'Chequia', 'Canada': 'Canadá',
-  'Bosnia-Herzegovina': 'Bosnia y Herzegovina', 'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
-  'Qatar': 'Qatar', 'Switzerland': 'Suiza', 'Brazil': 'Brasil', 'Morocco': 'Marruecos',
-  'Haiti': 'Haití', 'Scotland': 'Escocia', 'United States': 'Estados Unidos',
-  'USA': 'Estados Unidos', 'Paraguay': 'Paraguay', 'Australia': 'Australia',
-  'Turkey': 'Turquía', 'Türkiye': 'Turquía', 'Germany': 'Alemania',
-  'Curacao': 'Curazao', 'Curaçao': 'Curazao', 'Ivory Coast': 'Costa de Marfil',
-  'Ecuador': 'Ecuador', 'Netherlands': 'Países Bajos', 'Japan': 'Japón',
-  'Sweden': 'Suecia', 'Tunisia': 'Túnez', 'Belgium': 'Bélgica', 'Egypt': 'Egipto',
-  'Iran': 'Irán', 'New Zealand': 'Nueva Zelanda', 'Spain': 'España',
-  'Cape Verde': 'Cabo Verde', 'Saudi Arabia': 'Arabia Saudita', 'Uruguay': 'Uruguay',
-  'France': 'Francia', 'Senegal': 'Senegal', 'Iraq': 'Irak', 'Norway': 'Noruega',
-  'Argentina': 'Argentina', 'Algeria': 'Argelia', 'Austria': 'Austria',
-  'Jordan': 'Jordania', 'Portugal': 'Portugal', 'DR Congo': 'RD Congo',
-  'Uzbekistan': 'Uzbekistán', 'Colombia': 'Colombia', 'England': 'Inglaterra',
-  'Croatia': 'Croacia', 'Ghana': 'Ghana', 'Panama': 'Panamá',
-  'Korea Republic': 'Corea del Sur', 'Korea DPR': 'Corea del Norte',
-};
-
-// Reverse: Spanish → ESPN abbreviation
-const SPANISH_TO_ESPN_ABBR: Record<string, string> = {
-  'México': 'MEX', 'Sudáfrica': 'RSA', 'Corea del Sur': 'KOR', 'Chequia': 'CZE',
-  'Canadá': 'CAN', 'Bosnia y Herzegovina': 'BIH', 'Qatar': 'QAT', 'Suiza': 'SUI',
-  'Brasil': 'BRA', 'Marruecos': 'MAR', 'Haití': 'HTI', 'Escocia': 'SCO',
-  'Estados Unidos': 'USA', 'Paraguay': 'PAR', 'Australia': 'AUS', 'Turquía': 'TUR',
-  'Alemania': 'GER', 'Curazao': 'CUW', 'Costa de Marfil': 'CIV', 'Ecuador': 'ECU',
-  'Países Bajos': 'NED', 'Japón': 'JPN', 'Suecia': 'SWE', 'Túnez': 'TUN',
-  'Bélgica': 'BEL', 'Egipto': 'EGY', 'Irán': 'IRN', 'Nueva Zelanda': 'NZL',
-  'España': 'ESP', 'Cabo Verde': 'CPV', 'Arabia Saudita': 'KSA', 'Uruguay': 'URU',
-  'Francia': 'FRA', 'Senegal': 'SEN', 'Irak': 'IRQ', 'Noruega': 'NOR',
-  'Argentina': 'ARG', 'Argelia': 'ALG', 'Austria': 'AUT', 'Jordania': 'JOR',
-  'Portugal': 'POR', 'RD Congo': 'COD', 'Uzbekistán': 'UZB', 'Colombia': 'COL',
-  'Inglaterra': 'ENG', 'Croacia': 'CRO', 'Ghana': 'GHA', 'Panamá': 'PAN',
-};
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -454,12 +418,20 @@ export async function fetchESPNInjuries(teamAbbr: string): Promise<ESPNInjury[]>
 // TEAM NAME CONVERSION HELPERS
 // ═══════════════════════════════════════════════════════════════
 
+/**
+ * Convert ESPN English name to Spanish canónico (usa mapa unificado).
+ * @deprecated Usar mapToSpanish() de lib/teams.ts directamente si es posible
+ */
 export function espnNameToSpanish(englishName: string): string {
-  return ESPN_TO_SPANISH[englishName] || englishName;
+  return mapToSpanish(englishName) || englishName;
 }
 
+/**
+ * Convert Spanish name → FIFA country code (no ESPN abbreviation).
+ * @deprecated Usar mapToCode() de lib/teams.ts directamente
+ */
 export function spanishToESPNAbbreviation(spanishName: string): string {
-  return SPANISH_TO_ESPN_ABBR[spanishName] || '';
+  return mapToCode(spanishName) || '';
 }
 
 // ═══════════════════════════════════════════════════════════════

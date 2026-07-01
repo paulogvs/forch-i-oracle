@@ -227,98 +227,186 @@ export const POWER_RATINGS: Record<string, { attack: number; defense: number; mi
   'Panamá': { attack: 52, defense: 54, midfield: 50 },
 };
 
-// Lookup: Spanish name → English API name (derived from team data, not hardcoded)
-const englishNameMap = new Map<string, string>(
-  WORLD_CUP_TEAMS.map((t) => [t.name.toLowerCase(), t.englishName])
-);
+// ═══════════════════════════════════════════════════════════════
+// FUENTE ÚNICA DE VERDAD — MAPA DE NOMBRES UNIFICADO
+// ═══════════════════════════════════════════════════════════════
+// Esta sección reemplaza TODOS los mapas dispersos en:
+//   - lib/worldcup26-api.ts (FIFA_CODE_TO_SPANISH, FIFA_CODE_TO_ID)
+//   - lib/espn-api.ts (ESPN_TO_SPANISH, SPANISH_TO_ESPN_ABBR)
+//   - app/api/cron/ingest/route.ts (NAME_ALIASES)
+//   - lib/teams.ts anterior (_fdBase, ALIASES)
+//
+// CUALQUIER variante de nombre (ES, EN, FIFA code, alias API)
+// resuelve al nombre español canónico. Usar siempre mapToSpanish()
+// en lugar de buscar en WORLD_CUP_TEAMS directamente.
 
-const starPlayerMap = new Map<string, string[]>(
-  WORLD_CUP_TEAMS.map((t) => [t.name.toLowerCase(), t.starPlayers])
-);
+// 1. Construir mapa: cualquier variante → nombre español canónico
+const _allVariants = new Map<string, string>();
 
-/**
- * Convert a Spanish team name to the English name used by API-Football.
- * Falls back to the original name if not found.
- */
-export function getTeamEnglishName(spanishName: string): string {
-  return englishNameMap.get(spanishName.toLowerCase()) || spanishName;
+// Inicializar desde WORLD_CUP_TEAMS
+for (const team of WORLD_CUP_TEAMS) {
+  _allVariants.set(team.name.toLowerCase(), team.name);
+  _allVariants.set(team.englishName.toLowerCase(), team.name);
+  _allVariants.set(team.code.toLowerCase(), team.name);
 }
 
-// ═══ UNIFIED NAME MAP: football-data.org English → Our Spanish ═══
-// Single source of truth — derived from WORLD_CUP_TEAMS + aliases
-// Use this instead of hand-written maps in fixture/route.ts, live-scores/route.ts, etc.
-const _fdBase = new Map<string, string>(
-  WORLD_CUP_TEAMS.map((t) => [t.englishName, t.name])
-);
-// football-data.org / openfootball aliases that differ from englishName
-const ALIASES: Record<string, string> = {
+// 2. Aliases adicionales de APIs externas (consolidado de TODAS las fuentes)
+const API_ALIASES: Record<string, string> = {
+  // football-data.org / openfootball
   'Türkiye': 'Turquía',
   'Turkey': 'Turquía',
-  'Côte d\'Ivoire': 'Costa de Marfil',
+  "Côte d'Ivoire": 'Costa de Marfil',
   'Bosnia & Herzegovina': 'Bosnia y Herzegovina',
   'Czechia': 'Chequia',
   'Cape Verde Islands': 'Cabo Verde',
   'Curaçao': 'Curazao',
   'Korea Republic': 'Corea del Sur',
   'Korea DR': 'Corea del Sur',
-  'USA': 'Estados Unidos',
+  'Congo DR': 'RD Congo',
   'Haití': 'Haití',
   'Mexico': 'México',
-  'Congo DR': 'RD Congo',
+  // ESPN
+  'United States': 'Estados Unidos',
+  'Bosnia-Herzegovina': 'Bosnia y Herzegovina',
+  'Bosnia and Herzegovina': 'Bosnia y Herzegovina',
+  'Czech Republic': 'Chequia',
+  'South Korea': 'Corea del Sur',
+  'Saudi Arabia': 'Arabia Saudita',
+  'South Africa': 'Sudáfrica',
+  'Cape Verde': 'Cabo Verde',
+  'Curacao': 'Curazao',
+  'Ivory Coast': 'Costa de Marfil',
+  'DR Congo': 'RD Congo',
+  'Korea DPR': 'Corea del Norte',
+  // API-Football adicionales
+  'Poland': 'Polonia',
+  'Italy': 'Italia',
+  'Denmark': 'Dinamarca',
+  'Serbia': 'Serbia',
+  'Hungary': 'Hungría',
+  'Greece': 'Grecia',
+  'Ukraine': 'Ucrania',
+  'Ireland': 'Irlanda',
+  'Jamaica': 'Jamaica',
+  'Costa Rica': 'Costa Rica',
+  'Honduras': 'Honduras',
+  'Guatemala': 'Guatemala',
+  'Bolivia': 'Bolivia',
+  'Romania': 'Rumanía',
+  'India': 'India',
+  'China': 'China',
+  'Nigeria': 'Nigeria',
+  'Cameroon': 'Camerún',
+  'Chile': 'Chile',
+  'Peru': 'Perú',
+  'Venezuela': 'Venezuela',
 };
-for (const [alias, target] of Object.entries(ALIASES)) {
-  if (!_fdBase.has(alias)) _fdBase.set(alias, target);
+
+for (const [alias, spanish] of Object.entries(API_ALIASES)) {
+  if (!_allVariants.has(alias.toLowerCase())) {
+    _allVariants.set(alias.toLowerCase(), spanish);
+  }
 }
 
+// 3. Mapas inversos
+const _spanishToEnglish = new Map<string, string>(
+  WORLD_CUP_TEAMS.map(t => [t.name.toLowerCase(), t.englishName])
+);
+
+const _spanishToCode = new Map<string, string>(
+  WORLD_CUP_TEAMS.map(t => [t.name.toLowerCase(), t.code])
+);
+
+// 4. Star players
+const _starPlayers = new Map<string, string[]>(
+  WORLD_CUP_TEAMS.map(t => [t.name.toLowerCase(), t.starPlayers])
+);
+
 /**
- * Map a football-data.org / openfootball English team name to our Spanish name.
- * Also handles Spanish name passthrough (returns as-is) and FIFA code lookup.
- * Returns null if the name is unknown (team not in our database).
+ * ═══ MAPA UNIVERSAL: cualquier variante de nombre → español canónico ═══
+ *
+ * Acepta: nombre español, nombre inglés, código FIFA (3 letras), alias API
+ * Ejemplos: "MEX" → "México", "United States" → "Estados Unidos", "Brasil" → "Brasil"
+ * Siempre usar ESTA función. NO buscar en WORLD_CUP_TEAMS directamente.
+ *
+ * @returns Nombre español canónico, o null si no se encuentra
  */
-export function mapFDNameToSpanish(fdName: string): string | null {
-  // 1. Direct alias/englishName lookup
-  const direct = _fdBase.get(fdName);
+export function mapToSpanish(name: string): string | null {
+  if (!name) return null;
+  const lowered = name.trim().toLowerCase();
+
+  // 1. Búsqueda directa en mapa de variantes
+  const direct = _allVariants.get(lowered);
   if (direct) return direct;
 
-  // 2. Case-insensitive match on englishName (catches subtle casing diffs)
-  const byEnglish = WORLD_CUP_TEAMS.find(t => t.englishName.toLowerCase() === fdName.toLowerCase());
-  if (byEnglish) return byEnglish.name;
-
-  // 3. Already our Spanish name? Return as-is
-  const byName = WORLD_CUP_TEAMS.find(t => t.name.toLowerCase() === fdName.toLowerCase());
-  if (byName) return byName.name;
-
-  // 4. FIFA code lookup (e.g. "KSA" → "Arabia Saudita")
-  const byCode = WORLD_CUP_TEAMS.find(t => t.code.toLowerCase() === fdName.toLowerCase());
-  if (byCode) return byCode.name;
+  // 2. Fallback: búsqueda case-insensitive en WORLD_CUP_TEAMS
+  //    (cubre casos como "MéXico" o "USA " con espacios)
+  for (const team of WORLD_CUP_TEAMS) {
+    if (team.name.toLowerCase() === lowered) return team.name;
+    if (team.englishName.toLowerCase() === lowered) return team.name;
+    if (team.code.toLowerCase() === lowered) return team.name;
+  }
 
   return null;
 }
 
 /**
- * Backward-compatible alias for mapFDNameToSpanish.
+ * Nombre español → nombre inglés.
+ * @returns Nombre inglés, o el input si no se encuentra
  */
-export const mapFDTeamName = mapFDNameToSpanish;
+export function mapToEnglish(spanishName: string): string {
+  return _spanishToEnglish.get(spanishName.trim().toLowerCase()) || spanishName;
+}
 
-/** Get star players for a team */
+/**
+ * Nombre español → código FIFA de 3 letras.
+ * @returns Código FIFA (ej: "ARG"), o el input si no se encuentra
+ */
+export function mapToCode(spanishName: string): string {
+  return _spanishToCode.get(spanishName.trim().toLowerCase()) || spanishName;
+}
+
+/**
+ * Nombre español → Team object completo (name, englishName, code, group, etc.)
+ */
+export function getTeamByName(name: string): Team | undefined {
+  const spanish = mapToSpanish(name);
+  if (!spanish) return undefined;
+  return WORLD_CUP_TEAMS.find(t => t.name === spanish);
+}
+
+/**
+ * Obtener equipos por grupo
+ */
+export function getTeamsByGroup(group: string): Team[] {
+  return WORLD_CUP_TEAMS.filter(t => t.group === group);
+}
+
+/** Get star players for a team (por nombre español o inglés) */
 export function getTeamStarPlayers(teamName: string): string[] {
-  return starPlayerMap.get(teamName.toLowerCase()) || [];
+  const spanish = mapToSpanish(teamName);
+  return spanish ? (_starPlayers.get(spanish.toLowerCase()) || []) : [];
 }
 
 /** Get all team names in Spanish (for dropdowns) */
 export const TEAM_NAMES = WORLD_CUP_TEAMS.map((t) => `${t.flag} ${t.name}`).sort();
 
-/** Función para obtener equipo por nombre */
-// Constante compartida para forma por defecto (evita hardcodear en múltiples archivos)
+/** Default form (evita hardcodear en múltiples archivos) */
 export const DEFAULT_FORM: ('W' | 'D' | 'L')[] = ['D', 'D', 'D', 'D', 'D'];
 
-export function getTeamByName(name: string): Team | undefined {
-  return WORLD_CUP_TEAMS.find(
-    (t) => t.name.toLowerCase() === name.toLowerCase()
-  );
+// ═══════════════════════════════════════════════════════════════
+// BACKWARD COMPATIBILITY — funciones antiguas redirigen a mapToSpanish
+// ═══════════════════════════════════════════════════════════════
+
+/** @deprecated Usar mapToSpanish() en su lugar */
+export function mapFDNameToSpanish(fdName: string): string | null {
+  return mapToSpanish(fdName);
 }
 
-/** Función para obtener equipos por grupo */
-export function getTeamsByGroup(group: string): Team[] {
-  return WORLD_CUP_TEAMS.filter((t) => t.group === group);
+/** @deprecated Usar mapToSpanish() en su lugar */
+export const mapFDTeamName = mapFDNameToSpanish;
+
+/** @deprecated Usar mapToEnglish() en su lugar */
+export function getTeamEnglishName(spanishName: string): string {
+  return mapToEnglish(spanishName);
 }

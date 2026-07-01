@@ -1,0 +1,117 @@
+# FORCH.i ORACLE — Data Ingestion Scheduler
+# GitHub Actions es el scheduler PRIMARIO (reemplaza Vercel Cron).
+# Vercel Hobby solo permite 1 cron/día — GitHub Actions permite frecuencia real.
+#
+# SCHEDULE:
+#   - Durante el Mundial (Jun 11 - Jul 19, 2026): cada 30 min (7 AM - 2 AM UTC)
+#   - Fuera del Mundial: cada 2 horas
+#   - Backup: Vercel Cron 1x/día a las 6 AM UTC
+#
+# Endpoint: POST /api/cron/ingest (también acepta GET para Vercel Cron)
+# Auth: Bearer token con CRON_SECRET
+
+name: Data Ingestion
+
+on:
+  # ─── Schedule ──────────────────────────────────────────────
+  # World Cup period: June 11 - July 19, every 30 min
+  schedule:
+    - cron: '*/30 7-23 * 6 *'    # June: 7 AM - 11 PM UTC, every 30 min
+    - cron: '*/30 0-2 * 7 *'     # July 1-2: midnight - 2 AM UTC, every 30 min
+    - cron: '*/30 7-23 * 7,1-19 *' # July 1-19: 7 AM - 11 PM UTC, every 30 min
+    # Off-peak: every 2 hours (covers night hours and pre-tournament)
+    - cron: '0 */2 * * *'
+
+  # ─── Manual trigger ────────────────────────────────────────
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual run'
+        required: false
+        default: 'Manual ingestion'
+
+  # ─── On push to main (for testing) ─────────────────────────
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ingest.yml'
+      - 'lib/fifa-api.ts'
+      - 'app/api/cron/ingest/**'
+
+# ─── Permissions ─────────────────────────────────────────────
+permissions:
+  contents: read
+  actions: write
+
+# ─── Jobs ────────────────────────────────────────────────────
+jobs:
+  ingest:
+    name: Ingest Data from FIFA API
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify FIFA API is reachable (smoke test)
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" "https://api.fifa.com/api/v3/calendar/matches?idCompetition=17&idSeason=285023&count=1&language=es" | grep 200
+        timeout-seconds: 15
+
+      - name: Trigger ingestion endpoint
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "⚠️ CRON_SECRET not configured — skipping"
+            exit 0
+          fi
+
+          # Use POST for GitHub Actions (more idiomatic)
+          VERCEL_URL="${{ vars.VERCEL_URL }}"
+          if [ -z "$VERCEL_URL" ]; then
+            echo "⚠️ VERCEL_URL not set — cannot determine deployment URL"
+            echo "   Set it in GitHub repo Settings → Secrets and variables → Actions → Variables"
+            exit 1
+          fi
+
+          URL="https://${VERCEL_URL}/api/cron/ingest"
+          echo "📡 POST ${URL}"
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${URL}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            --max-time 120)
+
+          HTTP_CODE=$(echo "${RESPONSE}" | tail -1)
+          BODY=$(echo "${RESPONSE}" | head -n -1)
+
+          echo "📊 HTTP ${HTTP_CODE}"
+          echo "📦 ${BODY}"
+
+          if [ "${HTTP_CODE}" != "200" ]; then
+            echo "❌ Ingestion failed (HTTP ${HTTP_CODE})"
+            exit 1
+          fi
+
+          echo "✅ Ingestion completed"
+
+      - name: Log success to GitHub Summary
+        if: success()
+        run: |
+          echo "## ✅ Data Ingestion Successful" >> $GITHUB_STEP_SUMMARY
+          echo "Timestamp: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "Source: FIFA Public API" >> $GITHUB_STEP_SUMMARY
+
+      - name: Log failure to GitHub Summary
+        if: failure()
+        run: |
+          echo "## ❌ Data Ingestion Failed" >> $GITHUB_STEP_SUMMARY
+          echo "Timestamp: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "Check workflow logs for details." >> $GITHUB_STEP_SUMMARY

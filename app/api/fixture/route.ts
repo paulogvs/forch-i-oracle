@@ -12,8 +12,8 @@ import { calculateEnsemblePrediction, addCalibrationResult } from '@/lib/ensembl
 import { getDataLayerAsync } from '@/lib/data-layer';
 import { getOrComputeTournamentResults } from '@/lib/tournament-results';
 import { buildTournamentDAG } from '@/lib/tournament-dag';
-import { fetchWC26Games, teamIdToSpanish, type WC26Game } from '@/lib/worldcup26-api';
-import { mapFDNameToSpanish } from '@/lib/teams';
+import { fetchFIFAMatches, toInternalResult, type FIFAMatch, type InternalMatchResult } from '@/lib/fifa-api';
+import { mapToSpanish } from '@/lib/teams';
 
 // ═══ RESPONSE CACHE (5 minutes) ═══
 interface FixtureCacheEntry { data: unknown; expiresAt: number; }
@@ -251,41 +251,28 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     return true;
   }
 
-  // ── Convert raw games to usable match data ──
-  interface MatchData { home: string; away: string; homeGoals: number; awayGoals: number; isGroup: boolean; }
-  function extractFinished(games: WC26Game[]): MatchData[] {
-    const out: MatchData[] = [];
-    for (const g of games) {
-      if (g.finished !== 'TRUE') continue;
-      const home = teamIdToSpanish(g.home_team_id);
-      const away = teamIdToSpanish(g.away_team_id);
-      if (!home || !away) continue;
-      out.push({
-        home, away,
-        homeGoals: parseInt(g.home_score) || 0,
-        awayGoals: parseInt(g.away_score) || 0,
-        isGroup: g.round_of === 'group',
-      });
-    }
-    return out;
-  }
-
-  // ── Source 1: openfootball (primary, free) ──
-  const games = await fetchWC26Games();
+  // ── Source 1: FIFA Public API (primary, free, no API key) ──
+  const fifaMatches = await fetchFIFAMatches('es');
   let gamesCount = 0;
   let groupMatchesCount = 0;
   let koMatchesCount = 0;
-  if (games && games.length > 0) {
-    gamesCount = games.length;
-    const allMatches = extractFinished(games);
-    const groupMatches = allMatches.filter(m => m.isGroup);
-    const koMatches = allMatches.filter(m => !m.isGroup);
+  if (fifaMatches.length > 0) {
+    gamesCount = fifaMatches.length;
+
+    // Convert finished matches to internal format
+    const finishedResults = fifaMatches
+      .map(m => toInternalResult(m))
+      .filter(Boolean) as InternalMatchResult[];
+
+    // Split into group and knockout
+    const groupMatches = finishedResults.filter(m => m.stage === 'group');
+    const koMatches = finishedResults.filter(m => m.stage !== 'group');
     groupMatchesCount = groupMatches.length;
     koMatchesCount = koMatches.length;
 
     // PASS 1: Ingest group matches (team names match static data directly)
     for (const m of groupMatches) {
-      await tryIngest(m.home, m.away, m.homeGoals, m.awayGoals);
+      await tryIngest(m.homeTeam, m.awayTeam, m.homeScore, m.awayScore);
     }
 
     // RESOLVE: Now that group results are in, resolve bracket slots → real team names
@@ -293,14 +280,13 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
 
     // PASS 2: Ingest knockout matches (getMatchByTeams finds them via resolved bracket)
     for (const m of koMatches) {
-      await tryIngest(m.home, m.away, m.homeGoals, m.awayGoals);
+      await tryIngest(m.homeTeam, m.awayTeam, m.homeScore, m.awayScore);
     }
   }
 
   // ── Source 2: football-data.org (fallback, free tier) ──
-  // Always try as fallback — catches results openfootball hasn't updated yet
-  // or when file store lost data on Vercel cold start
-  // Note: bracket was already resolved above, so group AND KO matches are findable
+  // Catches edge cases where FIFA API hasn't updated yet.
+  // Note: bracket was already resolved above, so group AND KO matches are findable.
   {
     try {
       const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
@@ -317,8 +303,8 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
         const fdMatches = fdData.matches || [];
 
         for (const fd of fdMatches) {
-          const homeTeam = mapFDNameToSpanish(fd.homeTeam.name);
-          const awayTeam = mapFDNameToSpanish(fd.awayTeam.name);
+          const homeTeam = mapToSpanish(fd.homeTeam.name);
+          const awayTeam = mapToSpanish(fd.awayTeam.name);
           if (!homeTeam || !awayTeam) continue;
 
           const homeGoals = fd.score.fullTime.homeTeam;
