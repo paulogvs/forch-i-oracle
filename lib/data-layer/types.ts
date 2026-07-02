@@ -21,7 +21,7 @@ export interface DBTeam {
 // MATCHES
 // ═══════════════════════════════════════════════════════════════
 
-export type MatchRound = 'group' | 'R32' | 'R16' | 'QF' | 'SF' | 'F';
+export type MatchRound = 'group' | 'R32' | 'R16' | 'QF' | 'SF' | 'TP' | 'F';
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'cancelled';
 
 export interface DBMatch {

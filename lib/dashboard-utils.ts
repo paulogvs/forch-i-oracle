@@ -115,7 +115,6 @@ export function getUpcomingMatches(
 
   const upcoming = Array.from(predictions.values())
     .filter(p => {
-      if (!p.predictedScore) return false;
       // Exclude if either team already has a finished result
       if (finishedTeams.has(`${p.homeTeam}_vs_${p.awayTeam}`)) return false;
       // Exclude matches from before today — use date/time directly from prediction

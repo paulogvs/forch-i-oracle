@@ -118,13 +118,26 @@ export async function GET(request: Request) {
 
       for (const fm of finished) {
         if (!fm.homeCode || !fm.awayCode || fm.homeScore == null || fm.awayScore == null) continue;
-        // Use matchNumber as stable ID for dedup
-        const matchId = `FIFA-${fm.matchNumber}`;
-        if (existingIds.has(matchId)) continue;
+
+        // Convert FIFA codes to Spanish team names
+        const homeTeam = mapToSpanish(fm.homeCode);
+        const awayTeam = mapToSpanish(fm.awayCode);
+        if (!homeTeam || !awayTeam) continue;
+
+        // Find the match in our data layer by team names
+        let dbMatch = await db.getMatchByTeams(homeTeam, awayTeam);
+        if (!dbMatch) dbMatch = await db.getMatchByTeams(awayTeam, homeTeam);
+        if (!dbMatch) {
+          console.warn(`[live-scores] Match not found: ${homeTeam} vs ${awayTeam}`);
+          continue;
+        }
+
+        // Use internal match ID for dedup and persistence (not FIFA-{n})
+        if (existingIds.has(dbMatch.id)) continue;
 
         try {
-          await persistFromFIFALiveScore(db, fm);
-          existingIds.add(matchId);
+          await persistFromFIFALiveScore(db, fm, homeTeam, awayTeam, dbMatch.id);
+          existingIds.add(dbMatch.id);
         } catch {
           // Non-critical — live-scores serves data regardless
         }
@@ -175,19 +188,9 @@ export async function GET(request: Request) {
 
 /**
  * Persist a finished match from FIFA live scores to the data layer.
+ * Uses the internal match ID (not FIFA-{n}) for consistent dedup and lookup.
  */
-async function persistFromFIFALiveScore(db: IDataLayer, fm: FIFALiveScore): Promise<void> {
-  const homeTeam = mapToSpanish(fm.homeCode || '');
-  const awayTeam = mapToSpanish(fm.awayCode || '');
-  if (!homeTeam || !awayTeam) return;
-
-  let dbMatch = await db.getMatchByTeams(homeTeam, awayTeam);
-  if (!dbMatch) dbMatch = await db.getMatchByTeams(awayTeam, homeTeam);
-  if (!dbMatch) {
-    console.warn(`[live-scores] Match not found: ${homeTeam} vs ${awayTeam}`);
-    return;
-  }
-
+async function persistFromFIFALiveScore(db: IDataLayer, fm: FIFALiveScore, homeTeam: string, awayTeam: string, matchId: string): Promise<void> {
   const winner = (fm.homeScore ?? 0) > (fm.awayScore ?? 0)
     ? homeTeam
     : (fm.awayScore ?? 0) > (fm.homeScore ?? 0)
@@ -195,11 +198,11 @@ async function persistFromFIFALiveScore(db: IDataLayer, fm: FIFALiveScore): Prom
       : 'draw';
 
   await db.submitMatchResult({
-    matchId: `FIFA-${fm.matchNumber}`,
+    matchId,
     homeScore: fm.homeScore ?? 0,
     awayScore: fm.awayScore ?? 0,
     winner,
   });
 
-  console.log(`[live-scores] Persisted via FIFA: ${homeTeam} ${fm.homeScore}-${fm.awayScore} ${awayTeam}`);
+  console.log(`[live-scores] Persisted: ${homeTeam} ${fm.homeScore}-${fm.awayScore} ${awayTeam} (id: ${matchId})`);
 }

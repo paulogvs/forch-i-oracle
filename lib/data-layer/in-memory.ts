@@ -85,7 +85,7 @@ function ensureInitialized(): void {
         m.round === 'round-16' ? 'R16' :
         m.round === 'quarter' ? 'QF' :
         m.round === 'semi' ? 'SF' :
-        m.round === 'third' ? 'F' : 'F',
+        m.round === 'third' ? 'TP' : 'F',
       homeTeamId: m.homeTeam,
       awayTeamId: m.awayTeam,
       matchDate: m.date,

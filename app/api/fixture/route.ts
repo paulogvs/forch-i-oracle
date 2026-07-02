@@ -140,7 +140,7 @@ async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLay
   };
 
   // Process rounds in order
-  const roundOrder = ['R32', 'R16', 'QF', 'SF', 'F'];
+  const roundOrder = ['R32', 'R16', 'QF', 'SF', 'TP', 'F'];
   let totalUpdated = 0;
 
   for (const round of roundOrder) {
@@ -422,6 +422,15 @@ export async function POST(request: NextRequest) {
     // On Vercel, /tmp is ephemeral — results are lost on cold start.
     // This ensures predictions always reflect real results, even after cold start.
     const ingestDebug = await ensureResultsFromExternalAPI(db);
+
+    // ─── RESOLVE BRACKET: Always resolve knockout team names from available group results ───
+    // This ensures the data layer always has real team names for knockout matches,
+    // even when the external API poll was throttled (no new data).
+    // resolveKnockoutTeamNames reads group results from the data layer and resolves
+    // bracket slots (e.g., "1A", "3B/3E/3F/3G") to actual team names via the data layer.
+    await resolveKnockoutTeamNames(db).catch(err => {
+      console.warn('[fixture] resolveKnockoutTeamNames (non-blocking):', err instanceof Error ? err.message : String(err));
+    });
 
     const storedResults = await db.getMatchResults();
     // Build a map of matchId → actual scores for inclusion in the response
@@ -714,6 +723,11 @@ export async function POST(request: NextRequest) {
       const homeGoals = koResult ? koResult.homeScore : null;
       const awayGoals = koResult ? koResult.awayScore : null;
 
+      // Normalize round name to unified format
+      const normalizedRound = (
+        { 'round-32': 'R32', 'round-16': 'R16', 'quarter': 'QF', 'semi': 'SF', 'third': 'TP', 'final': 'F' } as Record<string, string>
+      )[match.round] || match.round;
+
       const koActual = actualResultsMap.get(match.id);
       fixture.push({
         id: match.id,
@@ -724,7 +738,7 @@ export async function POST(request: NextRequest) {
         city: match.city,
         homeTeam: koResult?.homeTeam || match.homeTeam,
         awayTeam: koResult?.awayTeam || match.awayTeam,
-        round: match.round,
+        round: normalizedRound,
         predictedScore: koResult && koResult.homeTeam !== 'TBD' && homeGoals !== null ? [homeGoals, awayGoals] : null,
         actualScore: koActual ? [koActual.homeScore, koActual.awayScore] : null,
         confidence: koResult && koResult.homeWinProb != null ? (koResult.homeWinProb > 55 ? 'alta' : koResult.homeWinProb > 40 ? 'media' : 'baja') : null,

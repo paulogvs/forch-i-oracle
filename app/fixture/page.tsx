@@ -74,12 +74,12 @@ export default function FixturePage() {
     // Override knockout match teams with consensus bracket (same source as championProbs)
     if (bracket) {
       const bracketRoundMap: Record<string, any[]> = {
-        'round-32': bracket.roundOf32 || [],
-        'round-16': bracket.roundOf16 || [],
-        'quarter': bracket.quarters || [],
-        'semi': bracket.semis || [],
-        'final': bracket.final ? [bracket.final] : [],
-        'third': bracket.thirdPlace ? [bracket.thirdPlace] : [],
+        'R32': bracket.roundOf32 || [],
+        'R16': bracket.roundOf16 || [],
+        'QF': bracket.quarters || [],
+        'SF': bracket.semis || [],
+        'F': bracket.final ? [bracket.final] : [],
+        'TP': bracket.thirdPlace ? [bracket.thirdPlace] : [],
       };
       // Track which bracket matches have been used (by position) to avoid duplicates
       const usedBracketIndices: Record<string, number> = {};
@@ -199,12 +199,11 @@ export default function FixturePage() {
   ];
   const PHASES = [
     { id: 'all', label: 'Todos' }, { id: 'group', label: 'Grupos' },
-    { id: 'round-32', label: '1/16' }, { id: 'round-16', label: '1/8' },
-    { id: 'quarter', label: '1/4' }, { id: 'semi', label: 'Semis' }, { id: 'final', label: 'Final' },
+    { id: 'R32', label: '1/16' }, { id: 'R16', label: 'Octavos' },
+    { id: 'QF', label: 'Cuartos' }, { id: 'SF', label: 'Semis' }, { id: 'F', label: 'Final' },
   ];
-
+  const getRoundLabel = (r: string) => ({ group:'Fase de Grupos',R32:'1/16 Final',R16:'Octavos',QF:'Cuartos',SF:'Semifinales',TP:'Tercer Puesto',F:'Final' }[r] || r);
   const filtered = phaseFilter === 'all' ? fixtures : fixtures.filter(m => m.round === phaseFilter);
-  const getRoundLabel = (r: string) => ({ group:'Fase de Grupos','round-32':'1/16 Final','round-16':'Octavos',quarter:'Cuartos',semi:'Semifinales',third:'Tercer Puesto',final:'Final' }[r] || r);
   const getFlag = (n: string) => getTeamByName(n)?.flag || '🏳️';
   const predictedCount = fixtures.filter(f => f.isPredicted).length;
   const playedCount = realResults.size;
@@ -243,7 +242,7 @@ export default function FixturePage() {
     const todayStart = new Date(now);
     todayStart.setUTCHours(0, 0, 0, 0);
     return fixtures
-      .filter(m => !m.isFinished && m.isPredicted)
+      .filter(m => !m.isFinished)
       .filter(m => {
         const matchDate = new Date(`${m.date}T${m.time || '00:00'}:00Z`);
         return matchDate >= todayStart;
@@ -346,7 +345,7 @@ export default function FixturePage() {
           className="space-y-5"
         >
           {/* Champion banner — only shown when filtering final/semi phase */}
-          {(phaseFilter === 'final' || phaseFilter === 'semi') && bracket?.champion && (
+          {(phaseFilter === 'F' || phaseFilter === 'SF') && bracket?.champion && (
             <motion.div
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
