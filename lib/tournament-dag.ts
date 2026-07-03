@@ -77,7 +77,11 @@ export function buildTournamentDAG(): TournamentDAG {
   for (const match of knockoutMatches) {
     const feedsInto = findFeedsInto(match.id, knockoutMatches);
     const feedsFrom = findFeedsFrom(match, knockoutMatches);
-    const slot = feedsInto ? (feedsInto.homeTeam.includes(match.id) ? 'home' : 'away') : null;
+    // Check exact slot reference for feedsIntoSlot: which slot (home/away) references this match
+    const slot = feedsInto ? (
+      feedsInto.homeTeam === match.id || feedsInto.homeTeam === `W-${match.id}` || feedsInto.homeTeam === `L-${match.id}`
+        ? 'home' : 'away'
+    ) : null;
 
     const node: DAGNode = {
       matchId: match.id,
@@ -139,11 +143,18 @@ export function buildTournamentDAG(): TournamentDAG {
  * Find which match this match feeds into.
  * Example: R16-1 has `homeTeam: 'W-R32-1'` and `awayTeam: 'W-R32-2'`.
  * R32-1 feeds into R16-1.
+ * 
+ * Uses exact match (not includes) to avoid substring false positives
+ * like "R32-1" matching "W-R32-11".
  */
 function findFeedsInto(matchId: string, allMatches: Match[]): Match | null {
   for (const m of allMatches) {
-    if (m.homeTeam.includes(matchId) || m.awayTeam.includes(matchId)) {
-      return m;
+    // Check exact slot references: "W-R32-1", "W-R32-11", "L-SF-1", etc.
+    const slotRefs = [m.homeTeam, m.awayTeam];
+    for (const ref of slotRefs) {
+      if (ref === matchId || ref === `W-${matchId}` || ref === `L-${matchId}`) {
+        return m;
+      }
     }
   }
   return null;
@@ -153,13 +164,19 @@ function findFeedsInto(matchId: string, allMatches: Match[]): Match | null {
  * Find which matches feed into this match.
  * Example: R16-1 has homeTeam: 'W-R32-1', awayTeam: 'W-R32-2'.
  * So R32-1 and R32-2 feed into R16-1.
+ * 
+ * Uses exact match (not includes) to avoid substring false positives.
  */
 function findFeedsFrom(match: Match, allMatches: Match[]): Match[] {
   const results: Match[] = [];
   for (const m of allMatches) {
     if (m.id === match.id) continue;
-    // Check if this match's ID is referenced in the slot
-    if (match.homeTeam.includes(m.id) || match.awayTeam.includes(m.id)) {
+    // Check if this match's ID is referenced as an exact slot reference
+    const slotRefs = [match.homeTeam, match.awayTeam];
+    const isReferenced = slotRefs.some(
+      ref => ref === m.id || ref === `W-${m.id}` || ref === `L-${m.id}`
+    );
+    if (isReferenced) {
       results.push(m);
     }
   }

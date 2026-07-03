@@ -15,7 +15,7 @@
 import { calculateMatchProbabilitiesDixonColes, type DixonColesResult } from './poisson-dixon-coles';
 import { calculateStatisticalPrediction, type StatisticalPrediction } from './predictor-engine';
 import { getDynamicStats, predictMatchDynamic, type DynamicPrediction } from './prediction-store';
-import { ELO_RATINGS } from './teams';
+import { getLiveElo } from './elo-sync';
 import { calculateUncertaintyIntervals } from './wilson-ci';
 
 // ═══════════════════════════════════════════════════════════════
@@ -283,8 +283,8 @@ export function calculateEnsemblePrediction(
   awayTeam: string
 ): EnsemblePrediction {
   // ═══ MODEL 1: Dixon-Coles ═══
-  const homeEloEntry = ELO_RATINGS[homeTeam] || { elo: 1500, attack: 1.2, defense: 1.0 };
-  const awayEloEntry = ELO_RATINGS[awayTeam] || { elo: 1500, attack: 1.2, defense: 1.0 };
+  const homeEloEntry = getLiveElo(homeTeam);
+  const awayEloEntry = getLiveElo(awayTeam);
 
   // Calculate lambdas for Dixon-Coles
   const eloDiff = homeEloEntry.elo - awayEloEntry.elo;

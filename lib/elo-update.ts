@@ -8,6 +8,7 @@
 
 import { ELO_RATINGS, type EloEntry } from './teams';
 import type { IDataLayer } from './data-layer/interface';
+import { setLiveElo } from './elo-sync';
 
 // ═══════════════════════════════════════════════════════════════
 // K-FACTOR BY STAGE — SINGLE SOURCE OF TRUTH
@@ -180,6 +181,10 @@ export async function processMatchEloUpdate(
   // Persist both teams
   await persistEloUpdate(homeTeam, newHomeElo, homeScore, awayScore, db);
   await persistEloUpdate(awayTeam, newAwayElo, awayScore, homeScore, db);
+
+  // Sync live Elo cache (so all engines immediately see the update)
+  setLiveElo(homeTeam, { elo: newHomeElo, attack: homeCurrent.attack, defense: homeCurrent.defense });
+  setLiveElo(awayTeam, { elo: newAwayElo, attack: awayCurrent.attack, defense: awayCurrent.defense });
 
   const kFactor = getKFactor(round);
   console.log(`[elo-update] ${homeTeam}: ${homeCurrent.elo} → ${newHomeElo} (${homeDelta >= 0 ? '+' : ''}${homeDelta}) K=${kFactor}`);

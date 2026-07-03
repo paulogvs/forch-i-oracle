@@ -3,7 +3,8 @@
 // Client-side multi-simulation for forecast page
 
 import { calculateStatisticalPrediction, loadEloOverrides, clearEloOverrides } from './predictor-engine';
-import { WORLD_CUP_TEAMS, ELO_RATINGS } from './teams';
+import { WORLD_CUP_TEAMS } from './teams';
+import { getLiveElo, getAllLiveElos } from './elo-sync';
 import { ALL_MATCHES } from './matches';
 import { getDataLayerAsync } from './data-layer';
 import type { EloEntry } from './teams';
@@ -293,7 +294,7 @@ function getTeamCode(name: string): string {
 }
 
 function getTeamElo(name: string): number {
-  return ELO_RATINGS[name]?.elo || 1500;
+  return getLiveElo(name).elo;
 }
 
 // ─── Match Simulation ─────────────────────────────────────────────────────
@@ -882,7 +883,7 @@ export async function simulateTournamentMulti(
       const kvEntry = await db.getKeyValue(`eloOverride:${teamName}`);
       if (kvEntry && typeof kvEntry.value === 'object' && kvEntry.value !== null) {
         const val = kvEntry.value as Partial<EloEntry>;
-        const base = ELO_RATINGS[teamName] || { elo: 1500, attack: 1.0, defense: 1.0 };
+        const base = getLiveElo(teamName);
         overrides.set(teamName, {
           elo: val.elo ?? base.elo,
           attack: val.attack ?? base.attack,

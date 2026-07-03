@@ -2,7 +2,8 @@
 // Instant (<1ms) computation using Elo ratings + tournament structure
 // No async, no fetch, no Monte Carlo — pure math with imported static data
 
-import { ELO_RATINGS, WORLD_CUP_TEAMS } from './teams';
+import { WORLD_CUP_TEAMS } from './teams';
+import { getLiveElo, getAllLiveElos } from './elo-sync';
 
 // ═══════════════════════════════════════════════════════════════
 // Elo probability formula: P(A beats B) = 1 / (1 + 10^((B-A)/400))
@@ -57,14 +58,14 @@ export function computeChampionProbsFromElo(): EloChampionProb[] {
   const teamAvgGroupOpponent = new Map<string, number>();
 
   for (const [letter, teams] of Object.entries(groups)) {
-    const elos = teams.map(t => ELO_RATINGS[t.name]?.elo || 1500);
+    const elos = teams.map(t => getLiveElo(t.name).elo);
     const avgElo = elos.reduce((a, b) => a + b, 0) / elos.length;
 
     for (const team of teams) {
-      const teamElo = ELO_RATINGS[team.name]?.elo || 1500;
+      const teamElo = getLiveElo(team.name).elo;
       // Probability of being top 2 in group (approximation: win vs avg opponent × 3 matches)
       const otherTeams = teams.filter(t => t.name !== team.name);
-      const avgOpponentElo = otherTeams.map(t => ELO_RATINGS[t.name]?.elo || 1500).reduce((a, b) => a + b, 0) / otherTeams.length;
+      const avgOpponentElo = otherTeams.map(t => getLiveElo(t.name).elo).reduce((a, b) => a + b, 0) / otherTeams.length;
       
       // P(top 2) ≈ P(win vs avg opponent)^1.5 (not all 3 matches need to be won)
       const pWinVsAvg = eloWinProb(teamElo, avgOpponentElo);
@@ -78,7 +79,7 @@ export function computeChampionProbsFromElo(): EloChampionProb[] {
   // Step 2: Compute knockout advancement probabilities
   // Average opponent Elo at each knockout round level
   // These increase as we go deeper (stronger teams survive)
-  const allElos = Object.values(ELO_RATINGS).map(e => e.elo);
+  const allElos = Object.values(getAllLiveElos()).map(e => e.elo);
   const globalAvg = allElos.reduce((a, b) => a + b, 0) / allElos.length;
 
   // Weighted average Elo of teams likely to reach each round
@@ -93,7 +94,7 @@ export function computeChampionProbsFromElo(): EloChampionProb[] {
   const results: EloChampionProb[] = [];
 
   for (const team of WORLD_CUP_TEAMS) {
-    const teamElo = ELO_RATINGS[team.name]?.elo || 1500;
+    const teamElo = getLiveElo(team.name).elo;
     const pGroup = teamGroupProb.get(team.name) || 0.5;
 
     // Knockout is 2 matches per round (win 2 to advance)

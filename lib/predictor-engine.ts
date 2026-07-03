@@ -13,6 +13,7 @@
 import { getAltitudeFactor } from './venues';
 import { computeH2H } from './h2h';
 import { ELO_RATINGS, WORLD_CUP_TEAMS, type EloEntry } from './teams';
+import { getLiveElo } from './elo-sync';
 import { calculateMatchProbabilitiesDixonColes } from './poisson-dixon-coles';
 
 // ═══════════════════════════════════════════════════════════════
@@ -151,17 +152,14 @@ export function clearEloOverrides(): void {
   eloOverrides = null;
 }
 
-/** Get Elo entry for a team. Checks overrides first, then static ELO_RATINGS. */
+/** Get Elo entry for a team. Checks overrides first, then live cache, then static ELO_RATINGS. */
 export function getElo(teamName: string): EloEntry {
-  // Check dynamic overrides first (set by match-result pipeline)
+  // Check dynamic overrides first (set by simulation pipeline)
   if (eloOverrides?.has(teamName)) {
     return eloOverrides.get(teamName)!;
   }
-  return ELO_RATINGS[teamName] || {
-    elo: DEFAULT_ELO,
-    attack: DEFAULT_ATTACK,
-    defense: DEFAULT_DEFENSE,
-  };
+  // Read from live Elo cache (updated by match-result pipeline)
+  return getLiveElo(teamName);
 }
 
 // ═══════════════════════════════════════════════════════════════

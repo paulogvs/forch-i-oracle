@@ -7,7 +7,7 @@
 // 3. Form decay: Recent matches weigh more (exponential decay)
 // 4. xG tracking: Expected goals vs actual to identify over/under-performers
 
-import { ELO_RATINGS } from './teams';
+import { getLiveElo, getAllLiveElos } from './elo-sync';
 
 // ═══════════════════════════════════════════════════════════════
 // DATA TYPES
@@ -243,7 +243,7 @@ export function predictMatchDynamic(
 
 export function getAllTeamStats(): Map<string, TeamDynamicStats> {
   const stats = new Map<string, TeamDynamicStats>();
-  const allTeams = Object.keys(ELO_RATINGS);
+  const allTeams = Object.keys(getAllLiveElos());
   for (const team of allTeams) {
     stats.set(team, getDynamicStats(team));
   }
@@ -272,9 +272,7 @@ export function resetEngine(): void {
 // ═══════════════════════════════════════════════════════════════
 
 function getTeamEloFallback(team: string): number {
-  const entry = ELO_RATINGS[team];
-  if (entry) return entry.elo;
-  return 1650;
+  return getLiveElo(team).elo;
 }
 
 function weightedAvg(values: number[], weights: number[], totalWeight: number): number {

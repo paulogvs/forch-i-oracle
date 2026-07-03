@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — FIFA World Cup 2026 Official Schedule
-// 48 teams in 12 groups of 4 → 72 group stage matches + 56 knockout matches
+// 48 teams in 12 groups of 4 → 72 group stage matches + 32 knockout matches
 // Fuente: FIFA.com — Calendario oficial publicado
 import { getTeamByName } from './teams';
 
