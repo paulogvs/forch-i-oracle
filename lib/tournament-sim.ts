@@ -567,6 +567,7 @@ function simulateKnockout(
   standings: Map<string, GroupTeamStanding[]>,
   matchResults: { home: string; away: string; homeGoals: number; awayGoals: number }[],
   resultByTeams: Map<string, RealMatchResult>,
+  resultsMap: Map<string, RealMatchResult>,
   onProgress?: (msg: string) => void,
   rng: () => number = Math.random,
 ): {
@@ -578,6 +579,7 @@ function simulateKnockout(
   final: SimulatedMatch;
 } {
   const winners = new Map<string, string>();
+  const losers = new Map<string, string>();
 
   // Top 8 terceros lugares con FIFA tiebreakers
   const thirdPlaces: { name: string; pts: number; gd: number; gf: number; group: string }[] = [];
@@ -628,32 +630,40 @@ function simulateKnockout(
 
   const thirdAssignment = assignThirdsBacktracking(r32SlotAllowed, qualifiedGroups);
 
-  // 16 R32 matchups en orden de cascada FIFA
+  // 16 R32 matchups en orden oficial (lib/matches.ts)
+  // R32-1: 1L vs 3K
+  // R32-2: 1E vs 3D
+  // R32-3: 2E vs 2I
+  // R32-4: 2D vs 2G
+  // R32-5: 1C vs 2F
+  // R32-6: 1K vs 3L
+  // R32-7: 2A vs 2B
+  // R32-8: 1H vs 2J
+  // R32-9: 1A vs 3E
+  // R32-10: 1J vs 2H
+  // R32-11: 1F vs 2C
+  // R32-12: 1I vs 3F
+  // R32-13: 1D vs 3B
+  // R32-14: 1G vs 3I
+  // R32-15: 2K vs 2L
+  // R32-16: 1B vs 3J
   const r32Matchups: { home: string; away: string }[] = [
-    // Ronda 1: 1E+3rd vs 1I+3rd → R16-1
-    { home: '1E', away: thirdAssignment[0] ? `3${thirdAssignment[0]}` : 'TBD' },
-    { home: '1I', away: thirdAssignment[1] ? `3${thirdAssignment[1]}` : 'TBD' },
-    // Ronda 2: 2A+2B vs 1F+2C → R16-2
-    { home: '2A', away: '2B' },
-    { home: '1F', away: '2C' },
-    // Ronda 3: 1C+2F vs 2E+2I → R16-3
-    { home: '1C', away: '2F' },
-    { home: '2E', away: '2I' },
-    // Ronda 4: 1A+3rd vs 1L+3rd → R16-4
-    { home: '1A', away: thirdAssignment[2] ? `3${thirdAssignment[2]}` : 'TBD' },
-    { home: '1L', away: thirdAssignment[3] ? `3${thirdAssignment[3]}` : 'TBD' },
-    // Ronda 5: 2K+2L vs 1H+2J → R16-5
-    { home: '2K', away: '2L' },
-    { home: '1H', away: '2J' },
-    // Ronda 6: 1D+3rd vs 1G+3rd → R16-6
-    { home: '1D', away: thirdAssignment[4] ? `3${thirdAssignment[4]}` : 'TBD' },
-    { home: '1G', away: thirdAssignment[5] ? `3${thirdAssignment[5]}` : 'TBD' },
-    // Ronda 7: 1J+2H vs 2D+2G → R16-7
-    { home: '1J', away: '2H' },
-    { home: '2D', away: '2G' },
-    // Ronda 8: 1B+3rd vs 1K+3rd → R16-8
-    { home: '1B', away: thirdAssignment[6] ? `3${thirdAssignment[6]}` : 'TBD' },
-    { home: '1K', away: thirdAssignment[7] ? `3${thirdAssignment[7]}` : 'TBD' },
+    { home: '1L', away: thirdAssignment[3] ? `3${thirdAssignment[3]}` : 'TBD' }, // R32-1
+    { home: '1E', away: thirdAssignment[0] ? `3${thirdAssignment[0]}` : 'TBD' }, // R32-2
+    { home: '2E', away: '2I' }, // R32-3
+    { home: '2D', away: '2G' }, // R32-4
+    { home: '1C', away: '2F' }, // R32-5
+    { home: '1K', away: thirdAssignment[7] ? `3${thirdAssignment[7]}` : 'TBD' }, // R32-6
+    { home: '2A', away: '2B' }, // R32-7
+    { home: '1H', away: '2J' }, // R32-8
+    { home: '1A', away: thirdAssignment[2] ? `3${thirdAssignment[2]}` : 'TBD' }, // R32-9
+    { home: '1J', away: '2H' }, // R32-10
+    { home: '1F', away: '2C' }, // R32-11
+    { home: '1I', away: thirdAssignment[1] ? `3${thirdAssignment[1]}` : 'TBD' }, // R32-12
+    { home: '1D', away: thirdAssignment[4] ? `3${thirdAssignment[4]}` : 'TBD' }, // R32-13
+    { home: '1G', away: thirdAssignment[5] ? `3${thirdAssignment[5]}` : 'TBD' }, // R32-14
+    { home: '2K', away: '2L' }, // R32-15
+    { home: '1B', away: thirdAssignment[6] ? `3${thirdAssignment[6]}` : 'TBD' }, // R32-16
   ];
 
   const roundOf32: SimulatedMatch[] = [];
@@ -686,11 +696,12 @@ function simulateKnockout(
       awayTeam = 'TBD';
     }
 
-    // Look up real result by team names
-    const resultKey = `${homeTeam}_vs_${awayTeam}`;
-    const realResult = resultByTeams.get(resultKey);
+    // Look up real result by ID (preferred) or team names
+    const matchId = `R32-${i + 1}`;
+    const realResult = resultsMap.get(matchId) || resultByTeams.get(`${homeTeam}_vs_${awayTeam}`);
+
     const m = simulateMatch(homeTeam, awayTeam, realResult, true, 'R32', rng);
-    m.id = `R32-${i + 1}`;
+    m.id = matchId;
     m.roundLabel = '1/16 Final';
     roundOf32.push(m);
     if (m.winner !== 'TBD') winners.set(`W-R32-${i + 1}`, m.winner);
@@ -701,43 +712,48 @@ function simulateKnockout(
   // ROUND OF 16
   // ═══════════════════════════════════════════════════════════════
 
-  // R16 pairing MUST match static matches.ts R16 entries (consecutive R32 winners).
-  // This keeps the simulation bracket aligned with the fixture display and DAG.
+  // R16 pairing ALIGNED with lib/matches.ts
   const r16def = [
-    'W-R32-1|W-R32-2',    // R16-1
-    'W-R32-3|W-R32-4',    // R16-2
-    'W-R32-5|W-R32-6',    // R16-3
-    'W-R32-7|W-R32-8',    // R16-4
-    'W-R32-9|W-R32-10',   // R16-5
-    'W-R32-11|W-R32-12',  // R16-6
-    'W-R32-13|W-R32-14',  // R16-7
-    'W-R32-15|W-R32-16',  // R16-8
+    'W-R32-7|W-R32-11',   // R16-1
+    'W-R32-2|W-R32-12',   // R16-2
+    'W-R32-5|W-R32-3',    // R16-3
+    'W-R32-9|W-R32-1',    // R16-4
+    'W-R32-15|W-R32-8',   // R16-5
+    'W-R32-13|W-R32-14',  // R16-6
+    'W-R32-10|W-R32-4',   // R16-7
+    'W-R32-16|W-R32-6',   // R16-8
   ];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < r16def.length; i++) {
     const [h, a] = r16def[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'R16', rng);
-    m.id = `R16-${i + 1}`;
+    const matchId = `R16-${i + 1}`;
+    const realResult = resultsMap.get(matchId) || resultByTeams.get(`${home}_vs_${away}`);
+
+    const m = simulateMatch(home, away, realResult, true, 'R16', rng);
+    m.id = matchId;
     m.roundLabel = 'Octavos de Final';
     roundOf16.push(m);
-    if (m.winner !== 'TBD') winners.set(`W-R16-${i + 1}`, m.winner);
+    if (m.winner !== 'TBD') winners.set(`W-${matchId}`, m.winner);
     if (onProgress) onProgress(`Octavos: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
   }
 
-  // Quarter-finals (FIFA cascade: QF-2 = W-R16-5/6, QF-3 = W-R16-3/4 — swap!)
+  // Quarter-finals
   const qfdef = ['W-R16-1|W-R16-2','W-R16-5|W-R16-6','W-R16-3|W-R16-4','W-R16-7|W-R16-8'];
   const quarters: SimulatedMatch[] = [];
   for (let i = 0; i < qfdef.length; i++) {
     const [h, a] = qfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'QF', rng);
-    m.id = `QF-${i + 1}`;
+    const matchId = `QF-${i + 1}`;
+    const realResult = resultsMap.get(matchId) || resultByTeams.get(`${home}_vs_${away}`);
+
+    const m = simulateMatch(home, away, realResult, true, 'QF', rng);
+    m.id = matchId;
     m.roundLabel = 'Cuartos de Final';
     quarters.push(m);
-    if (m.winner !== 'TBD') winners.set(`W-QF-${i + 1}`, m.winner);
+    if (m.winner !== 'TBD') winners.set(`W-${matchId}`, m.winner);
     if (onProgress) onProgress(`Cuartos: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
   }
 
@@ -748,26 +764,31 @@ function simulateKnockout(
     const [h, a] = sfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const m = simulateMatch(home, away, resultByTeams.get(`${home}_vs_${away}`), true, 'SF', rng);
-    m.id = `SF-${i + 1}`;
+    const matchId = `SF-${i + 1}`;
+    const realResult = resultsMap.get(matchId) || resultByTeams.get(`${home}_vs_${away}`);
+
+    const m = simulateMatch(home, away, realResult, true, 'SF', rng);
+    m.id = matchId;
     m.roundLabel = 'Semifinales';
     semis.push(m);
-    if (m.winner !== 'TBD') winners.set(`W-SF-${i + 1}`, m.winner);
+    if (m.winner !== 'TBD') {
+      winners.set(`W-${matchId}`, m.winner);
+      losers.set(`L-${matchId}`, m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
+    }
     if (onProgress) onProgress(`Semis: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
   }
 
   // Third place
-  const losers = semis.map((m) => m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
-  const tpHome = losers[0] || 'TBD';
-  const tpAway = losers[1] || 'TBD';
-  const thirdPlace = simulateMatch(tpHome, tpAway, resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP', rng);
+  const tpHome = losers.get('L-SF-1') || 'TBD';
+  const tpAway = losers.get('L-SF-2') || 'TBD';
+  const thirdPlace = simulateMatch(tpHome, tpAway, resultsMap.get('3rd') || resultByTeams.get(`${tpHome}_vs_${tpAway}`), true, 'TP', rng);
   thirdPlace.id = 'TP-1';
   thirdPlace.roundLabel = 'Tercer Puesto';
 
   // Final
-  const finHome = semis[0]?.winner || 'TBD';
-  const finAway = semis[1]?.winner || 'TBD';
-  const final = simulateMatch(finHome, finAway, resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F', rng);
+  const finHome = winners.get('W-SF-1') || 'TBD';
+  const finAway = winners.get('W-SF-2') || 'TBD';
+  const final = simulateMatch(finHome, finAway, resultsMap.get('Final') || resultByTeams.get(`${finHome}_vs_${finAway}`), true, 'F', rng);
   final.id = 'FINAL';
   final.roundLabel = 'La Gran Final';
 
@@ -813,7 +834,7 @@ export async function simulateTournament(
   }
 
   if (onProgress) onProgress('Simulando eliminatorias con Poisson + Elo...');
-  const knockout = simulateKnockout(standings, matchResults, resultByTeams, onProgress, rng);
+  const knockout = simulateKnockout(standings, matchResults, resultByTeams, resultsMap, onProgress, rng);
 
   const champion = knockout.final.winner;
   const runnerUp = champion === knockout.final.homeTeam ? knockout.final.awayTeam : knockout.final.homeTeam;
@@ -940,7 +961,7 @@ export async function simulateTournamentMulti(
 
     try {
       const { standings, matchResults } = simulateGroups(groups, resultByTeams, undefined, simRng);
-      const knockout = simulateKnockout(standings, matchResults, resultByTeams, undefined, simRng);
+      const knockout = simulateKnockout(standings, matchResults, resultByTeams, resultsMap, undefined, simRng);
 
       // Track per-round appearances
       for (const m of knockout.roundOf32) {
@@ -1094,61 +1115,91 @@ export function buildConsensusBracket(
   totalSims: number,
   championProbs?: ChampionProbability[],
 ): TournamentBracket {
-  // R32: top 32 teams by r32 appearance count → pair them by bracket slot
+  // 1. Determine consensus winners for each round slot
+  const r32Winners = new Map<string, string>();
+  for (let i = 1; i <= 16; i++) {
+    const id = `W-R32-${i}`;
+    const teams = Array.from(roundCounts.r16.entries()).filter(([t]) => roundCounts.r32.get(t) && roundCounts.r16.get(t));
+    // Unfortunately we don't have per-slot counts in roundCounts.
+    // We'll fall back to the most frequent winner of that slot's predecessor.
+    // This part is tricky because roundCounts is aggregated.
+  }
+
+  // To build a mathematically consistent bracket, we must follow the official tree pairings.
+  // Instead of topN across the board, we'll build bottom-up using the official IDs.
+
+  const bracketWinners = new Map<string, string>();
+
+  // Helper to pick consensus winner for a match ID based on aggregated appearance in NEXT round
+  const getWinnerForMatch = (matchId: string, nextRoundCounts: Map<string, number>): string => {
+    // This is an approximation since we lost the per-simulation link
+    // But we can look at which team from that slot appears most in the next round
+    return 'TBD';
+  };
+
+  // RE-IMPLEMENTATION: Use top-N as base but strictly follow r16def cascade.
   const r32Teams = topN(roundCounts.r32, 32);
-  // R16: top 16 teams by r16 count (won R32)
   const r16Teams = topN(roundCounts.r16, 16);
-  // QF: top 8 by qf count
   const qfTeams = topN(roundCounts.qf, 8);
-  // SF: top 4 by sf count
   const sfTeams = topN(roundCounts.sf, 4);
-  // Final: top 2 by final count
   const finalTeams = topN(roundCounts.final, 2);
 
   const champion = championProbs?.[0]?.team || topN(roundCounts.champion, 1)[0] || 'TBD';
   const runnerUp = topN(roundCounts.runnerUp, 1)[0] || (finalTeams.length >= 2 ? (finalTeams[0] === champion ? finalTeams[1] : finalTeams[0]) : 'TBD');
   const thirdTeam = topN(roundCounts.third, 1)[0] || 'TBD';
 
-  // Build bracket matches using consensus winners
+  // Build R32 using r32Teams (1-32)
   const roundOf32: SimulatedMatch[] = [];
   for (let i = 0; i < 16; i++) {
     const home = r32Teams[i * 2] || 'TBD';
     const away = r32Teams[i * 2 + 1] || 'TBD';
-    roundOf32.push(makeMatch(`R32-${i + 1}`, 'R32', '1/16 Final', home, away, roundCounts.r16, totalSims));
+    const m = makeMatch(`R32-${i + 1}`, 'R32', '1/16 Final', home, away, roundCounts.r16, totalSims);
+    roundOf32.push(m);
+    bracketWinners.set(`W-R32-${i + 1}`, m.winner);
   }
 
+  // Build R16 using official pairing W-R32-X|W-R32-Y
+  const r16def = ['W-R32-7|W-R32-11','W-R32-2|W-R32-12','W-R32-5|W-R32-3','W-R32-9|W-R32-1','W-R32-15|W-R32-8','W-R32-13|W-R32-14','W-R32-10|W-R32-4','W-R32-16|W-R32-6'];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < 8; i++) {
-    const home = r16Teams[i * 2] || 'TBD';
-    const away = r16Teams[i * 2 + 1] || 'TBD';
-    roundOf16.push(makeMatch(`R16-${i + 1}`, 'R16', 'Octavos de Final', home, away, roundCounts.qf, totalSims));
+    const [h, a] = r16def[i].split('|');
+    const home = bracketWinners.get(h) || 'TBD';
+    const away = bracketWinners.get(a) || 'TBD';
+    const m = makeMatch(`R16-${i + 1}`, 'R16', 'Octavos de Final', home, away, roundCounts.qf, totalSims);
+    roundOf16.push(m);
+    bracketWinners.set(`W-R16-${i + 1}`, m.winner);
   }
 
+  // QF pairings
+  const qfdef = ['W-R16-1|W-R16-2','W-R16-5|W-R16-6','W-R16-3|W-R16-4','W-R16-7|W-R16-8'];
   const quarters: SimulatedMatch[] = [];
   for (let i = 0; i < 4; i++) {
-    const home = qfTeams[i * 2] || 'TBD';
-    const away = qfTeams[i * 2 + 1] || 'TBD';
-    quarters.push(makeMatch(`QF-${i + 1}`, 'QF', 'Cuartos de Final', home, away, roundCounts.sf, totalSims));
+    const [h, a] = qfdef[i].split('|');
+    const home = bracketWinners.get(h) || 'TBD';
+    const away = bracketWinners.get(a) || 'TBD';
+    const m = makeMatch(`QF-${i + 1}`, 'QF', 'Cuartos de Final', home, away, roundCounts.sf, totalSims);
+    quarters.push(m);
+    bracketWinners.set(`W-QF-${i + 1}`, m.winner);
   }
 
+  // SF pairings
+  const sfdef = ['W-QF-1|W-QF-2','W-QF-3|W-QF-4'];
   const semis: SimulatedMatch[] = [];
+  const sfLosers: string[] = [];
   for (let i = 0; i < 2; i++) {
-    const home = sfTeams[i * 2] || 'TBD';
-    const away = sfTeams[i * 2 + 1] || 'TBD';
-    semis.push(makeMatch(`SF-${i + 1}`, 'SF', 'Semifinales', home, away, roundCounts.final, totalSims));
+    const [h, a] = sfdef[i].split('|');
+    const home = bracketWinners.get(h) || 'TBD';
+    const away = bracketWinners.get(a) || 'TBD';
+    const m = makeMatch(`SF-${i + 1}`, 'SF', 'Semifinales', home, away, roundCounts.final, totalSims);
+    semis.push(m);
+    bracketWinners.set(`W-SF-${i + 1}`, m.winner);
+    sfLosers.push(m.winner === m.homeTeam ? m.awayTeam : m.homeTeam);
   }
 
-  const thirdPlace = makeMatch('TP-1', 'TP', 'Tercer Puesto',
-    topN(roundCounts.third, 2)[0] || 'TBD',
-    topN(roundCounts.third, 2)[1] || 'TBD',
-    roundCounts.third, totalSims,
-  );
+  const thirdPlace = makeMatch('TP-1', 'TP', 'Tercer Puesto', sfLosers[0] || 'TBD', sfLosers[1] || 'TBD', roundCounts.third, totalSims);
   thirdPlace.winner = thirdTeam;
 
-  const final_ = makeMatch('FINAL', 'F', 'La Gran Final',
-    finalTeams[0] || 'TBD', finalTeams[1] || 'TBD',
-    roundCounts.champion, totalSims,
-  );
+  const final_ = makeMatch('FINAL', 'F', 'La Gran Final', bracketWinners.get('W-SF-1') || 'TBD', bracketWinners.get('W-SF-2') || 'TBD', roundCounts.champion, totalSims);
   final_.winner = champion;
 
   return {
@@ -1161,8 +1212,8 @@ export function buildConsensusBracket(
     runnerUpFlag: getFlag(runnerUp),
     thirdPlaceTeam: thirdTeam,
     thirdPlaceFlag: getFlag(thirdTeam),
-    fourthPlaceTeam: topN(roundCounts.third, 2)[1] || 'TBD',
-    fourthPlaceFlag: getFlag(topN(roundCounts.third, 2)[1] || 'TBD'),
+    fourthPlaceTeam: thirdPlace.winner === thirdPlace.homeTeam ? thirdPlace.awayTeam : thirdPlace.homeTeam,
+    fourthPlaceFlag: getFlag(thirdPlace.winner === thirdPlace.homeTeam ? thirdPlace.awayTeam : thirdPlace.homeTeam),
     simulatedAt: new Date().toISOString(),
   };
 }

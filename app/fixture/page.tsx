@@ -142,24 +142,24 @@ export default function FixturePage() {
   }, [fixtures]);
 
   // Compute match status
-  function getMatchStatus(match: FixtureMatch, result?: RealResult): MatchStatus {
-    // Use actualScore from fixture as source of truth
-    if (match.isFinished && match.actualHome != null && match.actualAway != null) {
+  function getMatchStatus(match: FixtureMatch): MatchStatus {
+    // Single source of truth: match.actualHome/Away from fullFixture
+    if (match.actualHome != null && match.actualAway != null) {
       if (match.homeGoals === null || match.awayGoals === null) return 'upcoming';
-      const pw = match.homeGoals > match.awayGoals ? 'home' : match.homeGoals < match.awayGoals ? 'away' : 'draw';
-      const rw = match.actualHome > match.actualAway ? 'home' : match.actualHome < match.actualAway ? 'away' : 'draw';
-      if (match.homeGoals === match.actualHome && match.awayGoals === match.actualAway) return 'exact';
-      if (pw === rw) return 'winner_ok';
+
+      const pH = match.homeGoals;
+      const pA = match.awayGoals;
+      const rH = match.actualHome;
+      const rA = match.actualAway;
+
+      const pW = pH > pA ? 'home' : pA > pH ? 'away' : 'draw';
+      const rW = rH > rA ? 'home' : rA > rH ? 'away' : 'draw';
+
+      if (pH === rH && pA === rA) return 'exact';
+      if (pW === rW) return 'winner_ok';
       return 'wrong';
     }
-    // Fallback to live-scores result
-    if (!result) return 'upcoming';
-    if (match.homeGoals === null || match.awayGoals === null) return 'upcoming';
-    const pw = match.homeGoals > match.awayGoals ? 'home' : match.homeGoals < match.awayGoals ? 'away' : 'draw';
-    const rw = result.homeScore > result.awayScore ? 'home' : result.homeScore < result.awayScore ? 'away' : 'draw';
-    if (match.homeGoals === result.homeScore && match.awayGoals === result.awayScore) return 'exact';
-    if (pw === rw) return 'winner_ok';
-    return 'wrong';
+    return 'upcoming';
   }
 
   return (
@@ -287,10 +287,9 @@ export default function FixturePage() {
               </h3>
               <div className="space-y-2">
                 {upcoming4.map(match => {
-                  const result = realResults.get(match.id);
-                  const status = getMatchStatus(match, result);
+                  const status = getMatchStatus(match);
                   return (
-                    <MatchCard key={match.id} match={match} result={result} status={status} getFlag={getFlag} getRoundLabel={getRoundLabel} onClick={() => setSelectedMatch(match)} />
+                    <MatchCard key={match.id} match={match} status={status} getFlag={getFlag} getRoundLabel={getRoundLabel} onClick={() => setSelectedMatch(match)} />
                   );
                 })}
               </div>
@@ -307,8 +306,7 @@ export default function FixturePage() {
               <div className="space-y-2">
                 <AnimatePresence>
                   {matches.map(match => {
-                    const result = realResults.get(match.id);
-                    const status = getMatchStatus(match, result);
+                    const status = getMatchStatus(match);
                     return (
                       <motion.div
                         key={match.id}
@@ -316,7 +314,7 @@ export default function FixturePage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <MatchCard match={match} result={result} status={status} getFlag={getFlag} getRoundLabel={getRoundLabel} onClick={() => setSelectedMatch(match)} />
+                        <MatchCard match={match} status={status} getFlag={getFlag} getRoundLabel={getRoundLabel} onClick={() => setSelectedMatch(match)} />
                       </motion.div>
                     );
                   })}
@@ -356,7 +354,7 @@ export default function FixturePage() {
       </AnimatePresence>
 
       {selectedMatch && (
-        <MatchDetailModal match={selectedMatch} realResult={realResults.get(selectedMatch.id)} status={getMatchStatus(selectedMatch, realResults.get(selectedMatch.id))} getFlag={getFlag} getRoundLabel={getRoundLabel} onClose={() => setSelectedMatch(null)} />
+        <MatchDetailModal match={selectedMatch} status={getMatchStatus(selectedMatch)} getFlag={getFlag} getRoundLabel={getRoundLabel} onClose={() => setSelectedMatch(null)} />
       )}
     </div>
   );
@@ -407,16 +405,13 @@ const PALETTES: Record<string, any> = {
 // ═══════════════════════════════════════════════════════════════
 // MATCH CARD — Real score TOP, Predicted BOTTOM, TBD for unplayed
 // ═══════════════════════════════════════════════════════════════
-function MatchCard({ match, result, status, getFlag, getRoundLabel, onClick }: {
-  match: FixtureMatch; result?: RealResult; status: MatchStatus;
+function MatchCard({ match, status, getFlag, getRoundLabel, onClick }: {
+  match: FixtureMatch; status: MatchStatus;
   getFlag: (n: string) => string; getRoundLabel: (r: string) => string; onClick: () => void;
 }) {
   const pal = PALETTES[status];
   const isPlayed = status !== 'upcoming';
-  // Use fixture actualScore as source of truth, fallback to live-scores result
-  const actualScore = match.isFinished && match.actualHome != null && match.actualAway != null
-    ? { homeScore: match.actualHome, awayScore: match.actualAway }
-    : result;
+  const actualScore = (match.actualHome != null && match.actualAway != null) ? { homeScore: match.actualHome, awayScore: match.actualAway } : null;
   const realWinner = actualScore ? (actualScore.homeScore > actualScore.awayScore ? 'home' : actualScore.homeScore < actualScore.awayScore ? 'away' : 'draw') : null;
 
   return (
@@ -838,8 +833,8 @@ function PredictedBracketMatchCard({ match: m, getFlag, isFinal = false }: { mat
 // ═══════════════════════════════════════════════════════════════
 // MODAL
 // ═══════════════════════════════════════════════════════════════
-function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, onClose }: {
-  match: FixtureMatch; realResult?: RealResult; status: MatchStatus;
+function MatchDetailModal({ match, status, getFlag, getRoundLabel, onClose }: {
+  match: FixtureMatch; status: MatchStatus;
   getFlag: (n: string) => string; getRoundLabel: (r: string) => string; onClose: () => void;
 }) {
   const pal = PALETTES[status];
@@ -848,10 +843,8 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
   const awayElo = ELO_RATINGS[match.awayTeam]?.elo || 1500;
   const homePower = POWER_RATINGS[match.homeTeam] || { attack: 50, defense: 50, midfield: 50 };
   const awayPower = POWER_RATINGS[match.awayTeam] || { attack: 50, defense: 50, midfield: 50 };
-  // Use fixture actualScore as source of truth, fallback to live-scores result
-  const actualScore = match.isFinished && match.actualHome != null && match.actualAway != null
-    ? { homeScore: match.actualHome, awayScore: match.actualAway }
-    : realResult;
+
+  const actualScore = (match.actualHome != null && match.actualAway != null) ? { homeScore: match.actualHome, awayScore: match.actualAway } : null;
   const realWinner = actualScore ? (actualScore.homeScore > actualScore.awayScore ? 'home' : actualScore.homeScore < actualScore.awayScore ? 'away' : 'draw') : null;
   const seal = (isPlayed && match.homeGoals !== null && actualScore) ? computeSealStatus(match.homeGoals, match.awayGoals!, actualScore.homeScore, actualScore.awayScore) : null;
 
@@ -941,9 +934,9 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
           <DriftSparkline matchId={match.id} homeTeam={match.homeTeam} awayTeam={match.awayTeam} className="mt-3" />
 
           {/* ═══ DRIFT — Prediction vs Reality ═══ */}
-          {isPlayed && realResult && match.homeGoals !== null && match.awayGoals !== null && (() => {
-            const maeHome = Math.abs(match.homeGoals - realResult.homeScore);
-            const maeAway = Math.abs(match.awayGoals - realResult.awayScore);
+          {isPlayed && actualScore && match.homeGoals !== null && match.awayGoals !== null && (() => {
+            const maeHome = Math.abs(match.homeGoals - actualScore.homeScore);
+            const maeAway = Math.abs(match.awayGoals - actualScore.awayScore);
             const totalMae = (maeHome + maeAway) / 2;
             const driftColor = totalMae < 0.5 ? 'bg-[var(--match-correct-score)] text-[var(--match-correct-text)]' : totalMae <= 1 ? 'bg-[var(--match-gold-border)] text-state-warning' : 'bg-[var(--match-wrong-score)] text-[var(--match-wrong-text)]';
             const driftLabel = totalMae < 0.5 ? 'Muy cercana' : totalMae <= 1 ? 'Cercana' : 'Lejana';
@@ -965,7 +958,7 @@ function MatchDetailModal({ match, realResult, status, getFlag, getRoundLabel, o
                   <div className="flex-1 text-center">
                     <div className="text-[10px] text-fg-tertiary mb-1">Real</div>
                     <div className="px-3 py-1.5 bg-raised rounded-[var(--r-md)]">
-                      <span className={cn("font-mono font-bold text-sm", pal.scoreText)}>{realResult.homeScore}-{realResult.awayScore}</span>
+                      <span className={cn("font-mono font-bold text-sm", pal.scoreText)}>{actualScore.homeScore}-{actualScore.awayScore}</span>
                     </div>
                   </div>
                 </div>

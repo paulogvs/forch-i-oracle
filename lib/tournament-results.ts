@@ -86,6 +86,9 @@ export async function getOrComputeTournamentResults() {
       const homeScore = real ? real.homeScore : pred.predictedScore[0];
       const awayScore = real ? real.awayScore : pred.predictedScore[1];
 
+      // Try to get prediction from DB first to maintain consistency
+      const dbPred = await db.getPrediction(match.id);
+
       fullFixture.push({
         id: match.id,
         group: match.group,
@@ -94,12 +97,12 @@ export async function getOrComputeTournamentResults() {
         homeTeam: match.homeTeam,
         awayTeam: match.awayTeam,
         round: 'group',
-        predictedScore: [pred.predictedScore[0], pred.predictedScore[1]],
+        predictedScore: dbPred ? dbPred.mostLikelyScore.split('-').map(Number) : [pred.predictedScore[0], pred.predictedScore[1]],
         actualScore: real ? [real.homeScore, real.awayScore] : null,
-        confidence: pred.confidence,
-        homeWinPct: pred.homeWinPct,
-        drawPct: pred.drawPct,
-        awayWinPct: pred.awayWinPct,
+        confidence: dbPred ? dbPred.confidence : pred.confidence,
+        homeWinPct: dbPred ? dbPred.homeWin : pred.homeWinPct,
+        drawPct: dbPred ? dbPred.draw : pred.drawPct,
+        awayWinPct: dbPred ? dbPred.awayWin : pred.awayWinPct,
       });
 
       // Update virtual standings for this group
@@ -160,6 +163,9 @@ export async function getOrComputeTournamentResults() {
       }
     }
 
+    // Try to get prediction from DB first to maintain consistency
+    const dbPred = await db.getPrediction(match.id);
+
     fullFixture.push({
       id: match.id,
       group: match.group,
@@ -168,12 +174,12 @@ export async function getOrComputeTournamentResults() {
       homeTeam,
       awayTeam,
       round: match.round,
-      predictedScore: bm && bm.homeTeam !== 'TBD' ? [bm.homeScore, bm.awayScore] : null,
+      predictedScore: dbPred ? dbPred.mostLikelyScore.split('-').map(Number) : (bm && bm.homeTeam !== 'TBD' ? [bm.homeScore, bm.awayScore] : null),
       actualScore: real ? [real.homeScore, real.awayScore] : null,
-      confidence: pred?.confidence || null,
-      homeWinPct: bm?.homeWinProb || null,
-      drawPct: bm?.drawProb || null,
-      awayWinPct: bm?.awayWinProb || null,
+      confidence: dbPred ? dbPred.confidence : (pred?.confidence || null),
+      homeWinPct: dbPred ? dbPred.homeWin : (bm?.homeWinProb || null),
+      drawPct: dbPred ? dbPred.draw : (bm?.drawProb || null),
+      awayWinPct: dbPred ? dbPred.awayWin : (bm?.awayWinProb || null),
     });
   }
 
