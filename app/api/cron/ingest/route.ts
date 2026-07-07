@@ -1,17 +1,16 @@
-// FORCH.i ORACLE — Cron Job: Data Ingestion (v2 — FIFA API)
-// Triggered by GitHub Actions (cada 15 min durante partidos)
-// Backup: Vercel Cron (1x/día a las 6 AM UTC)
+// FORCH.i ORACLE — Cron Job: Data Ingestion (v3 — Hardcoded Results)
+// Triggered by cronjob (3h after each match) or manually via POST
 //
-// DATA SOURCE: FIFA Public API (api.fifa.com/api/v3)
-//   - Gratis, sin API key, datos oficiales en tiempo real
-//   - Reemplaza: wheniskickoff.com, openfootball, API-Football, football-data.org
+// DATA SOURCE: lib/hardcoded-results.ts — static, user-provided results.
+// NO external API calls.
 //
-// AUTO-SIMULATE: Después de ingestar resultados, dispara /api/cron/simulate
+// AUTO-SIMULATE: After ingesting results, triggers /api/cron/simulate
 
 import { NextResponse } from 'next/server';
 import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
 import { validateCronAuth } from '@/lib/cron-auth';
-import { fetchFIFAMatches, toInternalResult, type FIFAMatch } from '@/lib/fifa-api';
+import { HARDCODED_RESULTS } from '@/lib/hardcoded-results';
+import { ALL_MATCHES } from '@/lib/matches';
 
 // ═══════════════════════════════════════════════════════════════
 // DIAGNOSTIC LOG
@@ -50,7 +49,7 @@ async function handleIngest(request: Request) {
   };
 
   try {
-    console.log('[cron:ingest] Starting FIFA API ingestion...');
+    console.log('[cron:ingest] Starting hardcoded results ingestion...');
 
     // Step 1: Check data layer
     try {
@@ -68,104 +67,74 @@ async function handleIngest(request: Request) {
       });
     }
 
-    // Step 2: Fetch matches from FIFA API
     diagnostics.push({
       step: 'source',
       status: 'ok',
-      message: 'Fetching matches from FIFA public API (free, no key required)',
+      message: `Loading ${HARDCODED_RESULTS.length} hardcoded results from lib/hardcoded-results.ts`,
     });
 
-    const fifaMatches = await fetchFIFAMatches('es');
+    // Step 2: Get ALL_MATCHES for team name resolution
+    const allMatches = ALL_MATCHES;
+    const matchesById = new Map(allMatches.map(m => [m.id, m]));
 
-    if (fifaMatches.length === 0) {
-      diagnostics.push({
-        step: 'fifa_api',
-        status: 'error',
-        message: 'FIFA API returned 0 matches. Ingestion aborted.',
-      });
-      return NextResponse.json({
-        success: false,
-        error: 'FIFA API unavailable',
-        diagnostics,
-      }, { status: 502 });
-    }
-
-    diagnostics.push({
-      step: 'fifa_api',
-      status: 'ok',
-      message: `Received ${fifaMatches.length} matches from FIFA API`,
-    });
-
-    // Step 3: Process finished matches only
-    const finishedMatches = fifaMatches.filter(m => m.status === 'finished' && m.home?.code && m.away?.code);
-    diagnostics.push({
-      step: 'filter',
-      status: 'ok',
-      message: `${finishedMatches.length} finished matches with scores (${fifaMatches.length - finishedMatches.length} upcoming/live)`,
-    });
-
-    // Step 4: Get existing results for dedup
+    // Step 3: Get existing results for dedup
     const existingResults = await db.getMatchResults();
     const existingResultIds = new Set(existingResults.map(r => r.matchId));
 
-    // Step 5: Ingest each finished match
+    // Step 4: Ingest each hardcoded result
     let processed = 0;
     let skipped = 0;
 
-    for (const fm of finishedMatches) {
-      const internal = toInternalResult(fm);
-      if (!internal) {
-        skipped++;
-        continue;
-      }
-
-      // Find match in database
-      let match = await db.getMatchByTeams(internal.homeTeam, internal.awayTeam);
-      if (!match) {
-        match = await db.getMatchByTeams(internal.awayTeam, internal.homeTeam);
-      }
-
+    for (const hr of HARDCODED_RESULTS) {
+      const match = matchesById.get(hr.matchId);
       if (!match) {
         diagnostics.push({
           step: 'match_lookup',
           status: 'warn',
-          message: `No match found for ${internal.homeTeam} vs ${internal.awayTeam} (FIFA match ${fm.id})`,
+          message: `No match found for ID: ${hr.matchId}`,
         });
         skipped++;
         continue;
       }
 
       // Deduplicate
-      if (existingResultIds.has(match.id)) {
+      if (existingResultIds.has(hr.matchId)) {
         skipped++;
         continue;
       }
 
       // Ingest!
+      const winner = hr.homeScore > hr.awayScore
+        ? match.homeTeam
+        : hr.awayScore > hr.homeScore
+          ? match.awayTeam
+          : 'draw';
+
       await db.submitMatchResult({
-        matchId: match.id,
-        homeScore: internal.homeScore,
-        awayScore: internal.awayScore,
-        winner: internal.winner,
+        matchId: hr.matchId,
+        homeScore: hr.homeScore,
+        awayScore: hr.awayScore,
+        winner,
       });
 
       // Update team form
-      await updateTeamForm(db, internal.homeTeam, internal.awayTeam, internal.homeScore, internal.awayScore);
+      await updateTeamForm(db, match.homeTeam, match.awayTeam, hr.homeScore, hr.awayScore);
       results.formsUpdated += 2;
       results.resultsIngested++;
       processed++;
-      existingResultIds.add(match.id);
+      existingResultIds.add(hr.matchId);
 
-      console.log(`[cron:ingest] Ingested: ${internal.homeTeam} ${internal.homeScore}-${internal.awayScore} ${internal.awayTeam}`);
+      console.log(`[cron:ingest] Ingested: ${match.homeTeam} ${hr.homeScore}-${hr.awayScore} ${match.awayTeam}`);
     }
 
     diagnostics.push({
       step: 'ingest',
       status: 'ok',
-      message: `Processed ${finishedMatches.length} finished: ${processed} ingested, ${skipped} skipped (no match/dup/TBD)`,
+      message: `Processed ${HARDCODED_RESULTS.length} results: ${processed} ingested, ${skipped} skipped (already ingested)` + 
+        (processed === 0 ? ' (all already ingested)' : ''),
     });
 
-    // Step 6: Auto-simulate after successful ingestion
+    // Step 5: Auto-simulate after successful ingestion
     if (results.resultsIngested > 0) {
       diagnostics.push({
         step: 'ingest_summary',
@@ -198,7 +167,7 @@ async function handleIngest(request: Request) {
       }
     }
 
-    // Step 7: Update cron status
+    // Step 6: Update cron status
     const duration = Date.now() - startTime;
     await db.updateCronStatus({
       jobName: 'ingest',
@@ -215,8 +184,7 @@ async function handleIngest(request: Request) {
       duration,
       resultsIngested: results.resultsIngested,
       formsUpdated: results.formsUpdated,
-      fifaMatchesReceived: fifaMatches.length,
-      finishedCount: finishedMatches.length,
+      hardcodedResultsTotal: HARDCODED_RESULTS.length,
       diagnostics,
     });
   } catch (error) {

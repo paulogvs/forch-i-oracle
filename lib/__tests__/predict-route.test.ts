@@ -3,12 +3,6 @@ import type { NextRequest } from 'next/server';
 
 // @ts-nocheck — vitest test file, mock objects don't satisfy NextRequest strictly
 
-// Mock the modules that make external calls
-vi.mock('@/lib/football-api', () => ({
-  getMatchContext: vi.fn().mockResolvedValue('Test match context'),
-  getComprehensiveTeamStats: vi.fn().mockResolvedValue(null),
-}));
-
 // Import after mocking
 import { POST } from '@/app/api/predict/route';
 

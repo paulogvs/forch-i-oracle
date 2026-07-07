@@ -1,24 +1,22 @@
 // FORCH.i ORACLE — Live Scores API
-// Instant real scores without going through full ingest pipeline.
-// Source: FIFA Public API (api.fifa.com/api/v3) — gratis, sin API key, datos oficiales en tiempo real
+// DISPLAY-ONLY: Reads real results from data layer and resolves team names
+// from the tournament bracket. NO external API calls.
 //
 // GET /api/live-scores — All matches with scores (finished + live + upcoming)
 // GET /api/live-scores?live=true — Only live matches
 // GET /api/live-scores?group=A — Matches for a specific group
-//
-// Server-side cache: 30s TTL (live data needs freshness)
 
 import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { getDataLayerAsync, type IDataLayer } from '@/lib/data-layer';
-import { fetchFIFAMatches, toLiveScore, toInternalResult } from '@/lib/fifa-api';
-import { mapToSpanish } from '@/lib/teams';
+import { getDataLayerAsync } from '@/lib/data-layer';
+import { ALL_MATCHES } from '@/lib/matches';
+import { getOrComputeTournamentResults } from '@/lib/tournament-results';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════
 
-export interface FIFALiveScore {
+export interface LiveScoreEntry {
   id: string;
   matchNumber: number;
   stage: string;
@@ -43,9 +41,9 @@ interface LiveScoresResponse {
   success: boolean;
   source: string;
   lastUpdated: string;
-  finished: FIFALiveScore[];
-  live: FIFALiveScore[];
-  upcoming: FIFALiveScore[];
+  finished: LiveScoreEntry[];
+  live: LiveScoreEntry[];
+  upcoming: LiveScoreEntry[];
   stats: {
     totalGames: number;
     finishedCount: number;
@@ -60,6 +58,40 @@ interface LiveScoresResponse {
 
 const liveCache = new Map<string, { data: LiveScoresResponse; expiresAt: number }>();
 const LIVE_CACHE_TTL = 30_000; // 30 seconds
+
+// Resolved team names for knockout matches (from bracket)
+let resolvedKnockoutMap: Map<string, { homeTeam: string; awayTeam: string }> | null = null;
+
+async function buildResolvedMap(): Promise<Map<string, { homeTeam: string; awayTeam: string }>> {
+  if (resolvedKnockoutMap) return resolvedKnockoutMap;
+
+  resolvedKnockoutMap = new Map();
+  try {
+    const tournamentData = await getOrComputeTournamentResults();
+    const bracket = tournamentData.bracket;
+    if (!bracket) return resolvedKnockoutMap;
+
+    const allBracketMatches = [
+      ...(bracket.roundOf32 || []),
+      ...(bracket.roundOf16 || []),
+      ...(bracket.quarters || []),
+      ...(bracket.semis || []),
+      bracket.thirdPlace,
+      bracket.final,
+    ].filter(Boolean);
+
+    for (const bm of allBracketMatches) {
+      if (bm.homeTeam && bm.homeTeam !== 'TBD' && bm.awayTeam && bm.awayTeam !== 'TBD') {
+        const id = bm.id === 'TP-1' ? '3rd' : bm.id === 'FINAL' ? 'Final' : bm.id;
+        resolvedKnockoutMap.set(id, { homeTeam: bm.homeTeam, awayTeam: bm.awayTeam });
+      }
+    }
+  } catch {
+    // Non-critical — will fall through to slot names
+  }
+
+  return resolvedKnockoutMap;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // HANDLER
@@ -84,69 +116,76 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Fetch from FIFA public API
-    const fifaMatches = await fetchFIFAMatches('es');
+    const db = await getDataLayerAsync();
+    const storedResults = await db.getMatchResults();
+    const resultsMap = new Map(storedResults.map(r => [r.matchId, r]));
 
-    if (fifaMatches.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'FIFA API unavailable',
-      }, { status: 502 });
-    }
+    // Build resolved team names for knockout matches from bracket
+    const resolvedNames = await buildResolvedMap();
 
-    // Convert to live score format
-    const converted = fifaMatches
-      .map(m => toLiveScore(m))
-      .filter((v): v is Record<string, unknown> => v !== null)
-      .map(v => v as unknown as FIFALiveScore);
+    // Build live score entries from ALL_MATCHES + stored results + resolved names
+    const allEntries: LiveScoreEntry[] = ALL_MATCHES.map((match, idx) => {
+      const result = resultsMap.get(match.id);
+      const hasResult = result && result.homeScore != null;
+      const today = new Date();
+
+      // Resolve team names: prefer bracket-resolved names, fall back to ALL_MATCHES
+      const resolved = resolvedNames.get(match.id);
+      const homeTeam = resolved?.homeTeam || match.homeTeam || null;
+      const awayTeam = resolved?.awayTeam || match.awayTeam || null;
+
+      // Winner name from resolved team names
+      const winnerName = hasResult && homeTeam && awayTeam
+        ? (result!.homeScore > result!.awayScore ? homeTeam :
+           result!.awayScore > result!.homeScore ? awayTeam : 'draw')
+        : null;
+
+      // Determine status
+      let status: LiveScoreEntry['status'] = 'scheduled';
+      if (hasResult) {
+        status = 'finished';
+      } else {
+        const matchDate = new Date(match.date + 'T' + (match.time || '12:00'));
+        const diffMs = today.getTime() - matchDate.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        if (diffHours >= 0 && diffHours < 3) status = 'live';
+      }
+
+      return {
+        id: match.id,
+        matchNumber: idx + 1,
+        stage: match.round || 'group',
+        group: match.round === 'group' ? (match.group || null) : null,
+        date: match.date,
+        venue: match.venue || null,
+        city: match.city || null,
+        status,
+        homeTeam,
+        awayTeam,
+        homeCode: null,
+        awayCode: null,
+        homeScore: result?.homeScore ?? null,
+        awayScore: result?.awayScore ?? null,
+        homePenScore: null,
+        awayPenScore: null,
+        winner: winnerName,
+        attendance: null,
+      };
+    });
 
     // Filter by group
     const filtered = groupFilter
-      ? converted.filter(m => m.group === groupFilter)
-      : converted;
+      ? allEntries.filter(m => m.group === groupFilter)
+      : allEntries;
 
     // Sort into buckets
     const finished = filtered.filter(m => m.status === 'finished');
     const live = filtered.filter(m => m.status === 'live');
     const upcoming = filtered.filter(m => m.status === 'scheduled' || m.status === 'postponed');
 
-    // Persist finished matches to data layer (non-blocking)
-    if (finished.length > 0) {
-      const db = await getDataLayerAsync();
-      const existingResults = await db.getMatchResults();
-      const existingIds = new Set(existingResults.map(r => r.matchId));
-
-      for (const fm of finished) {
-        if (!fm.homeCode || !fm.awayCode || fm.homeScore == null || fm.awayScore == null) continue;
-
-        // Convert FIFA codes to Spanish team names
-        const homeTeam = mapToSpanish(fm.homeCode);
-        const awayTeam = mapToSpanish(fm.awayCode);
-        if (!homeTeam || !awayTeam) continue;
-
-        // Find the match in our data layer by team names
-        let dbMatch = await db.getMatchByTeams(homeTeam, awayTeam);
-        if (!dbMatch) dbMatch = await db.getMatchByTeams(awayTeam, homeTeam);
-        if (!dbMatch) {
-          console.warn(`[live-scores] Match not found: ${homeTeam} vs ${awayTeam}`);
-          continue;
-        }
-
-        // Use internal match ID for dedup and persistence (not FIFA-{n})
-        if (existingIds.has(dbMatch.id)) continue;
-
-        try {
-          await persistFromFIFALiveScore(db, fm, homeTeam, awayTeam, dbMatch.id);
-          existingIds.add(dbMatch.id);
-        } catch {
-          // Non-critical — live-scores serves data regardless
-        }
-      }
-    }
-
     const response: LiveScoresResponse = {
       success: true,
-      source: 'FIFA Public API',
+      source: 'Forch.i Oracle (hardcoded data + bracket resolution)',
       lastUpdated: new Date().toISOString(),
       finished,
       live,
@@ -166,7 +205,7 @@ export async function GET(request: Request) {
     if (liveOnly) {
       return NextResponse.json({
         success: true,
-        source: 'FIFA Public API',
+        source: 'Forch.i Oracle (hardcoded data + bracket resolution)',
         lastUpdated: new Date().toISOString(),
         live,
         stats: {
@@ -184,25 +223,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
-
-/**
- * Persist a finished match from FIFA live scores to the data layer.
- * Uses the internal match ID (not FIFA-{n}) for consistent dedup and lookup.
- */
-async function persistFromFIFALiveScore(db: IDataLayer, fm: FIFALiveScore, homeTeam: string, awayTeam: string, matchId: string): Promise<void> {
-  const winner = (fm.homeScore ?? 0) > (fm.awayScore ?? 0)
-    ? homeTeam
-    : (fm.awayScore ?? 0) > (fm.homeScore ?? 0)
-      ? awayTeam
-      : 'draw';
-
-  await db.submitMatchResult({
-    matchId,
-    homeScore: fm.homeScore ?? 0,
-    awayScore: fm.awayScore ?? 0,
-    winner,
-  });
-
-  console.log(`[live-scores] Persisted: ${homeTeam} ${fm.homeScore}-${fm.awayScore} ${awayTeam} (id: ${matchId})`);
 }

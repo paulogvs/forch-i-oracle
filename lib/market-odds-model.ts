@@ -7,7 +7,7 @@
 // probabilities are a powerful baseline that captures public sentiment,
 // injury news, and sharp money.
 
-import { americanToImpliedProbability } from './espn-api';
+import { americanToImpliedProbability } from './odds-helpers';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
