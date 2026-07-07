@@ -329,7 +329,7 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     try {
       const fdToken = process.env.FOOTBALL_DATA_ORG_TOKEN;
       const headers: Record<string, string> = {};
-      if (fdToken) headers['X-Auth-Token'] = fdToken;
+      if (fdToken) headers['X-Auth-Token'] = fdToken as string;
 
       const fdResp = await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED', {
         headers,
@@ -349,11 +349,11 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
           const awayGoals = fd.score.fullTime.awayTeam;
           if (homeGoals === null || awayGoals === null) continue;
 
-          await tryIngest(homeTeam, awayTeam, homeGoals, awayGoals);
+          await tryIngest(homeTeam!, awayTeam!, homeGoals!, awayGoals!);
         }
       }
-    } catch (err) {
-      console.warn('[fixture] football-data.org fallback failed:', err instanceof Error ? err.message : String(err));
+    } catch (err: unknown) {
+      console.warn('[fixture] football-data.org fallback failed:', (err as Error)?.message || String(err));
     }
   }
 
