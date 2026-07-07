@@ -48,6 +48,9 @@ export interface SimulatedMatch {
   penalties?: boolean;
   penHome?: number;
   penAway?: number;
+  agreement?: any;
+  uncertainty?: any;
+  confidenceScore?: any;
 }
 
 export interface GroupStandings {
