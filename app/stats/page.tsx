@@ -62,21 +62,26 @@ function StatCard({ label, value, icon: Icon, tint }: {
 
 // ─── Main Page ────────────────────────────────────────────────────────────
 
+import { useTournamentStore } from '@/lib/store/tournament-store';
+
 export default function StatsPage() {
   const [tab, setTab] = useState<StatTab>('overview');
-
-  const { data: liveData } = useLiveScores<LiveResponse>();
-  const { data: simData } = useSimulation<SimResponse>();
+  const { fixture, loading } = useTournamentStore();
 
   const matches = useMemo(() => {
-    const finished = liveData?.finished || [];
-    return finished.map((m) => ({
-      ...m,
-      totalGoals: m.homeScore + m.awayScore,
-      goalDiff: Math.abs(m.homeScore - m.awayScore),
-      winner: m.homeScore > m.awayScore ? m.homeTeam : m.awayScore > m.homeScore ? m.awayTeam : 'Empate',
-    }));
-  }, [liveData]);
+    const finished = (fixture || []).filter(m => m.actualScore);
+    return finished.map((m) => {
+      const [h, a] = m.actualScore!;
+      return {
+        ...m,
+        homeScore: h,
+        awayScore: a,
+        totalGoals: h + a,
+        goalDiff: Math.abs(h - a),
+        winner: h > a ? m.homeTeam : a > h ? m.awayTeam : 'Empate',
+      };
+    });
+  }, [fixture]);
 
   const totalMatches = matches.length;
   const totalGoals = matches.reduce((s, m) => s + m.totalGoals, 0);

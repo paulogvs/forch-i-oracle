@@ -42,23 +42,16 @@ export default function FixturePage() {
   const [selectedMatch, setSelectedMatch] = useState<FixtureMatch | null>(null);
   const [tzOffset, setTzOffset] = useState<number>(-4);
 
-  const { fixture: cachedFixture, bracket: cachedBracket, standings: cachedStandings, top8: cachedTop8, loading: storeLoading } = useTournamentStore();
-  const { data: fixtureData, isLoading: fixtureLoading, error: fixtureError } = useFixture<FixtureResponse>();
-  const { data: liveData } = useLiveScores<LiveResponse>();
-  const { data: simData, isLoading: simLoading, error: simError } = useSimulation<SimResponse>();
+  const { fixture: cachedFixture, bracket, standings: cachedStandings, top8, loading, error, refresh, lastUpdated: storeLastUpdated } = useTournamentStore();
   const { data: predBracketData } = usePredictedBracket<PredictedBracketResponse>();
 
-  const loading = fixtureLoading && simLoading && storeLoading; // Only show global loading when ALL are loading
-  const allFailed = fixtureError && simError && !cachedFixture; // Only show error when ALL fail
+  const allFailed = !loading && !cachedFixture;
 
   useEffect(() => { setTzOffset(getUserTimezoneOffset()); }, []);
 
-  const top8 = useMemo(() => simData?.success ? simData.top8 || [] : cachedTop8 || [], [simData, cachedTop8]);
-  const bracket = useMemo(() => simData?.success ? simData.bracket : cachedBracket, [simData, cachedBracket]);
-
   const fixtures = useMemo(() => {
-    if (!fixtureData?.success) return cachedFixture || [];
-    const base = (fixtureData.fixture || []).map((m: any) => ({
+    if (!cachedFixture) return [];
+    return cachedFixture.map((m: any) => ({
       id: m.id, group: m.group || 'KO', date: m.date, time: m.time || '',
       homeTeam: m.homeTeam, awayTeam: m.awayTeam, venue: m.venue || '', city: m.city || '',
       round: m.round, homeGoals: m.predictedScore?.[0] ?? null, awayGoals: m.predictedScore?.[1] ?? null,
@@ -70,126 +63,20 @@ export default function FixturePage() {
       extraTime: false, penalties: false,
       analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
     }));
-
-    // Override knockout match teams with consensus bracket (same source as championProbs)
-    if (bracket) {
-      const bracketRoundMap: Record<string, any[]> = {
-        'R32': bracket.roundOf32 || [],
-        'R16': bracket.roundOf16 || [],
-        'QF': bracket.quarters || [],
-        'SF': bracket.semis || [],
-        'F': bracket.final ? [bracket.final] : [],
-        'TP': bracket.thirdPlace ? [bracket.thirdPlace] : [],
-      };
-      // Track which bracket matches have been used (by position) to avoid duplicates
-      const usedBracketIndices: Record<string, number> = {};
-      for (const m of base) {
-        const bracketMatches = bracketRoundMap[m.round];
-        if (!bracketMatches || bracketMatches.length === 0) continue;
-        const idx = usedBracketIndices[m.round] || 0;
-        if (idx < bracketMatches.length) {
-          const bMatch = bracketMatches[idx];
-          if (bMatch && bMatch.homeTeam !== 'TBD') {
-            m.homeTeam = bMatch.homeTeam;
-            m.awayTeam = bMatch.awayTeam;
-            m.homeGoals = bMatch.homeScore;
-            m.awayGoals = bMatch.awayScore;
-            m.homeWin = bMatch.homeWinProb;
-            m.draw = bMatch.drawProb;
-            m.awayWin = bMatch.awayWinProb;
-            m.isPredicted = bMatch.homeScore !== null;
-            m.confidence = bMatch.homeWinProb != null ? (bMatch.homeWinProb > 55 ? 'alta' : bMatch.homeWinProb > 40 ? 'media' : 'baja') : null;
-          }
-          usedBracketIndices[m.round] = idx + 1;
-        }
-      }
-    }
-
-    return base;
-  }, [fixtureData, bracket, cachedFixture]);
+  }, [cachedFixture]);
 
   const realResults = useMemo(() => {
     const resultsMap = new Map<string, RealResult>();
-    // 1. Source: simulation results
-    if (simData?.success && simData.results) for (const r of simData.results) resultsMap.set(r.matchId, r);
-    // 2. Source: fixture actualScore (single source of truth from data layer)
     for (const f of fixtures) {
       if (f.actualHome != null && f.actualAway != null) {
         const winner = f.actualHome > f.actualAway ? f.homeTeam : f.actualAway > f.actualHome ? f.awayTeam : 'draw';
         resultsMap.set(f.id, { matchId: f.id, homeScore: f.actualHome, awayScore: f.actualAway, winner });
       }
     }
-    // 3. Source: live-scores (override with freshest data)
-    if (liveData?.success && liveData.finished) {
-      for (const m of liveData.finished) {
-        const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
-        if (match) resultsMap.set(match.id, { matchId: match.id, homeScore: m.homeScore, awayScore: m.awayScore, winner: m.homeScore > m.awayScore ? m.homeTeam : m.awayScore > m.homeScore ? m.awayTeam : 'draw' });
-      }
-    }
     return resultsMap;
-  }, [simData, liveData, fixtures]);
+  }, [fixtures]);
 
-  // Compute standings from fixture actualScore + live-scores (single source of truth)
-  const liveStandings = useMemo(() => {
-    if (cachedStandings && Object.keys(cachedStandings).length > 0) return cachedStandings;
-
-    const standings: Record<string, any[]> = {};
-    // Initialize all groups
-    for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
-      const teams = WORLD_CUP_TEAMS.filter(t => t.group === letter);
-      standings[letter] = teams.map(t => ({
-        name: t.name, flag: t.flag, played: 0, won: 0, drawn: 0,
-        lost: 0, gf: 0, ga: 0, gd: 0, points: 0,
-      }));
-    }
-
-    // Helper to apply a match result to standings
-    function applyResult(homeTeam: string, awayTeam: string, homeScore: number, awayScore: number) {
-      const match = ALL_MATCHES.find(am => am.homeTeam === homeTeam && am.awayTeam === awayTeam);
-      if (!match || match.round !== 'group' || !match.group) return;
-      const group = match.group;
-      if (!standings[group]) return;
-      const ht = standings[group].find(t => t.name === homeTeam);
-      const at = standings[group].find(t => t.name === awayTeam);
-      if (!ht || !at) return;
-      ht.played++; at.played++;
-      ht.gf += homeScore; ht.ga += awayScore;
-      at.gf += awayScore; at.ga += homeScore;
-      ht.gd = ht.gf - ht.ga;
-      at.gd = at.gf - at.ga;
-      if (homeScore > awayScore) { ht.won++; ht.points += 3; at.lost++; }
-      else if (homeScore < awayScore) { at.won++; at.points += 3; ht.lost++; }
-      else { ht.drawn++; at.drawn++; ht.points += 1; at.points += 1; }
-    }
-
-    // 1. Source: fixture actualScore (single source of truth)
-    const processedMatchIds = new Set<string>();
-    for (const f of fixtures) {
-      if (f.actualHome != null && f.actualAway != null && f.round === 'group') {
-        applyResult(f.homeTeam, f.awayTeam, f.actualHome, f.actualAway);
-        processedMatchIds.add(f.id);
-      }
-    }
-
-    // 2. Source: live-scores (override/add with freshest data)
-    if (liveData?.success && liveData.finished) {
-      for (const m of liveData.finished) {
-        const match = ALL_MATCHES.find(am => am.homeTeam === m.homeTeam && am.awayTeam === m.awayTeam);
-        if (match && !processedMatchIds.has(match.id)) {
-          applyResult(m.homeTeam, m.awayTeam, m.homeScore, m.awayScore);
-        }
-      }
-    }
-
-    // Sort each group by points, then GD, then GF
-    for (const group of Object.keys(standings)) {
-      standings[group].sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
-    }
-    return standings;
-  }, [liveData, cachedStandings, fixtures]);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-  useEffect(() => { if (fixtureData || simData) setLastUpdated(new Date()); }, [fixtureData, simData]);
+  const liveStandings = useMemo(() => cachedStandings || {}, [cachedStandings]);
 
   const MAIN_TABS = [
     { id: 'partidos' as const, label: 'Partidos', icon: Target },
@@ -285,7 +172,9 @@ export default function FixturePage() {
               {predictedCount} pred · <span className="text-state-success">{correctCount} ✓</span> · <span className="text-accent-premium">{exactCount} 🎯</span> · {playedCount} jugados
             </p>
           </div>
-          <span className="text-[10px] text-fg-tertiary shrink-0">{lastUpdated ? lastUpdated.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+          <span className="text-[10px] text-fg-tertiary shrink-0">
+            {storeLastUpdated ? new Date(storeLastUpdated).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' }) : '...'}
+          </span>
         </div>
       </div>
 
@@ -326,10 +215,10 @@ export default function FixturePage() {
         </div>
       )}
       {allFailed && <div className="surface-danger p-5 text-center rounded-[var(--r-lg)]"><p className="text-state-danger text-sm">Error cargando datos. Reintentando...</p></div>}
-      {!loading && !allFailed && (fixtureError || simError) && (
+      {!loading && !allFailed && error && (
         <div className="surface-elevated p-3 rounded-[var(--r-lg)] border border-state-warning/20 text-xs text-fg-secondary flex items-center gap-2 mb-3">
           <Zap className="w-4 h-4 text-state-warning shrink-0" />
-          <span>Algunos datos podrían no estar disponibles. {fixtureError && 'Predicciones no cargadas. '} {simError && 'Resultados storificados no disponibles.'}</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -446,7 +335,7 @@ export default function FixturePage() {
       )}
       {!loading && !allFailed && mainTab === 'top8' && (
         <motion.div key="top8" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-          <Top8Tab top8={top8} getFlag={getFlag} />
+          <Top8Tab top8={top8 || []} getFlag={getFlag} />
         </motion.div>
       )}
       {!loading && !allFailed && mainTab === 'bracket' && (predBracketData?.bracket || bracket) && (

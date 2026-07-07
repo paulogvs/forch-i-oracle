@@ -72,37 +72,42 @@ function getEloTier(elo: number): { label: string; color: string } {
 
 // ─── Main Page ────────────────────────────────────────────────────────────
 
+import { useTournamentStore } from '@/lib/store/tournament-store';
+
 export default function TeamsPage() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [confFilter, setConfFilter] = useState<ConfederationFilter>('all');
   const [groupFilter, setGroupFilter] = useState<GroupFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { data: liveData } = useLiveScores<{ success: boolean; finished: any[] }>();
+  const { fixture, loading } = useTournamentStore();
 
-  // Compute live stats
+  // Compute live stats from the single source of truth (fixture)
   const teamStats = useMemo(() => {
     const stats = new Map<string, TeamStats>();
     for (const t of WORLD_CUP_TEAMS) {
       stats.set(t.name, { played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, points: 0 });
     }
-    if (liveData?.finished) {
-      for (const m of liveData.finished) {
-        const home = stats.get(m.homeTeam);
-        const away = stats.get(m.awayTeam);
-        if (!home || !away) continue;
-        home.played++; away.played++;
-        home.gf += m.homeScore; home.ga += m.awayScore;
-        away.gf += m.awayScore; away.ga += m.homeScore;
-        home.gd = home.gf - home.ga;
-        away.gd = away.gf - away.ga;
-        if (m.homeScore > m.awayScore) { home.won++; home.points += 3; away.lost++; }
-        else if (m.homeScore < m.awayScore) { away.won++; away.points += 3; home.lost++; }
-        else { home.drawn++; away.drawn++; home.points += 1; away.points += 1; }
-      }
+
+    const finishedMatches = (fixture || []).filter(m => m.actualScore);
+    for (const m of finishedMatches) {
+      const home = stats.get(m.homeTeam);
+      const away = stats.get(m.awayTeam);
+      if (!home || !away) continue;
+
+      const [homeScore, awayScore] = m.actualScore!;
+
+      home.played++; away.played++;
+      home.gf += homeScore; home.ga += awayScore;
+      away.gf += awayScore; away.ga += homeScore;
+      home.gd = home.gf - home.ga;
+      away.gd = away.gf - away.ga;
+      if (homeScore > awayScore) { home.won++; home.points += 3; away.lost++; }
+      else if (homeScore < awayScore) { away.won++; away.points += 3; home.lost++; }
+      else { home.drawn++; away.drawn++; home.points += 1; away.points += 1; }
     }
     return stats;
-  }, [liveData]);
+  }, [fixture]);
 
   // Filtered teams
   const filteredTeams = useMemo(() => {
