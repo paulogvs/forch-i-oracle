@@ -128,17 +128,19 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'R32-16', homeScore: 2, awayScore: 1 },
 
   // ── R16 ──
-  // User: España y Noruega pasaron el 5 (R16-3 y R16-5)
-  // User: Inglaterra y Bélgica pasaron el 6 (R16-4 y R16-6)
-  // User: Marruecos y Francia pasaron el 7 (R16-1 y R16-2)
-
-  { matchId: 'R16-1', homeScore: 1, awayScore: 2 }, // Marruecos (Away W-R32-11)
-  { matchId: 'R16-2', homeScore: 1, awayScore: 3 }, // Francia (Away W-R32-12)
-  { matchId: 'R16-3', homeScore: 1, awayScore: 2 }, // Noruega (Away W-R32-3)
-  { matchId: 'R16-4', homeScore: 1, awayScore: 0 }, // Inglaterra (Home W-R32-9? No, England is W-R32-1)
-  { matchId: 'R16-5', homeScore: 2, awayScore: 0 }, // España (Home W-R32-15? No, Spain is W-R32-8)
-  { matchId: 'R16-6', homeScore: 1, awayScore: 2 }, // Bélgica (Away W-R32-14)
+  // R16-1: W-R32-7 vs W-R32-11 (Marruecos). Marruecos wins (Away).
+  { matchId: 'R16-1', homeScore: 1, awayScore: 2 },
+  // R16-2: W-R32-2 vs W-R32-12 (Francia). Francia wins (Away).
+  { matchId: 'R16-2', homeScore: 0, awayScore: 3 },
+  // R16-3: W-R32-5 vs W-R32-3 (Noruega). Noruega wins (Away).
+  { matchId: 'R16-3', homeScore: 1, awayScore: 2 },
+  // R16-4: W-R32-9 vs W-R32-1 (Inglaterra). Inglaterra wins (Away).
+  { matchId: 'R16-4', homeScore: 1, awayScore: 2 },
+  // R16-5: W-R32-15 vs W-R32-8 (España). España wins (Away).
+  { matchId: 'R16-5', homeScore: 0, awayScore: 2 },
+  // R16-6: W-R32-13 vs W-R32-14 (Bélgica). Bélgica wins (Away).
+  { matchId: 'R16-6', homeScore: 1, awayScore: 3 },
   // R16-7 and R16-8 also finished July 7
-  { matchId: 'R16-7', homeScore: 1, awayScore: 0 },
-  { matchId: 'R16-8', homeScore: 2, awayScore: 1 },
+  { matchId: 'R16-7', homeScore: 2, awayScore: 1 },
+  { matchId: 'R16-8', homeScore: 3, awayScore: 0 },
 ];
