@@ -113,7 +113,6 @@ export const ELO_RATINGS: Record<string, EloEntry> = {
   'Bélgica':       { elo: 2044, attack: 1.6, defense: 1.0 },
   'Colombia':      { elo: 2032, attack: 1.7, defense: 0.8 },
   'Uruguay':       { elo: 2027, attack: 1.6, defense: 0.9 },
-  'Italia':        { elo: 1992, attack: 1.5, defense: 0.8 },
   'Croacia':       { elo: 1998, attack: 1.4, defense: 0.9 },
   'Marruecos':     { elo: 1988, attack: 1.3, defense: 0.7 },
   'Japón':         { elo: 1978, attack: 1.5, defense: 0.9 },
@@ -127,7 +126,6 @@ export const ELO_RATINGS: Record<string, EloEntry> = {
   'Corea del Sur': { elo: 1918, attack: 1.2, defense: 1.0 },
   'Ecuador':       { elo: 1912, attack: 1.3, defense: 1.0 },
   'Senegal':       { elo: 1908, attack: 1.4, defense: 0.9 },
-  'Dinamarca':     { elo: 1905, attack: 1.5, defense: 1.1 },
 
   // Tier 4 — Medio (1850-1900)
   'Irán':          { elo: 1895, attack: 1.3, defense: 0.9 },
@@ -179,7 +177,6 @@ export const POWER_RATINGS: Record<string, { attack: number; defense: number; mi
   'Bélgica': { attack: 88, defense: 82, midfield: 86 },
   'Colombia': { attack: 85, defense: 82, midfield: 84 },
   'Uruguay': { attack: 83, defense: 85, midfield: 82 },
-  'Italia': { attack: 82, defense: 85, midfield: 84 },
   'Croacia': { attack: 78, defense: 82, midfield: 88 },
   'Marruecos': { attack: 80, defense: 86, midfield: 78 },
   'Japón': { attack: 79, defense: 78, midfield: 80 },
@@ -193,7 +190,6 @@ export const POWER_RATINGS: Record<string, { attack: number; defense: number; mi
   'Corea del Sur': { attack: 76, defense: 72, midfield: 73 },
   'Ecuador': { attack: 72, defense: 74, midfield: 70 },
   'Senegal': { attack: 75, defense: 76, midfield: 72 },
-  'Dinamarca': { attack: 73, defense: 75, midfield: 76 },
 
   // Tier 4 — Medio
   'Irán': { attack: 68, defense: 72, midfield: 67 },

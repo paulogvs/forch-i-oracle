@@ -205,20 +205,18 @@ const GROUP_L: Match[] = [
 // Emparejamientos según PlaceHolderA/PlaceHolderB de la API
 // ═══════════════════════════════════════════════════════════════
 //
-// Ordenado por cascada: R32-1+R32-2 → R16-1, R32-3+R32-4 → R16-2 ...
-//
-// R16-1 = W-R32-1(1E vs 3ABCDF)   vs W-R32-2(1I vs 3CDFGH)    [FIFA R16-89]
-// R16-2 = W-R32-3(2A vs 2B)       vs W-R32-4(1F vs 2C)        [FIFA R16-90]
-// R16-3 = W-R32-5(1C vs 2F)       vs W-R32-6(2E vs 2I)        [FIFA R16-91]
-// R16-4 = W-R32-7(1A vs 3CEFHI)   vs W-R32-8(1L vs 3EHIJK)    [FIFA R16-92]
-// R16-5 = W-R32-9(2K vs 2L)       vs W-R32-10(1H vs 2J)       [FIFA R16-93]
-// R16-6 = W-R32-11(1D vs 3BEFIJ)  vs W-R32-12(1G vs 3AEHIJ)   [FIFA R16-94]
-// R16-7 = W-R32-13(1J vs 2H)      vs W-R32-14(2D vs 2G)       [FIFA R16-95]
-// R16-8 = W-R32-15(1B vs 3EFGIJ)  vs W-R32-16(1K vs 3DEIJL)   [FIFA R16-96]
+// R32 cascada → R16:
+//   R32-7(2A vs 2B) + R32-11(1F vs 2C) → R16-1
+//   R32-2(1E vs 3D) + R32-12(1I vs 3F) → R16-2
+//   R32-5(1C vs 2F) + R32-3(2E vs 2I) → R16-3
+//   R32-9(1A vs 3E) + R32-1(1L vs 3K) → R16-4
+//   R32-15(2K vs 2L) + R32-8(1H vs 2J) → R16-5
+//   R32-13(1D vs 3B) + R32-14(1G vs 3I) → R16-6
+//   R32-10(1J vs 2H) + R32-4(2D vs 2G) → R16-7
+//   R32-16(1B vs 3J) + R32-6(1K vs 3L) → R16-8
 //
 // QF-1 = W-R16-1 vs W-R16-2   QF-2 = W-R16-5 vs W-R16-6
 // QF-3 = W-R16-3 vs W-R16-4   QF-4 = W-R16-7 vs W-R16-8
-// (QF-2 y QF-3 intercambiados vs viejo bracket para coincidir con FIFA)
 // ═══════════════════════════════════════════════════════════════
 
 const ROUND_OF_32: Match[] = [
