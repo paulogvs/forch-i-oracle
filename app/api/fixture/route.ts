@@ -263,8 +263,25 @@ async function ensureResultsFromExternalAPI(db: Awaited<ReturnType<typeof getDat
     const match = matchesByIdMap.get(hr.matchId);
     if (!match) { failedIngest.push(`${hr.matchId} (no match def)`); continue; }
     if (existingIds.has(match.id) && validScoreIds.has(match.id)) continue;
-    const winner = hr.homeScore > hr.awayScore ? match.homeTeam : hr.awayScore > hr.homeScore ? match.awayTeam : 'draw';
-    await db.submitMatchResult({ matchId: match.id, homeScore: hr.homeScore, awayScore: hr.awayScore, winner });
+    // Determine winner: penalty scores > score > draw
+    let winner: string;
+    if (hr.homePenScore != null && hr.awayPenScore != null) {
+      winner = hr.homePenScore > hr.awayPenScore ? match.homeTeam : match.awayTeam;
+    } else if (hr.homeScore > hr.awayScore) {
+      winner = match.homeTeam;
+    } else if (hr.awayScore > hr.homeScore) {
+      winner = match.awayTeam;
+    } else {
+      winner = 'draw';
+    }
+    await db.submitMatchResult({
+      matchId: match.id,
+      homeScore: hr.homeScore,
+      awayScore: hr.awayScore,
+      winner,
+      homePenScore: hr.homePenScore,
+      awayPenScore: hr.awayPenScore,
+    });
     await updateTeamFormAfterResult(db, match.homeTeam, match.awayTeam, hr.homeScore, hr.awayScore);
     ingested++;
     existingIds.add(match.id);

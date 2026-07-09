@@ -108,14 +108,14 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'L6', homeScore: 2, awayScore: 1 },
 
   // ── R32 (16 matches, todos con resultados reales verificados) ──
-  // R32-1:  1E vs 3ABCDEF → Alemania vs Paraguay. Paraguay 1-1 (4-3 pens)
-  { matchId: 'R32-1', homeScore: 1, awayScore: 1 },
+  // R32-1:  1E vs 3ABCDEF → Alemania vs Paraguay. Paraguay gagne 1-1 (4-3 pens)
+  { matchId: 'R32-1', homeScore: 1, awayScore: 1, homePenScore: 3, awayPenScore: 4 },
   // R32-2:  1I vs 3CDFGH → Francia vs Suecia. Francia 3-0
   { matchId: 'R32-2', homeScore: 3, awayScore: 0 },
-  // R32-3:  2A vs 2B → Sudáfrica vs Canadá. Canadá 1-0
+  // R32-3:  2A vs 2B → Sudáfrica vs Canadá. Canadá 1-0 (Away win)
   { matchId: 'R32-3', homeScore: 0, awayScore: 1 },
-  // R32-4:  1F vs 2C → Países Bajos vs Marruecos. Marruecos 1-1 (3-2 pens)
-  { matchId: 'R32-4', homeScore: 1, awayScore: 1 },
+  // R32-4:  1F vs 2C → Países Bajos vs Marruecos. Maroc gana 1-1 (3-2 pens)
+  { matchId: 'R32-4', homeScore: 1, awayScore: 1, homePenScore: 2, awayPenScore: 3 },
   // R32-5:  2K vs 2L → Portugal vs Croacia. Portugal 2-1
   { matchId: 'R32-5', homeScore: 2, awayScore: 1 },
   // R32-6:  1H vs 2J → España vs Austria. España 3-0
@@ -126,7 +126,7 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'R32-8', homeScore: 3, awayScore: 2 },
   // R32-9:  1C vs 2F → Brasil vs Japón. Brasil 2-1
   { matchId: 'R32-9', homeScore: 2, awayScore: 1 },
-  // R32-10: 2E vs 2I → Costa de Marfil vs Noruega. Noruega 2-1
+  // R32-10: 2E vs 2I → Costa de Marfil vs Noruega. Noruega 2-1 (Away win)
   { matchId: 'R32-10', homeScore: 1, awayScore: 2 },
   // R32-11: 1A vs 3CEFHI → México vs Ecuador. México 2-0
   { matchId: 'R32-11', homeScore: 2, awayScore: 0 },
@@ -134,8 +134,8 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'R32-12', homeScore: 2, awayScore: 1 },
   // R32-13: 1J vs 2H → Argentina vs Cabo Verde. Argentina 3-2
   { matchId: 'R32-13', homeScore: 3, awayScore: 2 },
-  // R32-14: 2D vs 2G → Australia vs Egipto. Egipto 1-1 (4-2 pens)
-  { matchId: 'R32-14', homeScore: 1, awayScore: 1 },
+  // R32-14: 2D vs 2G → Australia vs Egipto. Egipto gana 1-1 (4-2 pens)
+  { matchId: 'R32-14', homeScore: 1, awayScore: 1, homePenScore: 2, awayPenScore: 4 },
   // R32-15: 1B vs 3EFGIJ → Suiza vs Argelia. Suiza 2-0
   { matchId: 'R32-15', homeScore: 2, awayScore: 0 },
   // R32-16: 1K vs 3DEIJL → Colombia vs Ghana. Colombia 2-1

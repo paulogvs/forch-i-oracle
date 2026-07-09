@@ -165,6 +165,8 @@ export interface RealMatchResultInput {
   homeScore: number;
   awayScore: number;
   winner: string;
+  homePenScore?: number;
+  awayPenScore?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════

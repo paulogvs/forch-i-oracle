@@ -167,17 +167,24 @@ export async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof get
       if (homeTeam !== 'TBD' && awayTeam !== 'TBD') {
         const result = resultsMap.get(match.id);
         if (result) {
-          if (result.homeScore > result.awayScore) {
-            winners.set(`W-${match.id}`, homeTeam);
-            losers.set(`L-${match.id}`, awayTeam);
+          // Use penalty scores if present, else fall back to score
+          let winner: string, loser: string;
+          if ((result as any).homePenScore != null && (result as any).awayPenScore != null) {
+            if ((result as any).homePenScore > (result as any).awayPenScore) {
+              winner = homeTeam; loser = awayTeam;
+            } else {
+              winner = awayTeam; loser = homeTeam;
+            }
+          } else if (result.homeScore > result.awayScore) {
+            winner = homeTeam; loser = awayTeam;
           } else if (result.awayScore > result.homeScore) {
-            winners.set(`W-${match.id}`, awayTeam);
-            losers.set(`L-${match.id}`, homeTeam);
+            winner = awayTeam; loser = homeTeam;
           } else {
-            // Draw in knockout should have pen winner, but if not assume home
-            winners.set(`W-${match.id}`, homeTeam);
-            losers.set(`L-${match.id}`, awayTeam);
+            // Draw in knockout without penalty info — assume home (conservative fallback)
+            winner = homeTeam; loser = awayTeam;
           }
+          winners.set(`W-${match.id}`, winner);
+          losers.set(`L-${match.id}`, loser);
         }
       }
     }

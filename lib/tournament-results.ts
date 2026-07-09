@@ -24,19 +24,30 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 async function ensureHardcodedResults(db: any) {
   const existing = await db.getMatchResults();
-  if (existing.length >= HARDCODED_RESULTS.length) return;
 
-  // First ingest all hardcoded results
+  // First ingest all hardcoded results (re-ingest even if already there, to update penalty winners)
+  // The data layer replaces existing entries by matchId.
   for (const hr of HARDCODED_RESULTS) {
     const match = ALL_MATCHES.find(m => m.id === hr.matchId);
     if (!match) continue;
-    // Winner stored as slot reference first; will be resolved by resolveKnockoutTeamNames
-    const winner = hr.homeScore > hr.awayScore ? match.homeTeam : hr.awayScore > hr.homeScore ? match.awayTeam : 'draw';
+    // Use penalty scores for KO draws, else use score
+    let initialWinner: string;
+    if (hr.homePenScore != null && hr.awayPenScore != null) {
+      initialWinner = hr.homePenScore > hr.awayPenScore ? match.homeTeam : match.awayTeam;
+    } else if (hr.homeScore > hr.awayScore) {
+      initialWinner = match.homeTeam;
+    } else if (hr.awayScore > hr.homeScore) {
+      initialWinner = match.awayTeam;
+    } else {
+      initialWinner = 'draw';
+    }
     await db.submitMatchResult({
       matchId: hr.matchId,
       homeScore: hr.homeScore,
       awayScore: hr.awayScore,
-      winner
+      winner: initialWinner,
+      homePenScore: hr.homePenScore,
+      awayPenScore: hr.awayPenScore,
     });
   }
 
@@ -45,21 +56,34 @@ async function ensureHardcodedResults(db: any) {
 
   // Now re-read resolved matches and update winner names in results
   const resolvedMatches = await db.getAllMatches();
-  const allResults = await db.getMatchResults();
   for (const hr of HARDCODED_RESULTS) {
     const resolvedMatch = resolvedMatches.find((m: any) => m.id === hr.matchId);
-    const existingResult = allResults.find((r: any) => r.matchId === hr.matchId);
-    if (!resolvedMatch || !existingResult) continue;
+    if (!resolvedMatch) continue;
     const homeName = resolvedMatch.homeTeamId;
     const awayName = resolvedMatch.awayTeamId;
-    if (homeName && awayName && !/^[12WLA3]/.test(homeName) && !/^[12WLA3]/.test(awayName)) {
-      const realWinner = hr.homeScore > hr.awayScore ? homeName : hr.awayScore > hr.homeScore ? awayName : 'draw';
+    // Slot detection: 1A-1L, 2A-2L, 3A-3L, W-*, L-*
+    const isSlot = (s: string) => /^[12][A-L]$|^3[A-L]/.test(s) || /^W-/.test(s) || /^L-/.test(s);
+    if (homeName && awayName && !isSlot(homeName) && !isSlot(awayName)) {
+      // Use penalty scores to determine real winner name
+      // Use penalty scores to determine real winner name
+      let realWinner: string;
+      if (hr.homePenScore != null && hr.awayPenScore != null) {
+        realWinner = hr.homePenScore > hr.awayPenScore ? homeName : awayName;
+      } else if (hr.homeScore > hr.awayScore) {
+        realWinner = homeName;
+      } else if (hr.awayScore > hr.homeScore) {
+        realWinner = awayName;
+      } else {
+        realWinner = 'draw';
+      }
       // Update the result with the real team name as winner
       await db.submitMatchResult({
         matchId: hr.matchId,
         homeScore: hr.homeScore,
         awayScore: hr.awayScore,
         winner: realWinner,
+        homePenScore: hr.homePenScore,
+        awayPenScore: hr.awayPenScore,
       });
     }
   }
