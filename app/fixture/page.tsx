@@ -27,6 +27,7 @@ interface FixtureMatch {
   topScores: { home: number; away: number; probability: number }[] | null;
   isPredicted: boolean; isFinished: boolean; extraTime?: boolean; penalties?: boolean;
   analysis?: string; homeKeyPlayers?: string[]; awayKeyPlayers?: string[];
+  keyFactors?: string[];
 }
 
 interface RealResult { matchId: string; homeScore: number; awayScore: number; winner: string; }
@@ -62,6 +63,7 @@ export default function FixturePage() {
       isFinished: m.actualScore != null,
       extraTime: false, penalties: false,
       analysis: m.analysis || '', homeKeyPlayers: m.homeKeyPlayers || [], awayKeyPlayers: m.awayKeyPlayers || [],
+      keyFactors: m.keyFactors || [],
     }));
   }, [cachedFixture]);
 
@@ -926,6 +928,21 @@ function MatchDetailModal({ match, status, getFlag, getRoundLabel, onClose }: {
                 <span className="text-accent-primary font-semibold">{match.homeWin}%</span>
                 <span className="text-fg-tertiary">{match.draw}%</span>
                 <span className="text-state-danger font-semibold">{match.awayWin}%</span>
+              </div>
+            </div>
+          )}
+
+          {/* Key Factors — Why this prediction */}
+          {match.keyFactors && match.keyFactors.length > 0 && (
+            <div className="pt-3 mt-3 border-t border-border-subtle">
+              <div className="text-[10px] text-fg-tertiary uppercase tracking-wider font-semibold mb-2">¿Por qué este pronóstico?</div>
+              <div className="space-y-1.5">
+                {match.keyFactors.map((factor, i) => (
+                  <div key={i} className="flex items-start gap-2 text-[11px] text-fg-secondary">
+                    <span className="text-accent-primary mt-0.5">•</span>
+                    <span>{factor}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

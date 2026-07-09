@@ -7,6 +7,7 @@ import { resolveKnockoutTeamNames } from './bracket-resolver';
 import { predictSingleMatch } from './match-predictor';
 import { HARDCODED_RESULTS } from './hardcoded-results';
 import { ALL_MATCHES } from './matches';
+import { ELO_RATINGS, POWER_RATINGS } from './teams';
 
 // ═══ IN-MEMORY CACHE ═══
 interface CachedResult {
@@ -149,58 +150,86 @@ export async function getOrComputeTournamentResults() {
   }
 
   // Knockout Stage Fixture Enrichment
-  // Use DATA LAYER matches (already resolved by resolveKnockoutTeamNames) instead of ALL_MATCHES
+  // Use DATA LAYER matches (already resolved by resolveKnockoutTeamNames) as SINGLE SOURCE OF TRUTH
+  // The consensus bracket is simulation-derived and may have wrong matchups — ignore it for team names.
   const dbMatches = await db.getAllMatches();
   const dbMatchMap = new Map(dbMatches.map(m => [m.id, m]));
-  const allBracketMatches = [
-    ...(consensusBracket.roundOf32 || []),
-    ...(consensusBracket.roundOf16 || []),
-    ...(consensusBracket.quarters || []),
-    ...(consensusBracket.semis || []),
-    consensusBracket.thirdPlace,
-    consensusBracket.final,
-  ].filter(Boolean);
 
   const knockoutMatchesStatic = ALL_MATCHES.filter(m => m.round !== 'group');
-  const bracketMatchMap = new Map(allBracketMatches.map(bm => [bm.id === 'TP-1' ? '3rd' : bm.id === 'FINAL' ? 'Final' : bm.id, bm]));
 
   for (const match of knockoutMatchesStatic) {
-    const bm = bracketMatchMap.get(match.id);
     const real = resultsMap.get(match.id);
 
-    // Prefer resolved team names from data layer (set by resolveKnockoutTeamNames)
+    // SINGLE SOURCE OF TRUTH: data layer resolved names (set by resolveKnockoutTeamNames)
     const dbMatch = dbMatchMap.get(match.id);
     const resolvedHome = dbMatch?.homeTeamId && !/^[12WLA]/.test(dbMatch.homeTeamId) && dbMatch.homeTeamId !== 'TBD'
       ? dbMatch.homeTeamId : match.homeTeam;
     const resolvedAway = dbMatch?.awayTeamId && !/^[12WLA]/.test(dbMatch.awayTeamId) && dbMatch.awayTeamId !== 'TBD'
       ? dbMatch.awayTeamId : match.awayTeam;
 
-    let homeTeam = resolvedHome !== match.homeTeam ? resolvedHome : (bm?.homeTeam || match.homeTeam);
-    let awayTeam = resolvedAway !== match.awayTeam ? resolvedAway : (bm?.awayTeam || match.awayTeam);
+    let homeTeam = resolvedHome;
+    let awayTeam = resolvedAway;
     let pred = (homeTeam !== 'TBD' && awayTeam !== 'TBD') ? predictSingleMatch(homeTeam, awayTeam, match.id) : null;
-
-    if (bm) {
-      if (real) {
-        bm.homeScore = real.homeScore;
-        bm.awayScore = real.awayScore;
-        bm.isPlayed = true;
-        bm.winner = real.winner;
-      } else if (pred) {
-        bm.homeScore = pred.predictedScore[0];
-        bm.awayScore = pred.predictedScore[1];
-        bm.homeWinProb = pred.homeWinPct;
-        bm.drawProb = pred.drawPct;
-        bm.awayWinProb = pred.awayWinPct;
-        bm.winner = pred.winner;
-        bm.isPlayed = false;
-        bm.agreement = pred.agreement;
-        bm.uncertainty = pred.uncertainty;
-        bm.confidenceScore = pred.confidenceScore;
-      }
-    }
 
     // Try to get prediction from DB first to maintain consistency
     const dbPred = await db.getPrediction(match.id);
+
+    // Determine predicted score: DB > engine prediction > null
+    let predictedScore: [number, number] | null = null;
+    if (dbPred) {
+      predictedScore = dbPred.mostLikelyScore.split('-').map(Number) as [number, number];
+    } else if (pred && homeTeam !== 'TBD' && awayTeam !== 'TBD') {
+      predictedScore = [pred.predictedScore[0], pred.predictedScore[1]];
+    }
+
+    // Generate key factors for the prediction reasoning
+    const keyFactors: string[] = [];
+    if (pred && homeTeam !== 'TBD' && awayTeam !== 'TBD') {
+      const homeElo = ELO_RATINGS[homeTeam]?.elo || 1500;
+      const awayElo = ELO_RATINGS[awayTeam]?.elo || 1500;
+      const eloDiff = homeElo - awayElo;
+      const homeAttack = POWER_RATINGS[homeTeam]?.attack || 50;
+      const awayAttack = POWER_RATINGS[awayTeam]?.attack || 50;
+      const homeDefense = POWER_RATINGS[homeTeam]?.defense || 50;
+      const awayDefense = POWER_RATINGS[awayTeam]?.defense || 50;
+
+      // Elo factor
+      if (Math.abs(eloDiff) > 100) {
+        const fav = eloDiff > 0 ? homeTeam : awayTeam;
+        keyFactors.push(`Ventaja Elo: ${fav} (+${Math.abs(eloDiff)} pts)`);
+      } else {
+        keyFactors.push('Equipos parejos en Elo — resultado abierto');
+      }
+
+      // Attack factor
+      if (homeAttack > awayAttack + 10) {
+        keyFactors.push(`Ataque local superior (${homeAttack} vs ${awayAttack})`);
+      } else if (awayAttack > homeAttack + 10) {
+        keyFactors.push(`Ataque visitante superior (${awayAttack} vs ${homeAttack})`);
+      }
+
+      // Defense factor
+      if (homeDefense > awayDefense + 10) {
+        keyFactors.push(`Defensa local sólida (${homeDefense})`);
+      } else if (awayDefense > homeDefense + 10) {
+        keyFactors.push(`Defensa visitante sólida (${awayDefense})`);
+      }
+
+      // Model agreement
+      if (pred.agreement !== undefined && pred.agreement > 0.8) {
+        keyFactors.push('Alta concordancia entre modelos');
+      } else if (pred.agreement !== undefined && pred.agreement < 0.5) {
+        keyFactors.push('Modelos discrepantes — incertidumbre alta');
+      }
+
+      // Confidence
+      const maxProb = Math.max(pred.homeWinPct, pred.awayWinPct);
+      if (maxProb > 70) {
+        keyFactors.push(`Predicción de alta confianza (${maxProb.toFixed(0)}%)`);
+      } else if (maxProb < 50) {
+        keyFactors.push('Partido muy disputado');
+      }
+    }
 
     fullFixture.push({
       id: match.id,
@@ -210,12 +239,13 @@ export async function getOrComputeTournamentResults() {
       homeTeam,
       awayTeam,
       round: match.round,
-      predictedScore: dbPred ? dbPred.mostLikelyScore.split('-').map(Number) : (bm && bm.homeTeam !== 'TBD' ? [bm.homeScore, bm.awayScore] : null),
+      predictedScore,
       actualScore: real ? [real.homeScore, real.awayScore] : null,
       confidence: dbPred ? dbPred.confidence : (pred?.confidence || null),
-      homeWinPct: dbPred ? dbPred.homeWin : (bm?.homeWinProb || null),
-      drawPct: dbPred ? dbPred.draw : (bm?.drawProb || null),
-      awayWinPct: dbPred ? dbPred.awayWin : (bm?.awayWinProb || null),
+      homeWinPct: dbPred ? dbPred.homeWin : (pred?.homeWinPct || null),
+      drawPct: dbPred ? dbPred.draw : (pred?.drawPct || null),
+      awayWinPct: dbPred ? dbPred.awayWin : (pred?.awayWinPct || null),
+      keyFactors,
     });
   }
 
