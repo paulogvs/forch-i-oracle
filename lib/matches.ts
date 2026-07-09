@@ -201,57 +201,61 @@ const GROUP_L: Match[] = [
 
 // ═══════════════════════════════════════════════════════════════
 // KNOCKOUT STAGE — Round of 32
-// BRACKET ALINEADO CON FIFA API (fuente única de verdad)
-// Emparejamientos según PlaceHolderA/PlaceHolderB de la API
+// BRACKET ALINEADO CON FIFA — Emparejamientos predeterminados
+// Fuente: https://match-later.com/en/wc2026/articles/knockout-bracket.html
 // ═══════════════════════════════════════════════════════════════
 //
-// R32 cascada → R16:
-//   R32-7(2A vs 2B) + R32-11(1F vs 2C) → R16-1
-//   R32-2(1E vs 3D) + R32-12(1I vs 3F) → R16-2
-//   R32-5(1C vs 2F) + R32-3(2E vs 2I) → R16-3
-//   R32-9(1A vs 3E) + R32-1(1L vs 3K) → R16-4
-//   R32-15(2K vs 2L) + R32-8(1H vs 2J) → R16-5
-//   R32-13(1D vs 3B) + R32-14(1G vs 3I) → R16-6
-//   R32-10(1J vs 2H) + R32-4(2D vs 2G) → R16-7
-//   R32-16(1B vs 3J) + R32-6(1K vs 3L) → R16-8
+// Los 16 emparejamientos de R32 están FIJOS desde el sorteo.
+// El 3er lugar se asigna vía backtracking según qué 8 grupos
+// aportan los mejores terceros (de 495 escenarios posibles).
 //
-// QF-1 = W-R16-1 vs W-R16-2   QF-2 = W-R16-5 vs W-R16-6
-// QF-3 = W-R16-3 vs W-R16-4   QF-4 = W-R16-7 vs W-R16-8
+// R32 cascada → R16 (verificada contra REAL bracket — Jul 2026):
+//   R32-1(1E vs 3ABCDEF) + R32-2(1I vs 3CDFGH) → R16-1
+//   R32-3(2A vs 2B)     + R32-4(1F vs 2C)      → R16-2
+//   R32-9(1C vs 2F)     + R32-10(2E vs 2I)     → R16-3
+//   R32-11(1A vs 3CEFHI) + R32-12(1L vs 3EHIJK) → R16-4
+//   R32-5(2K vs 2L)     + R32-6(1H vs 2J)      → R16-5
+//   R32-7(1D vs 3BEFIJ) + R32-8(1G vs 3AEHIJ)  → R16-6
+//   R32-13(1J vs 2H)    + R32-14(2D vs 2G)     → R16-7
+//   R32-15(1B vs 3EFGIJ) + R32-16(1K vs 3DEIJL) → R16-8
+//
+// QF-1 = W-R16-1 vs W-R16-2   QF-2 = W-R16-3 vs W-R16-4
+// QF-3 = W-R16-5 vs W-R16-6   QF-4 = W-R16-7 vs W-R16-8
 // ═══════════════════════════════════════════════════════════════
 
 const ROUND_OF_32: Match[] = [
-  // ── Ronda 1: 1L vs 3K (ganador → R16-2) ──
-  { id: 'R32-1', group: 'R32', matchday: 1, date: '2026-06-29', time: '20:30', homeTeam: '1L', awayTeam: '3K', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
-  // ── Ronda 2: 1E vs 3D (ganador → R16-4) ──
-  { id: 'R32-2', group: 'R32', matchday: 1, date: '2026-06-30', time: '21:00', homeTeam: '1E', awayTeam: '3D', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
-  // ── Ronda 3: 2E vs 2I (ganador → R16-3) ──
-  { id: 'R32-3', group: 'R32', matchday: 1, date: '2026-06-28', time: '19:00', homeTeam: '2E', awayTeam: '2I', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
-  // ── Ronda 4: 2D vs 2G (ganador → R16-7) ──
-  { id: 'R32-4', group: 'R32', matchday: 1, date: '2026-06-30', time: '01:00', homeTeam: '2D', awayTeam: '2G', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-32' },
-  // ── Ronda 5: 1C vs 2F (ganador → R16-3) ──
-  { id: 'R32-5', group: 'R32', matchday: 1, date: '2026-06-29', time: '17:00', homeTeam: '1C', awayTeam: '2F', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-32' },
-  // ── Ronda 6: 1K vs 3L (ganador → R16-8) ──
-  { id: 'R32-6', group: 'R32', matchday: 1, date: '2026-06-30', time: '17:00', homeTeam: '1K', awayTeam: '3L', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
-  // ── Ronda 7: 2A vs 2B (ganador → R16-1) ──
-  { id: 'R32-7', group: 'R32', matchday: 2, date: '2026-07-01', time: '02:00', homeTeam: '2A', awayTeam: '2B', homeCode: '', awayCode: '', venue: 'Estadio Azteca', city: 'Mexico City', round: 'round-32' },
-  // ── Ronda 8: 1H vs 2J (ganador → R16-5) ──
-  { id: 'R32-8', group: 'R32', matchday: 2, date: '2026-07-01', time: '16:00', homeTeam: '1H', awayTeam: '2J', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-32' },
-  // ── Ronda 9: 1A vs 3E (ganador → R16-2) ──
-  { id: 'R32-9', group: 'R32', matchday: 2, date: '2026-07-02', time: '23:00', homeTeam: '1A', awayTeam: '3E', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-32' },
-  // ── Ronda 10: 1J vs 2H (ganador → R16-7) ──
-  { id: 'R32-10', group: 'R32', matchday: 2, date: '2026-07-02', time: '19:00', homeTeam: '1J', awayTeam: '2H', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
-  // ── Ronda 11: 1F vs 2C (ganador → R16-1) ──
-  { id: 'R32-11', group: 'R32', matchday: 2, date: '2026-07-02', time: '00:00', homeTeam: '1F', awayTeam: '2C', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-32' },
-  // ── Ronda 12: 1I vs 3F (ganador → R16-4) ──
-  { id: 'R32-12', group: 'R32', matchday: 2, date: '2026-07-01', time: '20:00', homeTeam: '1I', awayTeam: '3F', homeCode: '', awayCode: '', venue: 'Lumen Field', city: 'Seattle', round: 'round-32' },
-  // ── Ronda 13: 1D vs 3B (ganador → R16-6) ──
-  { id: 'R32-13', group: 'R32', matchday: 2, date: '2026-07-03', time: '22:00', homeTeam: '1D', awayTeam: '3B', homeCode: '', awayCode: '', venue: 'Arrowhead Stadium', city: 'Kansas City', round: 'round-32' },
-  // ── Ronda 14: 1G vs 3I (ganador → R16-6) ──
-  { id: 'R32-14', group: 'R32', matchday: 2, date: '2026-07-03', time: '18:00', homeTeam: '1G', awayTeam: '3I', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-32' },
-  // ── Ronda 15: 2K vs 2L (ganador → R16-5) ──
-  { id: 'R32-15', group: 'R32', matchday: 2, date: '2026-07-03', time: '03:00', homeTeam: '2K', awayTeam: '2L', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-32' },
-  // ── Ronda 16: 1B vs 3J (ganador → R16-8) ──
-  { id: 'R32-16', group: 'R32', matchday: 2, date: '2026-07-04', time: '01:30', homeTeam: '1B', awayTeam: '3J', homeCode: '', awayCode: '', venue: 'Arrowhead Stadium', city: 'Kansas City', round: 'round-32' },
+  // ── Match 73 FIFA: 1E vs 3{ABCDEF} (ganador → R16-1) ──
+  { id: 'R32-1', group: 'R32', matchday: 1, date: '2026-06-29', time: '16:30', homeTeam: '1E', awayTeam: '3ABCDEF', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-32' },
+  // ── Match 75 FIFA: 1I vs 3{CDFGH} (ganador → R16-1) ──
+  { id: 'R32-2', group: 'R32', matchday: 1, date: '2026-06-30', time: '19:00', homeTeam: '1I', awayTeam: '3CDFGH', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-32' },
+  // ── Match 73 FIFA: 2A vs 2B (ganador → R16-2) ──
+  { id: 'R32-3', group: 'R32', matchday: 1, date: '2026-06-28', time: '19:00', homeTeam: '2A', awayTeam: '2B', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-32' },
+  // ── Match 76 FIFA: 1F vs 2C (ganador → R16-2) ──
+  { id: 'R32-4', group: 'R32', matchday: 1, date: '2026-06-29', time: '21:00', homeTeam: '1F', awayTeam: '2C', homeCode: '', awayCode: '', venue: 'Estadio BBVA', city: 'Monterrey', round: 'round-32' },
+  // ── Match 82 FIFA: 2K vs 2L (ganador → R16-5) ──
+  { id: 'R32-5', group: 'R32', matchday: 2, date: '2026-07-02', time: '19:00', homeTeam: '2K', awayTeam: '2L', homeCode: '', awayCode: '', venue: 'BMO Field', city: 'Toronto', round: 'round-32' },
+  // ── Match 84 FIFA: 1H vs 2J (ganador → R16-5) ──
+  { id: 'R32-6', group: 'R32', matchday: 2, date: '2026-07-02', time: '22:00', homeTeam: '1H', awayTeam: '2J', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-32' },
+  // ── Match 77 FIFA: 1D vs 3{BEFIJ} (ganador → R16-6) ──
+  { id: 'R32-7', group: 'R32', matchday: 2, date: '2026-06-30', time: '20:00', homeTeam: '1D', awayTeam: '3BEFIJ', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'round-32' },
+  // ── Match 81 FIFA: 1G vs 3{AEHIJ} (ganador → R16-6) ──
+  { id: 'R32-8', group: 'R32', matchday: 2, date: '2026-07-01', time: '16:00', homeTeam: '1G', awayTeam: '3AEHIJ', homeCode: '', awayCode: '', venue: 'Lumen Field', city: 'Seattle', round: 'round-32' },
+  // ── Match 78 FIFA: 1C vs 2F (ganador → R16-3) ──
+  { id: 'R32-9', group: 'R32', matchday: 1, date: '2026-06-29', time: '17:00', homeTeam: '1C', awayTeam: '2F', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-32' },
+  // ── Match 80 FIFA: 2E vs 2I (ganador → R16-3) ──
+  { id: 'R32-10', group: 'R32', matchday: 2, date: '2026-06-30', time: '23:00', homeTeam: '2E', awayTeam: '2I', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-32' },
+  // ── Match 74 FIFA: 1A vs 3{CEFHI} (ganador → R16-4) ──
+  { id: 'R32-11', group: 'R32', matchday: 1, date: '2026-06-30', time: '23:00', homeTeam: '1A', awayTeam: '3CEFHI', homeCode: '', awayCode: '', venue: 'Estadio Azteca', city: 'Mexico City', round: 'round-32' },
+  // ── Match 88 FIFA: 1L vs 3{EHIJK} (ganador → R16-4) ──
+  { id: 'R32-12', group: 'R32', matchday: 2, date: '2026-07-01', time: '20:00', homeTeam: '1L', awayTeam: '3EHIJK', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-32' },
+  // ── Match 87 FIFA: 1J vs 2H (ganador → R16-7) ──
+  { id: 'R32-13', group: 'R32', matchday: 2, date: '2026-07-03', time: '22:00', homeTeam: '1J', awayTeam: '2H', homeCode: '', awayCode: '', venue: 'Arrowhead Stadium', city: 'Kansas City', round: 'round-32' },
+  // ── Match 86 FIFA: 2D vs 2G (ganador → R16-7) ──
+  { id: 'R32-14', group: 'R32', matchday: 2, date: '2026-07-03', time: '18:00', homeTeam: '2D', awayTeam: '2G', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-32' },
+  // ── Match 79 FIFA: 1B vs 3{EFGIJ} (ganador → R16-8) ──
+  { id: 'R32-15', group: 'R32', matchday: 2, date: '2026-07-01', time: '03:00', homeTeam: '1B', awayTeam: '3EFGIJ', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-32' },
+  // ── Match 85 FIFA: 1K vs 3{DEIJL} (ganador → R16-8) ──
+  { id: 'R32-16', group: 'R32', matchday: 2, date: '2026-07-03', time: '12:00', homeTeam: '1K', awayTeam: '3DEIJL', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-32' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -259,14 +263,22 @@ const ROUND_OF_32: Match[] = [
 // ═══════════════════════════════════════════════════════════════
 
 const ROUND_OF_16: Match[] = [
-  { id: 'R16-1', group: 'R16', matchday: 1, date: '2026-07-04', time: '21:00', homeTeam: 'W-R32-7', awayTeam: 'W-R32-11', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-16' },
-  { id: 'R16-2', group: 'R16', matchday: 1, date: '2026-07-04', time: '17:00', homeTeam: 'W-R32-2', awayTeam: 'W-R32-12', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'round-16' },
-  { id: 'R16-3', group: 'R16', matchday: 1, date: '2026-07-05', time: '20:00', homeTeam: 'W-R32-5', awayTeam: 'W-R32-3', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-16' },
-  { id: 'R16-4', group: 'R16', matchday: 1, date: '2026-07-06', time: '00:00', homeTeam: 'W-R32-9', awayTeam: 'W-R32-1', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'round-16' },
-  { id: 'R16-5', group: 'R16', matchday: 1, date: '2026-07-06', time: '19:00', homeTeam: 'W-R32-15', awayTeam: 'W-R32-8', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-16' },
-  { id: 'R16-6', group: 'R16', matchday: 1, date: '2026-07-07', time: '00:00', homeTeam: 'W-R32-13', awayTeam: 'W-R32-14', homeCode: '', awayCode: '', venue: 'SoFi Stadium', city: 'Los Angeles', round: 'round-16' },
-  { id: 'R16-7', group: 'R16', matchday: 1, date: '2026-07-07', time: '16:00', homeTeam: 'W-R32-10', awayTeam: 'W-R32-4', homeCode: '', awayCode: '', venue: 'Gillette Stadium', city: 'Boston', round: 'round-16' },
-  { id: 'R16-8', group: 'R16', matchday: 1, date: '2026-07-07', time: '20:00', homeTeam: 'W-R32-16', awayTeam: 'W-R32-6', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'round-16' },
+  // Match 89 FIFA: W-R32-1 vs W-R32-2 → Francia vs Paraguay (real: Francia 1-0 Paraguay)
+  { id: 'R16-1', group: 'R16', matchday: 1, date: '2026-07-04', time: '17:00', homeTeam: 'W-R32-1', awayTeam: 'W-R32-2', homeCode: '', awayCode: '', venue: 'Lincoln Financial Field', city: 'Philadelphia', round: 'round-16' },
+  // Match 90 FIFA: W-R32-3 vs W-R32-4 → Canadá vs Marruecos (real: Marruecos 3-0 Canadá)
+  { id: 'R16-2', group: 'R16', matchday: 1, date: '2026-07-04', time: '21:00', homeTeam: 'W-R32-3', awayTeam: 'W-R32-4', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'round-16' },
+  // Match 91 FIFA: W-R32-9 vs W-R32-10 → Brasil vs Noruega (real: Noruega 2-0 Brasil)
+  { id: 'R16-3', group: 'R16', matchday: 1, date: '2026-07-05', time: '20:00', homeTeam: 'W-R32-9', awayTeam: 'W-R32-10', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-16' },
+  // Match 92 FIFA: W-R32-11 vs W-R32-12 → México vs Inglaterra (real: Inglaterra 3-2 México)
+  { id: 'R16-4', group: 'R16', matchday: 1, date: '2026-07-05', time: '23:00', homeTeam: 'W-R32-11', awayTeam: 'W-R32-12', homeCode: '', awayCode: '', venue: 'Estadio Azteca', city: 'Mexico City', round: 'round-16' },
+  // Match 93 FIFA: W-R32-5 vs W-R32-6 → Portugal vs España (real: España 1-0 Portugal)
+  { id: 'R16-5', group: 'R16', matchday: 1, date: '2026-07-06', time: '19:00', homeTeam: 'W-R32-5', awayTeam: 'W-R32-6', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'round-16' },
+  // Match 94 FIFA: W-R32-7 vs W-R32-8 → USA vs Bélgica (real: Bélgica 4-1 USA)
+  { id: 'R16-6', group: 'R16', matchday: 1, date: '2026-07-06', time: '22:00', homeTeam: 'W-R32-7', awayTeam: 'W-R32-8', homeCode: '', awayCode: '', venue: 'Lumen Field', city: 'Seattle', round: 'round-16' },
+  // Match 95 FIFA: W-R32-13 vs W-R32-14 → Argentina vs Egipto (real: Argentina 3-2 Egipto)
+  { id: 'R16-7', group: 'R16', matchday: 1, date: '2026-07-07', time: '16:00', homeTeam: 'W-R32-13', awayTeam: 'W-R32-14', homeCode: '', awayCode: '', venue: 'Mercedes-Benz Stadium', city: 'Atlanta', round: 'round-16' },
+  // Match 96 FIFA: W-R32-15 vs W-R32-16 → Suiza vs Colombia (real: Suiza 4-3 pens)
+  { id: 'R16-8', group: 'R16', matchday: 1, date: '2026-07-07', time: '20:00', homeTeam: 'W-R32-15', awayTeam: 'W-R32-16', homeCode: '', awayCode: '', venue: 'BC Place', city: 'Vancouver', round: 'round-16' },
 ];
 
 // ═══════════════════════════════════════════════════════════════

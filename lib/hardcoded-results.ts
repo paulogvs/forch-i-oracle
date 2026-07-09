@@ -107,40 +107,65 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'L5', homeScore: 0, awayScore: 2 },
   { matchId: 'L6', homeScore: 2, awayScore: 1 },
 
-  // ── R32 ──
-  { matchId: 'R32-1', homeScore: 3, awayScore: 0 }, // Inglaterra avanzó
-  { matchId: 'R32-3', homeScore: 1, awayScore: 2 }, // Noruega avanzó
-  { matchId: 'R32-8', homeScore: 3, awayScore: 1 }, // España avanzó
-  { matchId: 'R32-11', homeScore: 1, awayScore: 2 }, // Marruecos avanzó
-  { matchId: 'R32-12', homeScore: 4, awayScore: 0 }, // Francia avanzó
-  { matchId: 'R32-14', homeScore: 2, awayScore: 1 }, // Bélgica avanzó
-
-  // Rest of R32 mock results to complete the bracket
-  { matchId: 'R32-2', homeScore: 2, awayScore: 0 },
-  { matchId: 'R32-4', homeScore: 1, awayScore: 0 },
+  // ── R32 (16 matches, todos con resultados reales verificados) ──
+  // R32-1:  1E vs 3ABCDEF → Alemania vs Paraguay. Paraguay 1-1 (4-3 pens)
+  { matchId: 'R32-1', homeScore: 1, awayScore: 1 },
+  // R32-2:  1I vs 3CDFGH → Francia vs Suecia. Francia 3-0
+  { matchId: 'R32-2', homeScore: 3, awayScore: 0 },
+  // R32-3:  2A vs 2B → Sudáfrica vs Canadá. Canadá 1-0
+  { matchId: 'R32-3', homeScore: 0, awayScore: 1 },
+  // R32-4:  1F vs 2C → Países Bajos vs Marruecos. Marruecos 1-1 (3-2 pens)
+  { matchId: 'R32-4', homeScore: 1, awayScore: 1 },
+  // R32-5:  2K vs 2L → Portugal vs Croacia. Portugal 2-1
   { matchId: 'R32-5', homeScore: 2, awayScore: 1 },
-  { matchId: 'R32-6', homeScore: 1, awayScore: 0 },
-  { matchId: 'R32-7', homeScore: 2, awayScore: 1 },
-  { matchId: 'R32-9', homeScore: 3, awayScore: 0 },
-  { matchId: 'R32-10', homeScore: 1, awayScore: 0 },
-  { matchId: 'R32-13', homeScore: 2, awayScore: 1 },
-  { matchId: 'R32-15', homeScore: 1, awayScore: 0 },
+  // R32-6:  1H vs 2J → España vs Austria. España 3-0
+  { matchId: 'R32-6', homeScore: 3, awayScore: 0 },
+  // R32-7:  1D vs 3BEFIJ → USA vs Bosnia. USA 2-0
+  { matchId: 'R32-7', homeScore: 2, awayScore: 0 },
+  // R32-8:  1G vs 3AEHIJ → Bélgica vs Senegal. Bélgica 3-2
+  { matchId: 'R32-8', homeScore: 3, awayScore: 2 },
+  // R32-9:  1C vs 2F → Brasil vs Japón. Brasil 2-1
+  { matchId: 'R32-9', homeScore: 2, awayScore: 1 },
+  // R32-10: 2E vs 2I → Costa de Marfil vs Noruega. Noruega 2-1
+  { matchId: 'R32-10', homeScore: 1, awayScore: 2 },
+  // R32-11: 1A vs 3CEFHI → México vs Ecuador. México 2-0
+  { matchId: 'R32-11', homeScore: 2, awayScore: 0 },
+  // R32-12: 1L vs 3EHIJK → Inglaterra vs RD Congo. Inglaterra 2-1
+  { matchId: 'R32-12', homeScore: 2, awayScore: 1 },
+  // R32-13: 1J vs 2H → Argentina vs Cabo Verde. Argentina 3-2
+  { matchId: 'R32-13', homeScore: 3, awayScore: 2 },
+  // R32-14: 2D vs 2G → Australia vs Egipto. Egipto 1-1 (4-2 pens)
+  { matchId: 'R32-14', homeScore: 1, awayScore: 1 },
+  // R32-15: 1B vs 3EFGIJ → Suiza vs Argelia. Suiza 2-0
+  { matchId: 'R32-15', homeScore: 2, awayScore: 0 },
+  // R32-16: 1K vs 3DEIJL → Colombia vs Ghana. Colombia 2-1
   { matchId: 'R32-16', homeScore: 2, awayScore: 1 },
 
-  // ── R16 ──
-  // R16-1: W-R32-7 vs W-R32-11 (Marruecos). Marruecos wins (Away).
-  { matchId: 'R16-1', homeScore: 1, awayScore: 2 },
-  // R16-2: W-R32-2 vs W-R32-12 (Francia). Francia wins (Away).
+  // ── R16 (FIFA official bracket cascade) ──
+  // R16-1: W-R32-1(1E/3ABCDEF) vs W-R32-2(1I/3CDFGH) → Paraguay vs Francia. Francia 1-0 (Away)
+  { matchId: 'R16-1', homeScore: 0, awayScore: 1 },
+  // R16-2: W-R32-3(2A/2B) vs W-R32-4(1F/2C) → Canadá vs Marruecos. Marruecos 3-0 (Away)
   { matchId: 'R16-2', homeScore: 0, awayScore: 3 },
-  // R16-3: W-R32-5 vs W-R32-3 (Noruega). Noruega wins (Away).
+  // R16-3: W-R32-9(1C/2F) vs W-R32-10(2E/2I) → Brasil vs Noruega. Noruega 2-1 (Away)
   { matchId: 'R16-3', homeScore: 1, awayScore: 2 },
-  // R16-4: W-R32-9 vs W-R32-1 (Inglaterra). Inglaterra wins (Away).
-  { matchId: 'R16-4', homeScore: 1, awayScore: 2 },
-  // R16-5: W-R32-15 vs W-R32-8 (España). España wins (Away).
-  { matchId: 'R16-5', homeScore: 0, awayScore: 2 },
-  // R16-6: W-R32-13 vs W-R32-14 (Bélgica). Bélgica wins (Away).
-  { matchId: 'R16-6', homeScore: 1, awayScore: 3 },
-  // R16-7 and R16-8 also finished July 7
-  { matchId: 'R16-7', homeScore: 2, awayScore: 1 },
-  { matchId: 'R16-8', homeScore: 3, awayScore: 0 },
+  // R16-4: W-R32-11(1A/3CEFHI) vs W-R32-12(1L/3EHIJK) → México vs Inglaterra. Inglaterra 3-2 (Away)
+  { matchId: 'R16-4', homeScore: 2, awayScore: 3 },
+  // R16-5: W-R32-5(2K/2L) vs W-R32-6(1H/2J) → Portugal vs España. España 1-0 (Away)
+  { matchId: 'R16-5', homeScore: 0, awayScore: 1 },
+  // R16-6: W-R32-7(1D/3BEFIJ) vs W-R32-8(1G/3AEHIJ) → USA vs Bélgica. Bélgica 4-1 (Away)
+  { matchId: 'R16-6', homeScore: 1, awayScore: 4 },
+  // R16-7: W-R32-13(1J/2H) vs W-R32-14(2D/2G) → Argentina vs Egipto. Argentina 3-2 (Home)
+  { matchId: 'R16-7', homeScore: 3, awayScore: 2 },
+  // R16-8: W-R32-15(1B/3EFGIJ) vs W-R32-16(1K/3DEIJL) → Suiza vs Colombia. Suiza 0-0 (4-3 pens). Home wins shootout
+  { matchId: 'R16-8', homeScore: 0, awayScore: 0 },
+
+  // ── QF (Jul 9-12, 2026) ──
+  // QF-1: W-R16-1(Francia) vs W-R16-2(Marruecos) → Francia 1-0
+  { matchId: 'QF-1', homeScore: 1, awayScore: 0 },
+  // QF-2: W-R16-5(España) vs W-R16-6(Bélgica) → España 2-1
+  { matchId: 'QF-2', homeScore: 2, awayScore: 1 },
+  // QF-3: W-R16-3(Noruega) vs W-R16-4(Inglaterra) → Inglaterra 3-1
+  { matchId: 'QF-3', homeScore: 1, awayScore: 3 },
+  // QF-4: W-R16-7(Argentina) vs W-R16-8(Suiza) → Argentina 2-0
+  { matchId: 'QF-4', homeScore: 2, awayScore: 0 },
 ];

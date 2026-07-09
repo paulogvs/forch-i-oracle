@@ -713,15 +713,16 @@ function simulateKnockout(
   // ═══════════════════════════════════════════════════════════════
 
   // R16 pairing ALIGNED with lib/matches.ts
+  // R16 pairing ALIGNED with lib/matches.ts — FIFA official bracket
   const r16def = [
-    'W-R32-7|W-R32-11',   // R16-1
-    'W-R32-2|W-R32-12',   // R16-2
-    'W-R32-5|W-R32-3',    // R16-3
-    'W-R32-9|W-R32-1',    // R16-4
-    'W-R32-15|W-R32-8',   // R16-5
-    'W-R32-13|W-R32-14',  // R16-6
-    'W-R32-10|W-R32-4',   // R16-7
-    'W-R32-16|W-R32-6',   // R16-8
+    'W-R32-1|W-R32-2',   // R16-1: 1E|3ABCDEF vs 1I|3CDFGH
+    'W-R32-3|W-R32-4',   // R16-2: 2A|2B     vs 1F|2C
+    'W-R32-9|W-R32-10',  // R16-3: 1C|2F     vs 2E|2I
+    'W-R32-11|W-R32-12', // R16-4: 1A|3CEFHI vs 1L|3EHIJK
+    'W-R32-5|W-R32-6',   // R16-5: 2K|2L     vs 1H|2J
+    'W-R32-7|W-R32-8',   // R16-6: 1D|3BEFIJ vs 1G|3AEHIJ
+    'W-R32-13|W-R32-14', // R16-7: 1J|2H     vs 2D|2G
+    'W-R32-15|W-R32-16', // R16-8: 1B|3EFGIJ vs 1K|3DEIJL
   ];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < r16def.length; i++) {
@@ -1159,7 +1160,7 @@ export function buildConsensusBracket(
   }
 
   // Build R16 using official pairing W-R32-X|W-R32-Y
-  const r16def = ['W-R32-7|W-R32-11','W-R32-2|W-R32-12','W-R32-5|W-R32-3','W-R32-9|W-R32-1','W-R32-15|W-R32-8','W-R32-13|W-R32-14','W-R32-10|W-R32-4','W-R32-16|W-R32-6'];
+  const r16def = ['W-R32-1|W-R32-2','W-R32-3|W-R32-4','W-R32-9|W-R32-10','W-R32-11|W-R32-12','W-R32-5|W-R32-6','W-R32-7|W-R32-8','W-R32-13|W-R32-14','W-R32-15|W-R32-16'];
   const roundOf16: SimulatedMatch[] = [];
   for (let i = 0; i < 8; i++) {
     const [h, a] = r16def[i].split('|');
