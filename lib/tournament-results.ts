@@ -25,9 +25,11 @@ async function ensureHardcodedResults(db: any) {
   const existing = await db.getMatchResults();
   if (existing.length >= HARDCODED_RESULTS.length) return;
 
+  // First ingest all hardcoded results
   for (const hr of HARDCODED_RESULTS) {
     const match = ALL_MATCHES.find(m => m.id === hr.matchId);
     if (!match) continue;
+    // Winner stored as slot reference first; will be resolved by resolveKnockoutTeamNames
     const winner = hr.homeScore > hr.awayScore ? match.homeTeam : hr.awayScore > hr.homeScore ? match.awayTeam : 'draw';
     await db.submitMatchResult({
       matchId: hr.matchId,
@@ -35,6 +37,30 @@ async function ensureHardcodedResults(db: any) {
       awayScore: hr.awayScore,
       winner
     });
+  }
+
+  // Resolve bracket slots to real team names
+  await resolveKnockoutTeamNames(db);
+
+  // Now re-read resolved matches and update winner names in results
+  const resolvedMatches = await db.getAllMatches();
+  const allResults = await db.getMatchResults();
+  for (const hr of HARDCODED_RESULTS) {
+    const resolvedMatch = resolvedMatches.find((m: any) => m.id === hr.matchId);
+    const existingResult = allResults.find((r: any) => r.matchId === hr.matchId);
+    if (!resolvedMatch || !existingResult) continue;
+    const homeName = resolvedMatch.homeTeamId;
+    const awayName = resolvedMatch.awayTeamId;
+    if (homeName && awayName && !/^[12WLA3]/.test(homeName) && !/^[12WLA3]/.test(awayName)) {
+      const realWinner = hr.homeScore > hr.awayScore ? homeName : hr.awayScore > hr.homeScore ? awayName : 'draw';
+      // Update the result with the real team name as winner
+      await db.submitMatchResult({
+        matchId: hr.matchId,
+        homeScore: hr.homeScore,
+        awayScore: hr.awayScore,
+        winner: realWinner,
+      });
+    }
   }
 }
 
@@ -123,6 +149,9 @@ export async function getOrComputeTournamentResults() {
   }
 
   // Knockout Stage Fixture Enrichment
+  // Use DATA LAYER matches (already resolved by resolveKnockoutTeamNames) instead of ALL_MATCHES
+  const dbMatches = await db.getAllMatches();
+  const dbMatchMap = new Map(dbMatches.map(m => [m.id, m]));
   const allBracketMatches = [
     ...(consensusBracket.roundOf32 || []),
     ...(consensusBracket.roundOf16 || []),
@@ -139,8 +168,15 @@ export async function getOrComputeTournamentResults() {
     const bm = bracketMatchMap.get(match.id);
     const real = resultsMap.get(match.id);
 
-    let homeTeam = bm?.homeTeam || match.homeTeam;
-    let awayTeam = bm?.awayTeam || match.awayTeam;
+    // Prefer resolved team names from data layer (set by resolveKnockoutTeamNames)
+    const dbMatch = dbMatchMap.get(match.id);
+    const resolvedHome = dbMatch?.homeTeamId && !/^[12WLA]/.test(dbMatch.homeTeamId) && dbMatch.homeTeamId !== 'TBD'
+      ? dbMatch.homeTeamId : match.homeTeam;
+    const resolvedAway = dbMatch?.awayTeamId && !/^[12WLA]/.test(dbMatch.awayTeamId) && dbMatch.awayTeamId !== 'TBD'
+      ? dbMatch.awayTeamId : match.awayTeam;
+
+    let homeTeam = resolvedHome !== match.homeTeam ? resolvedHome : (bm?.homeTeam || match.homeTeam);
+    let awayTeam = resolvedAway !== match.awayTeam ? resolvedAway : (bm?.awayTeam || match.awayTeam);
     let pred = (homeTeam !== 'TBD' && awayTeam !== 'TBD') ? predictSingleMatch(homeTeam, awayTeam, match.id) : null;
 
     if (bm) {
