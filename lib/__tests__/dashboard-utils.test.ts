@@ -57,7 +57,8 @@ describe('dashboard-utils', () => {
       expect(getRoundLabel('group')).toBe('Fase de Grupos');
       expect(getRoundLabel('round-32')).toBe('1/16 Final');
       expect(getRoundLabel('round-16')).toBe('Octavos');
-      expect(getRoundLabel('quarter')).toBe('Cuartos');
+      expect(getRoundLabel('quarter')).toBe('R8');
+      expect(getRoundLabel('R8')).toBe('R8');
       expect(getRoundLabel('semi')).toBe('Semifinales');
       expect(getRoundLabel('third')).toBe('Tercer Puesto');
       expect(getRoundLabel('final')).toBe('Final');

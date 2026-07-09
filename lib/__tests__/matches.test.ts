@@ -121,7 +121,8 @@ describe('getRoundName', () => {
     expect(getRoundName('group')).toBe('Fase de Grupos');
     expect(getRoundName('round-32')).toBe('1/16 Final');
     expect(getRoundName('round-16')).toBe('Octavos');
-    expect(getRoundName('quarter')).toBe('Cuartos');
+    expect(getRoundName('quarter')).toBe('R8');
+    expect(getRoundName('R8')).toBe('R8');
     expect(getRoundName('semi')).toBe('Semis');
     expect(getRoundName('third')).toBe('3° Puesto');
     expect(getRoundName('final')).toBe('Final');
