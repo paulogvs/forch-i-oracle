@@ -141,7 +141,7 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   // R32-16: 1K vs 3DEIJL → Colombia vs Ghana. Colombia 2-1
   { matchId: 'R32-16', homeScore: 2, awayScore: 1 },
 
-  // ── R16 (FIFA official bracket cascade) ──
+    // ── R16 (FIFA official bracket cascade — ALL 8 matches) ──
   // R16-1: W-R32-1(1E/3ABCDEF) vs W-R32-2(1I/3CDFGH) → Paraguay vs Francia. Francia 1-0 (Away)
   { matchId: 'R16-1', homeScore: 0, awayScore: 1 },
   // R16-2: W-R32-3(2A/2B) vs W-R32-4(1F/2C) → Canadá vs Marruecos. Marruecos 3-0 (Away)
@@ -157,15 +157,5 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   // R16-7: W-R32-13(1J/2H) vs W-R32-14(2D/2G) → Argentina vs Egipto. Argentina 3-2 (Home)
   { matchId: 'R16-7', homeScore: 3, awayScore: 2 },
   // R16-8: W-R32-15(1B/3EFGIJ) vs W-R32-16(1K/3DEIJL) → Suiza vs Colombia. Suiza 0-0 (4-3 pens). Home wins shootout
-  { matchId: 'R16-8', homeScore: 0, awayScore: 0 },
-
-  // ── QF (Jul 9-12, 2026) ──
-  // QF-1: W-R16-1(Francia) vs W-R16-2(Marruecos) → Francia 1-0
-  { matchId: 'QF-1', homeScore: 1, awayScore: 0 },
-  // QF-2: W-R16-5(España) vs W-R16-6(Bélgica) → España 2-1
-  { matchId: 'QF-2', homeScore: 2, awayScore: 1 },
-  // QF-3: W-R16-3(Noruega) vs W-R16-4(Inglaterra) → Inglaterra 3-1
-  { matchId: 'QF-3', homeScore: 1, awayScore: 3 },
-  // QF-4: W-R16-7(Argentina) vs W-R16-8(Suiza) → Argentina 2-0
-  { matchId: 'QF-4', homeScore: 2, awayScore: 0 },
+  { matchId: 'R16-8', homeScore: 0, awayScore: 0, homePenScore: 4, awayPenScore: 3 },
 ];

@@ -83,7 +83,7 @@ function ensureInitialized(): void {
       round: m.round === 'group' ? 'group' :
         m.round === 'round-32' ? 'R32' :
         m.round === 'round-16' ? 'R16' :
-        m.round === 'quarter' ? 'QF' :
+        m.round === 'quarter' ? 'R8' :
         m.round === 'semi' ? 'SF' :
         m.round === 'third' ? 'TP' : 'F',
       homeTeamId: m.homeTeam,

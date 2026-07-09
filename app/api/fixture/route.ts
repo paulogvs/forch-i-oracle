@@ -47,7 +47,7 @@ async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLay
   // ── Check if any knockout match still needs resolution ──
   const slotPattern = /^[12][A-L]$|^3[A-L]|\/|^W-|^L-/;
   const knockoutMatches = allMatches.filter(m =>
-    m.round === 'R32' || m.round === 'R16' || m.round === 'QF' || m.round === 'SF'
+    m.round === 'R32' || m.round === 'R16' || m.round === 'R8' || m.round === 'SF'
   );
   if (knockoutMatches.length === 0) return 0;
   const needsResolve = knockoutMatches.some(m => slotPattern.test(m.homeTeamId));
@@ -63,7 +63,7 @@ async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLay
     }
     // Propagate winners to later-round matches that use W- slots
     const laterMatches = allMatches.filter(m =>
-      m.round === 'R16' || m.round === 'QF' || m.round === 'SF' || m.id === '3rd' || m.id === 'Final'
+      m.round === 'R16' || m.round === 'R8' || m.round === 'SF' || m.id === '3rd' || m.id === 'Final'
     );
     let updated = 0;
     for (const m of laterMatches) {
@@ -141,7 +141,7 @@ async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof getDataLay
   };
 
   // Process rounds in order
-  const roundOrder = ['R32', 'R16', 'QF', 'SF', 'TP', 'F'];
+  const roundOrder = ['R32', 'R16', 'R8', 'SF', 'TP', 'F'];
   let totalUpdated = 0;
 
   for (const round of roundOrder) {
@@ -755,15 +755,15 @@ function simulateKnockoutPhase(
   }
 
   // ═══════════════════════════════════════════════════
-  // QUARTERFINALS — 4 matches
+  // RONDA DE 8 — 4 matches
   // ═══════════════════════════════════════════════════
 
-  // ALINEADO CON FIFA API: QF-2 = W-R16-5/6, QF-3 = W-R16-3/4 (swap!)
+  // ALINEADO CON FIFA API: R8-2 = W-R16-5/6, R8-3 = W-R16-3/4 (swap!)
   const qfSlots = [
-    { id: 'QF-1', home: 'W-R16-1', away: 'W-R16-2' },
-    { id: 'QF-2', home: 'W-R16-5', away: 'W-R16-6' },
-    { id: 'QF-3', home: 'W-R16-3', away: 'W-R16-4' },
-    { id: 'QF-4', home: 'W-R16-7', away: 'W-R16-8' },
+    { id: 'R8-1', home: 'W-R16-1', away: 'W-R16-2' },
+    { id: 'R8-2', home: 'W-R16-5', away: 'W-R16-6' },
+    { id: 'R8-3', home: 'W-R16-3', away: 'W-R16-4' },
+    { id: 'R8-4', home: 'W-R16-7', away: 'W-R16-8' },
   ];
 
   for (const slot of qfSlots) {
@@ -781,8 +781,8 @@ function simulateKnockoutPhase(
   // ═══════════════════════════════════════════════════
 
   const sfSlots = [
-    { id: 'SF-1', home: 'W-QF-1', away: 'W-QF-2' },
-    { id: 'SF-2', home: 'W-QF-3', away: 'W-QF-4' },
+    { id: 'SF-1', home: 'W-R8-1', away: 'W-R8-2' },
+    { id: 'SF-2', home: 'W-R8-3', away: 'W-R8-4' },
   ];
 
   for (const slot of sfSlots) {

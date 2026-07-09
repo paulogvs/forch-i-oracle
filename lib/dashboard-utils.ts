@@ -191,7 +191,7 @@ export function getRoundLabel(round: string): string {
     group: 'Fase de Grupos',
     'round-32': '1/16 Final',
     'round-16': 'Octavos',
-    quarter: 'Cuartos',
+    quarter: 'R8',
     semi: 'Semifinales',
     third: 'Tercer Puesto',
     final: 'Final',

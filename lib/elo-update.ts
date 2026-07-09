@@ -14,14 +14,14 @@ import { setLiveElo } from './elo-sync';
 // K-FACTOR BY STAGE — SINGLE SOURCE OF TRUTH
 // ═══════════════════════════════════════════════════════════════
 
-export type MatchRound = 'group' | 'R32' | 'R16' | 'QF' | 'SF' | 'F' | 'TP';
+export type MatchRound = 'group' | 'R32' | 'R16' | 'R8' | 'SF' | 'F' | 'TP';
 
 /** K-factor for each tournament stage. Higher K = more reactive to results. */
 export const K_FACTORS: Record<MatchRound, number> = {
   group: 40,   // Group stage: standard weight
   R32: 60,     // Round of 32: knockout begins, higher stakes
   R16: 60,     // Octavos: same as R32
-  QF: 70,      // Cuartos: quarter-finals, very high stakes
+  R8: 70,      // Ronda de 8: quarter-finals, very high stakes
   SF: 70,      // Semifinals: same as QF
   F: 80,       // Final: maximum weight — single match decides champion
   TP: 40,      // Third place: exhibition match, standard weight

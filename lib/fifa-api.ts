@@ -42,7 +42,7 @@ const STAGE_MAP: Record<string, string> = {
   'First Stage': 'group',
   'Round of 32': 'R32',
   'Round of 16': 'R16',
-  'Quarter-finals': 'QF',
+  'Quarter-finals': 'R8',
   'Semi-finals': 'SF',
   'Match for third place': 'TP',
   'Final': 'F',

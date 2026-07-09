@@ -60,7 +60,7 @@ export const QUINIELA_POINTS: Record<string, number> = {
   'round-16': 4,
   R16: 4,
   quarter: 8,
-  QF: 8,
+  R8: 8,
   semi: 16,
   SF: 16,
   third: 8,

@@ -87,9 +87,9 @@ export default function FixturePage() {
   const PHASES = [
     { id: 'all', label: 'Todos' }, { id: 'group', label: 'Grupos' },
     { id: 'R32', label: '1/16' }, { id: 'R16', label: 'Octavos' },
-    { id: 'QF', label: 'Cuartos' }, { id: 'SF', label: 'Semis' }, { id: 'F', label: 'Final' },
+    { id: 'R8', label: 'R8' }, { id: 'SF', label: 'Semis' }, { id: 'F', label: 'Final' },
   ];
-  const getRoundLabel = (r: string) => ({ group:'Fase de Grupos',R32:'1/16 Final',R16:'Octavos',QF:'Cuartos',SF:'Semifinales',TP:'Tercer Puesto',F:'Final' }[r] || r);
+  const getRoundLabel = (r: string) => ({ group:'Fase de Grupos',R32:'1/16 Final',R16:'Octavos',R8:'Ronda de 8',SF:'Semifinales',TP:'Tercer Puesto',F:'Final' }[r] || r);
   const filtered = phaseFilter === 'all' ? fixtures : fixtures.filter(m => m.round === phaseFilter);
   const getFlag = (n: string) => getTeamByName(n)?.flag || '🏳️';
   const predictedCount = fixtures.filter(f => f.isPredicted).length;

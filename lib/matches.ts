@@ -219,8 +219,8 @@ const GROUP_L: Match[] = [
 //   R32-13(1J vs 2H)    + R32-14(2D vs 2G)     → R16-7
 //   R32-15(1B vs 3EFGIJ) + R32-16(1K vs 3DEIJL) → R16-8
 //
-// QF-1 = W-R16-1 vs W-R16-2   QF-2 = W-R16-3 vs W-R16-4
-// QF-3 = W-R16-5 vs W-R16-6   QF-4 = W-R16-7 vs W-R16-8
+// R8-1 = W-R16-1 vs W-R16-2   R8-2 = W-R16-3 vs W-R16-4
+// R8-3 = W-R16-5 vs W-R16-6   R8-4 = W-R16-7 vs W-R16-8
 // ═══════════════════════════════════════════════════════════════
 
 const ROUND_OF_32: Match[] = [
@@ -282,20 +282,20 @@ const ROUND_OF_16: Match[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// QUARTERFINALS
-// NOTA: QF-2 y QF-3 intercambiados respecto al bracket viejo
+// RONDA DE 8 (Quarter-finals)
+// NOTA: R8-2 y R8-3 intercambiados respecto al bracket viejo
 // para coincidir con la cascada real de la FIFA:
-//   QF-1 = W-R16-1 vs W-R16-2  → W97
-//   QF-2 = W-R16-5 vs W-R16-6  → W98  (swap!)
-//   QF-3 = W-R16-3 vs W-R16-4  → W99  (swap!)
-//   QF-4 = W-R16-7 vs W-R16-8  → W100
+//   R8-1 = W-R16-1 vs W-R16-2  → W97
+//   R8-2 = W-R16-5 vs W-R16-6  → W98  (swap!)
+//   R8-3 = W-R16-3 vs W-R16-4  → W99  (swap!)
+//   R8-4 = W-R16-7 vs W-R16-8  → W100
 // ═══════════════════════════════════════════════════════════════
 
 const QUARTERFINALS: Match[] = [
-  { id: 'QF-1', group: 'QF', matchday: 1, date: '2026-07-09', time: '20:00', homeTeam: 'W-R16-1', awayTeam: 'W-R16-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'quarter' },
-  { id: 'QF-2', group: 'QF', matchday: 1, date: '2026-07-10', time: '19:00', homeTeam: 'W-R16-5', awayTeam: 'W-R16-6', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'quarter' },
-  { id: 'QF-3', group: 'QF', matchday: 1, date: '2026-07-11', time: '21:00', homeTeam: 'W-R16-3', awayTeam: 'W-R16-4', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'quarter' },
-  { id: 'QF-4', group: 'QF', matchday: 1, date: '2026-07-12', time: '01:00', homeTeam: 'W-R16-7', awayTeam: 'W-R16-8', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'quarter' },
+  { id: 'R8-1', group: 'R8', matchday: 1, date: '2026-07-09', time: '20:00', homeTeam: 'W-R16-1', awayTeam: 'W-R16-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'R8' },
+  { id: 'R8-2', group: 'R8', matchday: 1, date: '2026-07-10', time: '19:00', homeTeam: 'W-R16-5', awayTeam: 'W-R16-6', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'R8' },
+  { id: 'R8-3', group: 'R8', matchday: 1, date: '2026-07-11', time: '21:00', homeTeam: 'W-R16-3', awayTeam: 'W-R16-4', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'R8' },
+  { id: 'R8-4', group: 'R8', matchday: 1, date: '2026-07-12', time: '01:00', homeTeam: 'W-R16-7', awayTeam: 'W-R16-8', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'R8' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -303,8 +303,8 @@ const QUARTERFINALS: Match[] = [
 // ═══════════════════════════════════════════════════════════════
 
 const SEMIFINALS: Match[] = [
-  { id: 'SF-1', group: 'SF', matchday: 1, date: '2026-07-14', time: '19:00', homeTeam: 'W-QF-1', awayTeam: 'W-QF-2', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'semi' },
-  { id: 'SF-2', group: 'SF', matchday: 1, date: '2026-07-15', time: '19:00', homeTeam: 'W-QF-3', awayTeam: 'W-QF-4', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'semi' },
+  { id: 'SF-1', group: 'SF', matchday: 1, date: '2026-07-14', time: '19:00', homeTeam: 'W-R8-1', awayTeam: 'W-R8-2', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'semi' },
+  { id: 'SF-2', group: 'SF', matchday: 1, date: '2026-07-15', time: '19:00', homeTeam: 'W-R8-3', awayTeam: 'W-R8-4', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'semi' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -355,7 +355,7 @@ for (const letter of ['A','B','C','D','E','F','G','H','I','J','K','L']) {
 }
 
 // Legacy exports for compatibility
-export type Round = 'group' | 'round-32' | 'round-16' | 'quarter' | 'semi' | 'third' | 'final';
+export type Round = 'group' | 'round-32' | 'round-16' | 'R8' | 'semi' | 'third' | 'final';
 export const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 export const getMatchesByGroup = (g: string) => GROUP_STAGE_MATCHES.filter(m => m.group === g);
 export const getMatchesByRound = (r: string) => ALL_MATCHES.filter(m => m.round === r);
@@ -377,7 +377,7 @@ export const getRoundName = (round: string): string => {
     group: 'Fase de Grupos',
     'round-32': '1/16 Final',
     'round-16': 'Octavos',
-    quarter: 'Cuartos',
+    quarter: 'R8',
     semi: 'Semis',
     third: '3° Puesto',
     final: 'Final',

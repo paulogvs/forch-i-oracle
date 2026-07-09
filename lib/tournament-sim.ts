@@ -740,26 +740,26 @@ function simulateKnockout(
     if (onProgress) onProgress(`Octavos: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
   }
 
-  // Quarter-finals
+  // Ronda de 8 (Quarter-finals)
   const qfdef = ['W-R16-1|W-R16-2','W-R16-5|W-R16-6','W-R16-3|W-R16-4','W-R16-7|W-R16-8'];
   const quarters: SimulatedMatch[] = [];
   for (let i = 0; i < qfdef.length; i++) {
     const [h, a] = qfdef[i].split('|');
     const home = winners.get(h) || 'TBD';
     const away = winners.get(a) || 'TBD';
-    const matchId = `QF-${i + 1}`;
+    const matchId = `R8-${i + 1}`;
     const realResult = resultsMap.get(matchId) || resultByTeams.get(`${home}_vs_${away}`);
 
-    const m = simulateMatch(home, away, realResult, true, 'QF', rng);
+    const m = simulateMatch(home, away, realResult, true, 'R8', rng);
     m.id = matchId;
-    m.roundLabel = 'Cuartos de Final';
+    m.roundLabel = 'Ronda de 8';
     quarters.push(m);
     if (m.winner !== 'TBD') winners.set(`W-${matchId}`, m.winner);
-    if (onProgress) onProgress(`Cuartos: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
+    if (onProgress) onProgress(`R8: ${m.homeTeam} vs ${m.awayTeam} → ${m.winner}`);
   }
 
   // Semi-finals
-  const sfdef = ['W-QF-1|W-QF-2','W-QF-3|W-QF-4'];
+  const sfdef = ['W-R8-1|W-R8-2','W-R8-3|W-R8-4'];
   const semis: SimulatedMatch[] = [];
   for (let i = 0; i < sfdef.length; i++) {
     const [h, a] = sfdef[i].split('|');
@@ -1171,20 +1171,20 @@ export function buildConsensusBracket(
     bracketWinners.set(`W-R16-${i + 1}`, m.winner);
   }
 
-  // QF pairings
+  // R8 pairings
   const qfdef = ['W-R16-1|W-R16-2','W-R16-5|W-R16-6','W-R16-3|W-R16-4','W-R16-7|W-R16-8'];
   const quarters: SimulatedMatch[] = [];
   for (let i = 0; i < 4; i++) {
     const [h, a] = qfdef[i].split('|');
     const home = bracketWinners.get(h) || 'TBD';
     const away = bracketWinners.get(a) || 'TBD';
-    const m = makeMatch(`QF-${i + 1}`, 'QF', 'Cuartos de Final', home, away, roundCounts.sf, totalSims);
+    const m = makeMatch(`R8-${i + 1}`, 'R8', 'Ronda de 8', home, away, roundCounts.sf, totalSims);
     quarters.push(m);
-    bracketWinners.set(`W-QF-${i + 1}`, m.winner);
+    bracketWinners.set(`W-R8-${i + 1}`, m.winner);
   }
 
   // SF pairings
-  const sfdef = ['W-QF-1|W-QF-2','W-QF-3|W-QF-4'];
+  const sfdef = ['W-R8-1|W-R8-2','W-R8-3|W-R8-4'];
   const semis: SimulatedMatch[] = [];
   const sfLosers: string[] = [];
   for (let i = 0; i < 2; i++) {

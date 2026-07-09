@@ -140,7 +140,7 @@ export async function resolveKnockoutTeamNames(db: Awaited<ReturnType<typeof get
     return 'TBD';
   };
 
-  const roundOrder = ['R32', 'R16', 'QF', 'SF', 'TP', 'F'];
+  const roundOrder = ['R32', 'R16', 'R8', 'SF', 'TP', 'F'];
   const slotPattern = /^[12][A-L]$|^3[A-L]|\/|^W-|^L-/;
   let totalUpdated = 0;
 
