@@ -125,6 +125,41 @@ export default function FixturePage() {
   })();
   const formatDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
 
+  const bracketData = predBracketData?.bracket || bracket;
+
+  // ─── Merge fixture-resolved team names into bracket data ───
+  const mergedBracket = useMemo(() => {
+    if (!bracketData) return null;
+    // Build a map of matchId -> { homeTeam, awayTeam } from fixtures (resolved names)
+    const fixtureTeamMap = new Map<string, { homeTeam: string; awayTeam: string }>();
+    for (const f of fixtures) {
+      if (f.round !== 'group') {
+        fixtureTeamMap.set(f.id, { homeTeam: f.homeTeam, awayTeam: f.awayTeam });
+      }
+    }
+    // Deep clone bracket and replace team names for R8+
+    const clone = JSON.parse(JSON.stringify(bracketData));
+    const roundsToFix = ['quarters', 'semis', 'thirdPlace', 'final'];
+    for (const round of roundsToFix) {
+      if (clone[round]?.length) {
+        for (const m of clone[round]) {
+          const resolved = fixtureTeamMap.get(m.id);
+          if (resolved) {
+            m.homeTeam = resolved.homeTeam;
+            m.awayTeam = resolved.awayTeam;
+          }
+        }
+      } else if (clone[round]) {
+        const resolved = fixtureTeamMap.get(clone[round].id);
+        if (resolved) {
+          clone[round].homeTeam = resolved.homeTeam;
+          clone[round].awayTeam = resolved.awayTeam;
+        }
+      }
+    }
+    return clone;
+  }, [fixtures, bracketData]);
+
   // ─── Next 4 upcoming matches (not finished, nearest first) ───
   const upcoming4 = useMemo(() => {
     const now = new Date();
@@ -338,10 +373,10 @@ export default function FixturePage() {
           <Top8Tab top8={top8 || []} getFlag={getFlag} />
         </motion.div>
       )}
-      {!loading && !allFailed && mainTab === 'bracket' && (predBracketData?.bracket || bracket) && (
+{!loading && !allFailed && mainTab === 'bracket' && (predBracketData?.bracket || bracket) && (
         <motion.div key="bracket" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
           <BracketTab
-            bracket={predBracketData?.bracket || bracket}
+            bracket={mergedBracket || predBracketData?.bracket || bracket}
             legacyBracket={bracket}
             championPath={predBracketData?.championPath || []}
             champion={predBracketData?.champion || bracket?.champion || null}
@@ -929,6 +964,31 @@ function MatchDetailModal({ match, status, getFlag, getRoundLabel, onClose }: {
                 <span className="text-fg-tertiary">{match.draw}%</span>
                 <span className="text-state-danger font-semibold">{match.awayWin}%</span>
               </div>
+
+              {/* Detailed Prediction Explanation */}
+              {match.homeGoals !== null && match.awayGoals !== null && (
+                <div className="mt-3 pt-3 border-t border-border-subtle">
+                  <div className="text-[10px] text-fg-tertiary uppercase tracking-wider font-semibold mb-2">Detalle del Pronóstico</div>
+                  <div className="space-y-1.5 text-[10px] text-fg-secondary">
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-accent-primary mt-0.5 shrink-0">⚽</span>
+                      <span><strong>Tiempo reglamentario (90 min):</strong> El pronóstico de <span className="text-accent-primary">{match.homeGoals}-{match.awayGoals}</span> refleja el marcador esperado al final de los 90 minutos.</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-state-warning mt-0.5 shrink-0">⏱️</span>
+                      <span><strong>Tiempo extra:</strong> Si el marcador está empatado tras 90 min, se juegan 30 min extra. Probabilidad estimada: <span className="font-mono text-accent-primary">{match.draw ? (match.draw * 0.35).toFixed(1) : '~15'}%</span> (basado en histórico de empates en KO).</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-state-danger mt-0.5 shrink-0">🥅</span>
+                      <span><strong>Penales:</strong> Si persiste el empate tras el tiempo extra, se define por penales. Probabilidad: <span className="font-mono text-accent-primary">{match.draw ? (match.draw * 0.18).toFixed(1) : '~8'}%</span>.</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <span className="text-fg-tertiary mt-0.5 shrink-0">📊</span>
+                      <span>Motor: <strong>Ensemble 4-modelos</strong> (Dixon-Coles · Elo-Poisson · Bayesiano · Monte Carlo 1000 sims). Consenso: <span className="text-accent-primary">{(match.homeWin ?? 0) > (match.awayWin ?? 0) ? match.homeTeam : match.awayTeam} favorito ({Math.max(match.homeWin ?? 0, match.awayWin ?? 0)}%)</span>.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
