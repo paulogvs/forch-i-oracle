@@ -976,11 +976,11 @@ function MatchDetailModal({ match, status, getFlag, getRoundLabel, onClose }: {
                     </div>
                     <div className="flex items-start gap-1.5">
                       <span className="text-state-warning mt-0.5 shrink-0">⏱️</span>
-                      <span><strong>Tiempo extra:</strong> Si el marcador está empatado tras 90 min, se juegan 30 min extra. Probabilidad estimada: <span className="font-mono text-accent-primary">{match.draw ? (match.draw * 0.35).toFixed(1) : '~15'}%</span> (basado en histórico de empates en KO).</span>
+                      <span><strong>Tiempo extra:</strong> Si el marcador termina empatado tras 90 min, se juegan 30 min extra. Probabilidad calculada: <span className="font-mono text-accent-primary">{match.draw ? (match.draw * 0.35).toFixed(1) : '~15'}%</span>.</span>
                     </div>
                     <div className="flex items-start gap-1.5">
                       <span className="text-state-danger mt-0.5 shrink-0">🥅</span>
-                      <span><strong>Penales:</strong> Si persiste el empate tras el tiempo extra, se define por penales. Probabilidad: <span className="font-mono text-accent-primary">{match.draw ? (match.draw * 0.18).toFixed(1) : '~8'}%</span>.</span>
+                      <span><strong>Penales:</strong> Si persiste el empate tras el tiempo extra, se decide por penales. Probabilidad estimada: <span className="font-mono text-accent-primary">{match.draw ? (match.draw * 0.18).toFixed(1) : '~8'}%</span>. Esto es un escenario de alta tensión según el motor.</span>
                     </div>
                     <div className="flex items-start gap-1.5">
                       <span className="text-fg-tertiary mt-0.5 shrink-0">📊</span>

@@ -292,10 +292,10 @@ const ROUND_OF_16: Match[] = [
 // ═══════════════════════════════════════════════════════════════
 
 const QUARTERFINALS: Match[] = [
-  { id: 'R8-1', group: 'R8', matchday: 1, date: '2026-07-09', time: '20:00', homeTeam: 'W-R16-1', awayTeam: 'W-R16-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'R8' },
-  { id: 'R8-2', group: 'R8', matchday: 1, date: '2026-07-10', time: '19:00', homeTeam: 'W-R16-5', awayTeam: 'W-R16-6', homeCode: '', awayCode: '', venue: 'NRG Stadium', city: 'Houston', round: 'R8' },
-  { id: 'R8-3', group: 'R8', matchday: 1, date: '2026-07-11', time: '21:00', homeTeam: 'W-R16-3', awayTeam: 'W-R16-4', homeCode: '', awayCode: '', venue: "Levi's Stadium", city: 'Santa Clara', round: 'R8' },
-  { id: 'R8-4', group: 'R8', matchday: 1, date: '2026-07-12', time: '01:00', homeTeam: 'W-R16-7', awayTeam: 'W-R16-8', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'R8' },
+  { id: 'R8-1', group: 'R8', matchday: 1, date: '2026-07-09', time: '20:00', homeTeam: 'Francia', awayTeam: 'Marruecos', homeCode: 'FRA', awayCode: 'MAR', venue: 'MetLife Stadium', city: 'New York', round: 'R8' },
+  { id: 'R8-2', group: 'R8', matchday: 1, date: '2026-07-10', time: '19:00', homeTeam: 'España', awayTeam: 'Bélgica', homeCode: 'ESP', awayCode: 'BEL', venue: 'NRG Stadium', city: 'Houston', round: 'R8' },
+  { id: 'R8-3', group: 'R8', matchday: 1, date: '2026-07-11', time: '21:00', homeTeam: 'Noruega', awayTeam: 'Inglaterra', homeCode: 'NOR', awayCode: 'ENG', venue: "Levi's Stadium", city: 'Santa Clara', round: 'R8' },
+  { id: 'R8-4', group: 'R8', matchday: 1, date: '2026-07-12', time: '01:00', homeTeam: 'Argentina', awayTeam: 'Suiza', homeCode: 'ARG', awayCode: 'SUI', venue: 'Hard Rock Stadium', city: 'Miami', round: 'R8' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
