@@ -158,4 +158,8 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'R16-7', homeScore: 3, awayScore: 2 },
   // R16-8: W-R32-15(1B/3EFGIJ) vs W-R32-16(1K/3DEIJL) → Suiza vs Colombia. Suiza 0-0 (4-3 pens). Home wins shootout
   { matchId: 'R16-8', homeScore: 0, awayScore: 0, homePenScore: 4, awayPenScore: 3 },
+
+  // ── R8 (Ronda de 8) ──
+  // R8-1: Francia vs Marruecos. Francia 2-0 (Home win) — 9 de julio
+  { matchId: 'R8-1', homeScore: 2, awayScore: 0 },
 ];
