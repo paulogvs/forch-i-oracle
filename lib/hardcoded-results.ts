@@ -1,5 +1,5 @@
 // FORCH.i ORACLE — Hardcoded Match Results (REAL from FIFA API)
-// UPDATED: 2026-07-07
+// UPDATED: 2026-07-12
 // This is the SINGLE SOURCE OF TRUTH for finished matches.
 
 export interface HardcodedResult {
@@ -160,6 +160,12 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'R16-8', homeScore: 0, awayScore: 0, homePenScore: 4, awayPenScore: 3 },
 
   // ── R8 (Ronda de 8) ──
-  // R8-1: Francia vs Marruecos. Francia 2-0 (Home win) — 9 de julio
+  // R8-1: Francia vs Marruecos. Francia 2-0 (Home win) — 9 julio, Boston
   { matchId: 'R8-1', homeScore: 2, awayScore: 0 },
+  // R8-2: España vs Bélgica. España 2-1 (Home win) — 10 julio, Los Ángeles
+  { matchId: 'R8-2', homeScore: 2, awayScore: 1 },
+  // R8-3: Noruega vs Inglaterra. Inglaterra 2-1 (Away win, AET) — 11 julio, Miami
+  { matchId: 'R8-3', homeScore: 1, awayScore: 2 },
+  // R8-4: Argentina vs Suiza. Argentina 3-1 (Home win, AET) — 11 julio, Kansas City
+  { matchId: 'R8-4', homeScore: 3, awayScore: 1 },
 ];

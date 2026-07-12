@@ -303,8 +303,8 @@ const QUARTERFINALS: Match[] = [
 // ═══════════════════════════════════════════════════════════════
 
 const SEMIFINALS: Match[] = [
-  { id: 'SF-1', group: 'SF', matchday: 1, date: '2026-07-14', time: '19:00', homeTeam: 'W-R8-1', awayTeam: 'W-R8-2', homeCode: '', awayCode: '', venue: 'AT&T Stadium', city: 'Dallas', round: 'semi' },
-  { id: 'SF-2', group: 'SF', matchday: 1, date: '2026-07-15', time: '19:00', homeTeam: 'W-R8-3', awayTeam: 'W-R8-4', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'semi' },
+  { id: 'SF-1', group: 'SF', matchday: 1, date: '2026-07-14', time: '19:00', homeTeam: 'Francia', awayTeam: 'España', homeCode: 'FRA', awayCode: 'ESP', venue: 'AT&T Stadium', city: 'Dallas', round: 'semi' },
+  { id: 'SF-2', group: 'SF', matchday: 1, date: '2026-07-15', time: '19:00', homeTeam: 'Inglaterra', awayTeam: 'Argentina', homeCode: 'ENG', awayCode: 'ARG', venue: 'MetLife Stadium', city: 'New York', round: 'semi' },
 ];
 
 // ═══════════════════════════════════════════════════════════════
