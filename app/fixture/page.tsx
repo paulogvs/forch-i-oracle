@@ -215,7 +215,7 @@ export default function FixturePage() {
         </div>
       </div>
 
-      <div className="flex gap-1 p-1 bg-elevated rounded-[var(--r-xl)] mb-4 border border-border-subtle relative">
+      <div className="flex gap-1 p-1 bg-elevated rounded-[var(--r-xl)] mb-4 border border-border-subtle relative" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.1)' }}>
         {MAIN_TABS.map(t => (
           <button key={t.id} onClick={() => setMainTab(t.id)} className={cn(
             "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-[var(--r-lg)] text-xs font-semibold relative z-10 transition-colors duration-200",
@@ -239,8 +239,8 @@ export default function FixturePage() {
         <div className="flex flex-wrap gap-1.5 mb-4">
           {PHASES.map(p => (
             <button key={p.id} onClick={() => setPhaseFilter(p.id)} className={cn(
-              "px-3 py-1 rounded-full text-[11px] font-semibold transition-all border",
-              phaseFilter === p.id ? "bg-accent-secondary/15 text-accent-secondary border-accent-secondary/30" : "text-fg-tertiary border-border-subtle hover:text-fg-secondary"
+              "px-3 py-1 rounded-full text-[11px] font-semibold transition-all duration-200 border",
+              phaseFilter === p.id ? "bg-accent-secondary/15 text-accent-secondary border-accent-secondary/30 shadow-md shadow-accent-secondary/10" : "text-fg-tertiary border-border-subtle hover:text-fg-secondary hover:bg-elevated/50"
             )}>{p.label}</button>
           ))}
         </div>
@@ -277,6 +277,7 @@ export default function FixturePage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
               className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50"
+              style={{ boxShadow: '0 0 32px rgba(226,179,64,0.06), 0 12px 40px rgba(0,0,0,0.2)' }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-accent-premium/5 to-transparent pointer-events-none" />
               <div className="relative text-center">
@@ -452,7 +453,7 @@ function MatchCard({ match, status, getFlag, getRoundLabel, onClick }: {
   const realWinner = actualScore ? (actualScore.homeScore > actualScore.awayScore ? 'home' : actualScore.homeScore < actualScore.awayScore ? 'away' : 'draw') : null;
 
   return (
-    <button onClick={onClick} className={cn("w-full text-left px-4 py-3 rounded-[var(--r-lg)] border transition-all hover:brightness-110", pal.card)}>
+    <button onClick={onClick} className={cn("w-full text-left px-4 py-3 rounded-[var(--r-lg)] border transition-all duration-300 hover:brightness-110 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5 luxury-card", pal.card)}>
       <div className="flex items-center gap-3">
         {/* Home */}
         <div className="flex items-center gap-1.5 w-[36%] min-w-0">
@@ -675,7 +676,7 @@ function BracketTab({ bracket, legacyBracket, championPath, champion, championFl
 
       {/* Accuracy stats bar */}
       {stats && stats.played > 0 && (
-        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--match-card-scheduled)]/60 border border-border-subtle text-[10px]">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--match-card-scheduled)]/60 border border-border-subtle text-[10px] backdrop-blur-sm" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           <span className="text-fg-secondary font-semibold">Precisión Bracket:</span>
           <span className="text-state-success font-bold">{stats.correct}/{stats.played}</span>
           <span className="text-fg-tertiary">({stats.accuracy != null ? `${stats.accuracy}%` : '—'})</span>
@@ -689,7 +690,7 @@ function BracketTab({ bracket, legacyBracket, championPath, champion, championFl
 
       {/* Champion reveal */}
       {champion && (
-        <div className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50">
+        <div className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-[var(--match-gold-bg)] via-surface to-[var(--match-gold-bg)] border border-[var(--match-gold-border)]/50" style={{ boxShadow: '0 0 40px rgba(226,179,64,0.08), 0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-accent-premium/5 to-transparent pointer-events-none" />
           <div className="relative text-center">
             <div className="text-4xl mb-1 animate-bounce">{championFlag || '🏆'}</div>
@@ -737,13 +738,13 @@ function BracketTab({ bracket, legacyBracket, championPath, champion, championFl
           />
         )}
         {bracketData.thirdPlace && (
-          <div className="p-4 rounded-xl bg-gradient-to-r from-accent-premium/10 to-state-warning/10 border border-accent-premium/20">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-accent-premium/10 to-state-warning/10 border border-accent-premium/20" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.1)' }}>
             <div className="text-[10px] text-accent-premium uppercase tracking-wider font-semibold mb-2">🥉 Tercer Puesto</div>
             <PredictedBracketMatchCard match={bracketData.thirdPlace} getFlag={getFlag} />
           </div>
         )}
         {bracketData.final && (
-          <div className="p-5 rounded-xl bg-gradient-to-r from-accent-premium/10 via-accent-premium/15 to-accent-premium/10 border border-accent-premium/30">
+          <div className="p-5 rounded-xl bg-gradient-to-r from-accent-premium/10 via-accent-premium/15 to-accent-premium/10 border border-accent-premium/30" style={{ boxShadow: '0 4px 24px rgba(226,179,64,0.06), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
             <div className="text-center mb-3">
               <span className="text-xl">🏆</span>
               <div className="text-[10px] text-accent-premium uppercase tracking-[0.2em] font-bold">La Gran Final</div>
@@ -760,7 +761,7 @@ function BracketRoundAesthetic({ title, subtitle, matches, getFlag, roundColor }
   title: string; subtitle: string; matches: any[]; getFlag: (n: string) => string; roundColor: string;
 }) {
   return (
-    <div className={`p-4 rounded-xl bg-gradient-to-r ${roundColor} border border-white/5`}>
+    <div className={`p-4 rounded-xl bg-gradient-to-r ${roundColor} border border-white/5`} style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
       <div className="flex items-center justify-between mb-3">
         <div>
           <h4 className="text-xs font-bold text-fg-primary">{title}</h4>
@@ -892,11 +893,12 @@ function MatchDetailModal({ match, status, getFlag, getRoundLabel, onClose }: {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
-        className="relative w-full sm:max-w-md bg-[var(--match-modal-bg)] border border-border-subtle rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
+        className="relative w-full sm:max-w-md bg-[var(--match-modal-bg)] border border-border-subtle rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto glass-panel"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={`${match.homeTeam} vs ${match.awayTeam}`}
+        style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(226,179,64,0.08), inset 0 1px 0 rgba(255,255,255,0.05)' }}
       >
         <button onClick={onClose} className="absolute top-3 right-3 z-10 p-1.5 rounded-[var(--r-md)] bg-raised text-fg-tertiary hover:text-fg-primary transition-colors" aria-label="Cerrar"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
 

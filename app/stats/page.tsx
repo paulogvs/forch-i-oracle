@@ -34,7 +34,7 @@ function getFlag(name: string): string {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`surface ${className}`}>
+    <div className={`surface luxury-card ${className}`}>
       {children}
     </div>
   );
@@ -52,7 +52,7 @@ function StatCard({ label, value, icon: Icon, tint }: {
   label: string; value: string | number; icon: any; tint: string;
 }) {
   return (
-    <div className={`p-4 rounded-xl ${STAT_TINTS[tint]} border border-border-subtle`}>
+    <div className={`p-4 rounded-xl ${STAT_TINTS[tint]} border border-border-subtle luxury-card shimmer-hover`}>
       <Icon className="w-6 h-6 mb-1 text-fg-secondary" />
       <div className="text-2xl font-black text-fg-primary">{value}</div>
       <div className="t-micro">{label}</div>
@@ -164,7 +164,7 @@ export default function StatsPage() {
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto mb-6">
-        <div className="flex gap-2 p-1 surface rounded-xl">
+        <div className="flex gap-2 p-1 surface rounded-xl" style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.1)' }}>
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -339,8 +339,8 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
           { id: 'gd' as const, label: 'Dif. Goles' },
         ].map((s) => (
           <button key={s.id} onClick={() => setSortBy(s.id)}
-            className={`px-4 py-2 rounded-lg h-card transition-all border ${
-              sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary'
+            className={`px-4 py-2 rounded-lg h-card transition-all duration-200 border ${
+              sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30 shadow-md shadow-accent-primary/10' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary hover:bg-raised/50'
             }`}>
             {s.label}
           </button>
@@ -366,7 +366,7 @@ function TeamsTab({ teamStats }: { teamStats: any[] }) {
           </thead>
           <tbody>
             {sorted.map((t, i) => (
-              <tr key={t.name} className="border-b border-border-subtle/50 hover:bg-elevated/50 transition-colors">
+              <tr key={t.name} className="border-b border-border-subtle/50 hover:bg-elevated/50 transition-all duration-200">
                 <td className="px-4 py-3 text-fg-tertiary">{i + 1}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -416,8 +416,8 @@ function MatchesTab({ matches }: { matches: any[] }) {
           { id: 'diff' as const, label: 'Mayor Dif.' },
         ].map((s) => (
           <button key={s.id} onClick={() => setSortBy(s.id)}
-            className={`px-4 py-2 rounded-lg h-card transition-all border ${
-              sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary'
+            className={`px-4 py-2 rounded-lg h-card transition-all duration-200 border ${
+              sortBy === s.id ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/30 shadow-md shadow-accent-primary/10' : 'bg-elevated text-fg-secondary border-border-subtle hover:text-fg-primary hover:bg-raised/50'
             }`}>
             {s.label}
           </button>

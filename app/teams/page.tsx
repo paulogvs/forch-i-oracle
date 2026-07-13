@@ -156,7 +156,7 @@ export default function TeamsPage() {
             placeholder="Buscar equipo..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface backdrop-blur-xl border border-border-subtle rounded-xl px-4 py-3 pl-10 t-body focus:outline-none focus:border-border-focus transition-colors"
+            className="w-full bg-surface/60 backdrop-blur-xl border border-border-subtle rounded-xl px-4 py-3 pl-10 t-body focus:outline-none focus:border-border-focus focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] transition-all duration-300"
           />
           <BarChart3 className="absolute left-3 top-3 w-4 h-4 text-fg-tertiary" />
         </div>
@@ -261,7 +261,7 @@ function TeamCard({ team, stats, index, onClick }: {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.02 }}
       onClick={onClick}
-      className="group text-left p-4 surface-interactive"
+      className="group text-left p-4 surface-interactive luxury-card gold-glow"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -326,8 +326,9 @@ function TeamDetailModal({ team, stats, onClose }: {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
-        className="relative w-full sm:max-w-lg bg-canvas border border-border-subtle rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto"
+        className="relative w-full sm:max-w-lg bg-canvas border border-border-subtle rounded-t-2xl sm:rounded-2xl max-h-[85vh] overflow-y-auto glass-panel"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(226,179,64,0.06), inset 0 1px 0 rgba(255,255,255,0.05)' }}
       >
         {/* Header */}
         <div className={`p-6 ${getConfederationSurface(team.confederation)}`}>

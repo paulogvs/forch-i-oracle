@@ -33,7 +33,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="fixed top-0 inset-x-0 lg:left-64 z-20 h-14 bg-canvas/80 backdrop-blur-xl border-b border-border-subtle" role="banner">
+    <header className="fixed top-0 inset-x-0 lg:left-64 z-20 h-14 bg-canvas/70 backdrop-blur-2xl border-b border-border-subtle border-glow-gold" role="banner" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)' }}>
       <div className="h-full flex items-center justify-between px-4 sm:px-6 lg:px-10">
         <div className="flex items-center gap-3 lg:hidden">
           <span className="text-[13px] font-bold">FORCH.i</span>

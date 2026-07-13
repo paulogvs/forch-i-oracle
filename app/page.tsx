@@ -65,7 +65,7 @@ export default function DashboardPage() {
             {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Sincronizar'}
           </button>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Predicciones IA <span className="text-gold">Mundial 2026</span></h1>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Predicciones IA <span className="text-gold" style={{ textShadow: '0 0 20px rgba(226,179,64,0.15)' }}>Mundial 2026</span></h1>
         <p className="text-xs text-fg-secondary">Estado actual del torneo al 7 de Julio de 2026</p>
       </header>
 
@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
 function StatPill({ icon, label, value, sub, color }: any) {
   return (
-    <div className="p-3 rounded-[var(--r-lg)] border bg-elevated border-border-subtle">
+    <div className="p-3 rounded-[var(--r-lg)] border bg-elevated border-border-subtle luxury-card gold-glow shimmer-hover">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] text-fg-tertiary uppercase font-semibold">{label}</span>
         <span className={cn(color === 'emerald' ? 'text-accent-emerald' : 'text-accent-gold')}>{icon}</span>
@@ -132,7 +132,7 @@ function StatPill({ icon, label, value, sub, color }: any) {
 function UpcomingMatchCard({ match }: any) {
   const [h, a] = match.predictedScore || [0, 0];
   return (
-    <div className="surface p-3 rounded-[var(--r-lg)] border border-border-subtle flex items-center gap-3 bg-raised/20">
+    <div className="surface p-3 rounded-[var(--r-lg)] border border-border-subtle flex items-center gap-3 bg-raised/20 luxury-card shimmer-hover">
       <div className="flex-1 min-w-0 flex items-center gap-2">
         <span className="text-base">{getFlag(match.homeTeam)}</span>
         <span className="text-xs font-bold truncate text-fg-secondary">{match.homeTeam}</span>
@@ -179,7 +179,7 @@ function ResultCard({ match }: { match: { home: string, away: string, pred: [num
 function ChampionWidget({ probs, champion }: any) {
   const maxProb = probs[0]?.pct || 1;
   return (
-    <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-gold/20 bg-elevated/50">
+    <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-gold/20 bg-elevated/50 luxury-card" style={{ boxShadow: '0 0 0 1px rgba(226,179,64,0.08), 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)' }}>
       <div className="text-center mb-4">
         <div className="text-3xl mb-1">🏆</div>
         <div className="text-lg font-black text-gold">{champion}</div>
@@ -192,7 +192,7 @@ function ChampionWidget({ probs, champion }: any) {
             <span className="text-[10px]">{getFlag(p.team)}</span>
             <span className="text-[11px] font-semibold w-20 truncate">{p.team}</span>
             <div className="flex-1 h-2 bg-raised rounded-full overflow-hidden">
-              <div className="h-full bg-gold/60" style={{ width: `${(p.pct / maxProb) * 100}%` }} />
+              <div className="h-full bg-gradient-to-r from-accent-premium/60 to-accent-premium/30 rounded-full transition-all duration-500" style={{ width: `${(p.pct / maxProb) * 100}%` }} />
             </div>
             <span className="text-[10px] font-mono w-10 text-right">{p.pct}%</span>
           </div>
@@ -204,7 +204,7 @@ function ChampionWidget({ probs, champion }: any) {
 
 function QuickLink({ href, icon, title, desc, accent }: any) {
   return (
-    <Link href={href} className="block surface-interactive px-4 py-3 rounded-[var(--r-lg)] border border-border-subtle hover:border-accent-primary/50 transition-all">
+    <Link href={href} className="block surface-interactive px-4 py-3 rounded-[var(--r-lg)] border border-border-subtle hover:border-accent-premium/40 hover:shadow-[0_0_20px_rgba(226,179,64,0.1)] transition-all duration-300 gold-glow">
       <div className="flex items-center gap-3">
         <span className="text-lg">{icon}</span>
         <div className="flex-1">

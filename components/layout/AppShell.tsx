@@ -32,8 +32,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </a>
 
       {/* Sidebar (lg+) */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col border-r border-border-subtle bg-surface/60 backdrop-blur-xl z-30" role="navigation" aria-label="Navegación principal">
-        <Link href="/" className="h-14 flex items-center gap-2 px-6 border-b border-border-subtle">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col border-r border-border-subtle bg-surface/50 backdrop-blur-2xl z-30" role="navigation" aria-label="Navegación principal" style={{ boxShadow: '4px 0 24px rgba(0,0,0,0.15)' }}>
+        <Link href="/" className="h-14 flex items-center gap-2 px-6 border-b border-border-subtle hover:bg-elevated/30 transition-colors duration-200">
           <span className="h-7 w-7 rounded-md bg-accent-primary/20 border border-accent-primary/40 flex items-center justify-center">
             <span className="h-2 w-2 rounded-full bg-accent-primary" />
           </span>
@@ -70,9 +70,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'group flex items-center gap-3 h-10 px-3 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200',
+                  'group flex items-center gap-3 h-10 px-3 rounded-[var(--r-md)] text-sm font-medium transition-all duration-200 hover:translate-x-0.5',
                   active
-                    ? `${accentColor} ring-1 ring-current/20`
+                    ? `${accentColor} ring-1 ring-current/20 nav-active-glow shadow-md`
                     : 'text-fg-secondary hover:text-fg-primary hover:bg-elevated/60',
                 )}
               >
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between">
             <button
               onClick={toggleTheme}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-secondary hover:text-fg-primary hover:bg-elevated/60 transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-secondary hover:text-fg-primary hover:bg-elevated/60 transition-all duration-200 hover:shadow-sm"
               title={theme === 'dark' ? 'Modo claro (T)' : 'Modo oscuro (T)'}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <BackToTop />
 
       {/* BottomNav (mobile) — scrollable for 7 items */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/80 backdrop-blur-xl border-t border-border-subtle" role="navigation" aria-label="Navegación móvil">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-surface/70 backdrop-blur-2xl border-t border-border-subtle" role="navigation" aria-label="Navegación móvil" style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.2)' }}>
         <ul className="flex overflow-x-auto h-16 hide-scrollbar">
           {NAV.map((item) => {
             const active = pathname === item.href;
@@ -137,12 +137,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href={item.href}
                   className={cn(
-                    'h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors relative',
-                    active ? colorMap[item.href] : 'text-fg-tertiary',
+                    'h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-all duration-200 relative',
+                    active ? colorMap[item.href] : 'text-fg-tertiary hover:text-fg-secondary',
                   )}
                   aria-current={active ? 'page' : undefined}
                 >
-                  {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-current" />}
+                  {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-current shadow-[0_0_8px_rgba(226,179,64,0.5)]" />}
                   <Icon className="h-5 w-5" />
                   <span className="truncate w-full text-center">{t(item.label as any)}</span>
                 </Link>
