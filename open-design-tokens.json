@@ -1,0 +1,635 @@
+{
+  "$schema": "https://opencode.ai/design-systems/v1",
+  "name": "FORCH.i ORACLE",
+  "version": "1.0.0",
+  "meta": {
+    "family": "FORCH.iA",
+    "designer": "Paulo Velasco",
+    "year": 2026,
+    "description": "Luxury design system for FIFA World Cup 2026 prediction platform. Dark-first with FORCH.i gold (#C9A227) accents, glassmorphism depth, and 3-layer surface hierarchy."
+  },
+
+  "colors": {
+    "gold": {
+      "value": "#C9A227",
+      "description": "FORCH.i primary gold — used for accents, highlights, champion indicators"
+    },
+    "gold-light": {
+      "value": "#E2B340",
+      "description": "Gold hover state, gradient midpoint, glow effects"
+    },
+    "gold-bright": {
+      "value": "#FFE69A",
+      "description": "Gold gradient endpoint, text shimmer highlights"
+    },
+    "gold-dark": {
+      "value": "#A07F1A",
+      "description": "Gold on elevated surfaces, pressed states"
+    },
+
+    "bg-canvas": {
+      "value": "#06080D",
+      "description": "Deepest background — page-level canvas"
+    },
+    "bg-surface": {
+      "value": "#0C1017",
+      "description": "Card/panel surface — first depth layer"
+    },
+    "bg-elevated": {
+      "value": "#151C25",
+      "description": "Hovered/raised surfaces — second depth layer"
+    },
+    "bg-overlay": {
+      "value": "#1E2732",
+      "description": "Dropdowns, tooltips, overlays — third depth layer"
+    },
+    "bg-raised": {
+      "value": "#283445",
+      "description": "Active inputs, selected tabs — fourth depth layer"
+    },
+
+    "glass-base": {
+      "value": "rgba(12, 16, 23, 0.6)",
+      "description": "Base glassmorphism background"
+    },
+    "glass-elevated": {
+      "value": "rgba(21, 28, 37, 0.7)",
+      "description": "Elevated glass (modals, panels)"
+    },
+    "glass-panel": {
+      "value": "rgba(12, 16, 23, 0.85)",
+      "description": "Heavy glass (sidebars, premium overlays)"
+    },
+
+    "text-primary": {
+      "value": "#F0F6FC",
+      "description": "Primary text — headings, body emphasis"
+    },
+    "text-secondary": {
+      "value": "#94A3B8",
+      "description": "Secondary text — navigation, card labels"
+    },
+    "text-tertiary": {
+      "value": "#64748B",
+      "description": "Tertiary text — metadata, timestamps, placeholders"
+    },
+    "text-disabled": {
+      "value": "#5A6478",
+      "description": "Disabled state text"
+    },
+
+    "accent-blue": {
+      "value": "#3B82F6",
+      "description": "Primary interactive accent — links, buttons, active tabs"
+    },
+    "accent-violet": {
+      "value": "#8B5CF6",
+      "description": "Secondary accent — phase filters, knockout indicators"
+    },
+    "accent-emerald": {
+      "value": "#10B981",
+      "description": "Success/correct predictions — green channel"
+    },
+
+    "state-success": {
+      "value": "#22C55E",
+      "description": "Correct prediction indicator"
+    },
+    "state-warning": {
+      "value": "#F59E0B",
+      "description": "Partial match, score-only correct"
+    },
+    "state-danger": {
+      "value": "#EF4444",
+      "description": "Incorrect prediction indicator"
+    },
+
+    "border-subtle": {
+      "value": "rgba(255, 255, 255, 0.06)",
+      "description": "Default card borders"
+    },
+    "border-strong": {
+      "value": "rgba(255, 255, 255, 0.14)",
+      "description": "Hover/active borders"
+    },
+    "border-gold": {
+      "value": "rgba(201, 162, 39, 0.25)",
+      "description": "Gold-trim borders for premium containers"
+    },
+
+    "medal-gold": { "value": "#C9A227" },
+    "medal-silver": { "value": "#B0B8C4" },
+    "medal-bronze": { "value": "#CD7F32" }
+  },
+
+  "typography": {
+    "family": {
+      "display": {
+        "value": "var(--font-playfair-display), 'Playfair Display', Georgia, serif",
+        "description": "Serif for headings, hero titles, champion names"
+      },
+      "body": {
+        "value": "var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "description": "Sans-serif for body text, navigation, labels"
+      },
+      "mono": {
+        "value": "'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace",
+        "description": "Monospace for scores, probabilities, data tables"
+      }
+    },
+    "scale": {
+      "h0-hero": {
+        "size": "clamp(32px, 5vw, 48px)",
+        "lineHeight": "1.05",
+        "letterSpacing": "-0.04em",
+        "weight": "800",
+        "family": "display",
+        "usage": "Page hero titles, champion reveal"
+      },
+      "h1-display": {
+        "size": "clamp(24px, 4vw, 32px)",
+        "lineHeight": "1.1",
+        "letterSpacing": "-0.03em",
+        "weight": "700",
+        "family": "display",
+        "usage": "Section titles, dashboard headers"
+      },
+      "h2-page": {
+        "size": "clamp(18px, 3vw, 24px)",
+        "lineHeight": "1.2",
+        "letterSpacing": "-0.02em",
+        "weight": "600",
+        "family": "body",
+        "usage": "Page-level headings"
+      },
+      "h3-section": {
+        "size": "clamp(14px, 2vw, 16px)",
+        "lineHeight": "1.3",
+        "letterSpacing": "-0.01em",
+        "weight": "600",
+        "family": "body",
+        "usage": "Section subtitles, group labels"
+      },
+      "h4-card": {
+        "size": "14px",
+        "lineHeight": "1.4",
+        "letterSpacing": "-0.005em",
+        "weight": "600",
+        "family": "body",
+        "usage": "Card titles, team names"
+      },
+      "body": {
+        "size": "14px",
+        "lineHeight": "1.6",
+        "letterSpacing": "normal",
+        "weight": "400",
+        "family": "body",
+        "usage": "Body paragraphs, descriptions"
+      },
+      "meta": {
+        "size": "12px",
+        "lineHeight": "1.4",
+        "letterSpacing": "normal",
+        "weight": "500",
+        "family": "body",
+        "usage": "Secondary info, match metadata"
+      },
+      "micro": {
+        "size": "10px",
+        "lineHeight": "1.3",
+        "letterSpacing": "0.06em",
+        "weight": "700",
+        "family": "body",
+        "usage": "Labels, badges, timestamps, uppercase"
+      },
+      "score": {
+        "size": "clamp(16px, 2.5vw, 24px)",
+        "lineHeight": "1",
+        "letterSpacing": "-0.03em",
+        "weight": "800",
+        "family": "mono",
+        "usage": "Match scores, prediction numbers"
+      },
+      "stat": {
+        "size": "24px",
+        "lineHeight": "1",
+        "letterSpacing": "-0.02em",
+        "weight": "700",
+        "family": "mono",
+        "usage": "Dashboard stats, probability percentages"
+      },
+      "tabular": {
+        "size": "12px",
+        "lineHeight": "1.2",
+        "letterSpacing": "normal",
+        "weight": "500",
+        "family": "mono",
+        "usage": "Table cells, standings data"
+      }
+    }
+  },
+
+  "spacing": {
+    "xs":  "4px",
+    "sm":  "8px",
+    "md":  "12px",
+    "lg":  "16px",
+    "xl":  "24px",
+    "2xl": "32px",
+    "3xl": "48px",
+    "4xl": "64px",
+    "5xl": "96px"
+  },
+
+  "borderRadius": {
+    "sm":  "8px",
+    "md":  "12px",
+    "lg":  "16px",
+    "xl":  "24px",
+    "2xl": "32px",
+    "full": "9999px"
+  },
+
+  "shadows": {
+    "sm": {
+      "value": "0 1px 3px rgba(0,0,0,0.5)",
+      "description": "Subtle surface shadow"
+    },
+    "md": {
+      "value": "0 4px 16px rgba(0,0,0,0.4)",
+      "description": "Elevated card shadow"
+    },
+    "lg": {
+      "value": "0 16px 48px rgba(0,0,0,0.5)",
+      "description": "Modal/panel shadow"
+    },
+    "xl": {
+      "value": "0 24px 64px rgba(0,0,0,0.6)",
+      "description": "Premium overlay shadow"
+    },
+    "glass": {
+      "value": "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
+      "description": "Glassmorphism card shadow with subtle inner highlight"
+    },
+    "glass-panel": {
+      "value": "0 24px 64px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)",
+      "description": "Premium glass panel — 3-layer shadow"
+    },
+    "glow-gold": {
+      "value": "0 0 0 1px rgba(201,162,39,0.5), 0 0 32px rgba(201,162,39,0.2)",
+      "description": "Gold glow for champion cards, premium elements"
+    },
+    "glow-blue": {
+      "value": "0 0 0 1px rgba(59,130,246,0.5), 0 0 32px rgba(59,130,246,0.2)",
+      "description": "Blue glow for active/selected elements"
+    },
+    "glow-green": {
+      "value": "0 0 0 1px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.15)",
+      "description": "Green glow for correct predictions"
+    },
+    "glow-red": {
+      "value": "0 0 0 1px rgba(239,68,68,0.4), 0 0 16px rgba(239,68,68,0.12)",
+      "description": "Red glow for incorrect predictions"
+    },
+    "luxury-hover": {
+      "value": "0 12px 40px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.08)",
+      "description": "Hover state for luxury cards — lift + border reveal"
+    },
+    "sidebar": {
+      "value": "4px 0 24px rgba(0,0,0,0.15)",
+      "description": "Sidebar panel shadow"
+    },
+    "bottom-nav": {
+      "value": "0 -4px 24px rgba(0,0,0,0.2)",
+      "description": "Mobile bottom navigation shadow"
+    }
+  },
+
+  "gradients": {
+    "gold": {
+      "value": "linear-gradient(135deg, #C9A227 0%, #FFE69A 50%, #C9A227 100%)",
+      "description": "Gold shimmer for champion text, premium badges"
+    },
+    "gold-card": {
+      "value": "linear-gradient(135deg, rgba(201,162,39,0.08) 0%, transparent 50%, rgba(201,162,39,0.04) 100%)",
+      "description": "Subtle gold gradient for card backgrounds"
+    },
+    "gold-border": {
+      "value": "linear-gradient(90deg, transparent, rgba(201,162,39,0.3), rgba(201,162,39,0.15), rgba(201,162,39,0.3), transparent)",
+      "description": "Gold bottom border glow"
+    },
+    "live": {
+      "value": "linear-gradient(90deg, #10B981, #22C55E)",
+      "description": "Live match indicator gradient"
+    },
+    "blue-violet": {
+      "value": "linear-gradient(135deg, #3B82F6, #8B5CF6)",
+      "description": "Blue-to-violet accent gradient"
+    },
+    "nav-active": {
+      "value": "linear-gradient(180deg, #C9A227, #3B82F6)",
+      "description": "Active nav indicator — gold to blue"
+    },
+    "shimmer": {
+      "value": "linear-gradient(90deg, var(--elevated) 25%, var(--raised) 50%, var(--elevated) 75%)",
+      "description": "Skeleton loading shimmer"
+    },
+    "card-3d": {
+      "value": "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 40%)",
+      "description": "Luxury card top highlight for 3D depth"
+    },
+    "bracket-round": {
+      "value": {
+        "R32": "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(139,92,246,0.06) 100%)",
+        "R16": "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(59,130,246,0.06) 100%)",
+        "R8":  "linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(201,162,39,0.06) 100%)",
+        "SF":  "linear-gradient(135deg, rgba(201,162,39,0.12) 0%, rgba(59,130,246,0.06) 100%)",
+        "F":   "linear-gradient(135deg, rgba(201,162,39,0.15) 0%, rgba(201,162,39,0.08) 100%)"
+      },
+      "description": "Per-round gradient backgrounds for bracket sections"
+    }
+  },
+
+  "glassmorphism": {
+    "blur": {
+      "light": "blur(20px) saturate(180%)",
+      "medium": "blur(24px) saturate(200%)",
+      "heavy": "blur(32px) saturate(200%)"
+    },
+    "background": {
+      "light": "rgba(12, 16, 23, 0.6)",
+      "medium": "rgba(21, 28, 37, 0.7)",
+      "heavy": "rgba(12, 16, 23, 0.85)"
+    },
+    "border": "rgba(255, 255, 255, 0.06)",
+    "innerHighlight": "inset 0 1px 0 rgba(255, 255, 255, 0.04)"
+  },
+
+  "motion": {
+    "easing": {
+      "out":        "cubic-bezier(0.16, 1, 0.3, 1)",
+      "spring":     "cubic-bezier(0.34, 1.56, 0.64, 1)",
+      "smooth":     "cubic-bezier(0.4, 0, 0.2, 1)",
+      "stiff":      "cubic-bezier(0.4, 0, 0.6, 1)"
+    },
+    "duration": {
+      "fast":   "120ms",
+      "normal": "220ms",
+      "slow":   "360ms",
+      "reveal": "500ms"
+    },
+    "keyframes": {
+      "fadeIn":     { "from": { "opacity": 0 }, "to": { "opacity": 1 } },
+      "slideUp":    { "from": { "opacity": 0, "transform": "translateY(8px)" }, "to": { "opacity": 1, "transform": "translateY(0)" } },
+      "scaleIn":    { "from": { "opacity": 0, "transform": "scale(0.96)" }, "to": { "opacity": 1, "transform": "scale(1)" } },
+      "pulseGold":  { "0%": { "boxShadow": "var(--shadow-glow-gold)" }, "50%": { "boxShadow": "0 0 0 1px rgba(201,162,39,0.6), 0 0 40px rgba(201,162,39,0.3)" } },
+      "shimmer":    { "0%": { "backgroundPosition": "-200% 0" }, "100%": { "backgroundPosition": "200% 0" } },
+      "breathe":    { "0%, 100%": { "boxShadow": "0 0 0 0 rgba(59,130,246,0.4)" }, "50%": { "boxShadow": "0 0 0 6px rgba(59,130,246,0)" } }
+    }
+  },
+
+  "components": {
+    "luxury-card": {
+      "description": "3-layer depth card with glassmorphism and gold trim support",
+      "structure": {
+        "layers": [
+          { "z": 0, "name": "pseudo-border-glow", "type": "::after", "content": "''", "inset": "-1px", "borderRadius": "inherit", "background": "linear-gradient(135deg, rgba(201,162,39,0.15), rgba(255,230,154,0.08), rgba(201,162,39,0.15))", "opacity": "0", "transition": "opacity 0.4s var(--ease-out)", "pointerEvents": "none", "hoverOpacity": 1 },
+          { "z": 1, "name": "glass-bg", "background": "var(--glass-base)", "backdropFilter": "var(--glassmorphism-blur-medium)", "borderRadius": "inherit", "border": "1px solid rgba(255,255,255,0.06)" },
+          { "z": 2, "name": "inner-highlight", "type": "::before", "content": "''", "position": "absolute", "inset": 0, "borderRadius": "inherit", "background": "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 40%)", "pointerEvents": "none" }
+        ],
+        "defaults": {
+          "position": "relative",
+          "borderRadius": "var(--r-lg)",
+          "transition": "all 0.3s var(--ease-out)"
+        },
+        "hover": {
+          "transform": "translateY(-2px)",
+          "boxShadow": "var(--shadow-luxury-hover)"
+        },
+        "variants": {
+          "gold": {
+            "border": "1px solid rgba(201,162,39,0.2)",
+            "boxShadow": "0 0 0 1px rgba(201,162,39,0.08), 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)",
+            "hoverBoxShadow": "var(--shadow-glow-gold), 0 12px 40px rgba(0,0,0,0.3)"
+          },
+          "interactive": {
+            "cursor": "pointer",
+            "hover": "background: var(--elevated); border-color: var(--border-strong); transform: translateY(-1px)"
+          },
+          "flat": {
+            "background": "var(--surface)",
+            "border": "1px solid var(--border-subtle)"
+          },
+          "elevated": {
+            "background": "var(--elevated)",
+            "border": "1px solid var(--border-subtle)",
+            "boxShadow": "var(--shadow-md)"
+          }
+        }
+      }
+    },
+
+    "glass-panel": {
+      "description": "Premium glass panel for modals, sidebars, and overlays",
+      "background": "rgba(12, 16, 23, 0.85)",
+      "backdropFilter": "blur(32px) saturate(200%)",
+      "border": "1px solid rgba(255,255,255,0.08)",
+      "boxShadow": "0 24px 64px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)",
+      "borderRadius": "var(--r-xl)"
+    },
+
+    "nav-sidebar": {
+      "description": "Luxury fixed sidebar with active nav glow and per-route accent colors",
+      "width": "256px",
+      "background": "rgba(12, 16, 23, 0.5)",
+      "backdropFilter": "blur(24px) saturate(200%)",
+      "borderRight": "1px solid var(--border-subtle)",
+      "boxShadow": "var(--shadow-sidebar)",
+      "activeIndicator": {
+        "position": "absolute",
+        "left": 0,
+        "top": "50%",
+        "transform": "translateY(-50%)",
+        "width": "3px",
+        "height": "60%",
+        "borderRadius": "0 3px 3px 0",
+        "background": "var(--gradient-nav-active)"
+      },
+      "routeAccents": {
+        "/":        { "color": "#3B82F6", "dot": "#3B82F6" },
+        "/fixture": { "color": "#C9A227", "dot": "#C9A227" },
+        "/live":    { "color": "#10B981", "dot": "#10B981" },
+        "/stats":   { "color": "#10B981", "dot": "#10B981" },
+        "/teams":   { "color": "#C9A227", "dot": "#C9A227" }
+      },
+      "navItem": {
+        "height": "40px",
+        "padding": "0 12px",
+        "borderRadius": "var(--r-md)",
+        "fontSize": "14px",
+        "fontWeight": "500",
+        "transition": "all 0.2s var(--ease-out)",
+        "hoverTransform": "translateX(2px)"
+      }
+    },
+
+    "match-card": {
+      "description": "Match prediction card with status-coded borders and scores",
+      "statusPalettes": {
+        "upcoming": {
+          "background": "var(--surface)",
+          "border": "var(--border-subtle)",
+          "scoreBg": "var(--raised)",
+          "scoreText": "var(--text-tertiary)"
+        },
+        "exact": {
+          "background": "rgba(34,197,94,0.08)",
+          "border": "rgba(34,197,94,0.25)",
+          "scoreBg": "rgba(34,197,94,0.18)",
+          "scoreText": "#4ADE80",
+          "goldGlow": true
+        },
+        "winner_ok": {
+          "background": "rgba(34,197,94,0.05)",
+          "border": "rgba(34,197,94,0.15)",
+          "scoreBg": "rgba(34,197,94,0.10)",
+          "scoreText": "var(--state-success)"
+        },
+        "wrong": {
+          "background": "rgba(239,68,68,0.08)",
+          "border": "rgba(239,68,68,0.25)",
+          "scoreBg": "rgba(239,68,68,0.18)",
+          "scoreText": "#FCA5A5"
+        },
+        "gold": {
+          "background": "rgba(201,162,39,0.06)",
+          "border": "rgba(201,162,39,0.25)",
+          "scoreBg": "rgba(201,162,39,0.12)",
+          "scoreText": "#C9A227"
+        }
+      },
+      "layout": {
+        "padding": "12px 16px",
+        "borderRadius": "var(--r-lg)",
+        "transition": "all 0.3s var(--ease-out)",
+        "hover": "brightness(1.1); box-shadow: var(--shadow-lg) var(--shadow-black/20); transform: translateY(-1px)"
+      }
+    },
+
+    "bracket-node": {
+      "description": "Knockout bracket match node with score display",
+      "padding": "10px 12px",
+      "borderRadius": "var(--r-md)",
+      "border": "1px solid var(--border-subtle)",
+      "background": "rgba(12, 16, 23, 0.6)",
+      "score": {
+        "fontFamily": "var(--font-mono)",
+        "fontWeight": "700",
+        "fontSize": "clamp(13px, 2vw, 16px)"
+      },
+      "final": {
+        "background": "rgba(201,162,39,0.06)",
+        "border": "rgba(201,162,39,0.3)",
+        "boxShadow": "0 4px 24px rgba(201,162,39,0.06)",
+        "scoreSize": "clamp(16px, 2.5vw, 22px)"
+      },
+      "connector": {
+        "color": "rgba(255,255,255,0.1)",
+        "width": "2px",
+        "style": "dashed"
+      }
+    },
+
+    "champion-banner": {
+      "description": "Champion probability + reveal banner with gold treatment",
+      "padding": "20px",
+      "borderRadius": "var(--r-xl)",
+      "background": "linear-gradient(135deg, rgba(201,162,39,0.08) 0%, var(--surface) 50%, rgba(201,162,39,0.04) 100%)",
+      "border": "1px solid rgba(201,162,39,0.2)",
+      "boxShadow": "0 0 40px rgba(201,162,39,0.08), 0 16px 48px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
+      "glow": "0 0 32px rgba(201,162,39,0.06), 0 12px 40px rgba(0,0,0,0.2)"
+    },
+
+    "tab-bar": {
+      "description": "Segmented tab control with animated active indicator",
+      "background": "var(--elevated)",
+      "borderRadius": "var(--r-xl)",
+      "border": "1px solid var(--border-subtle)",
+      "boxShadow": "inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.1)",
+      "padding": "4px",
+      "activePill": {
+        "background": "var(--accent-blue)",
+        "borderRadius": "var(--r-lg)",
+        "boxShadow": "0 4px 16px rgba(59,130,246,0.25)",
+        "transition": "type: spring, stiffness: 500, damping: 35"
+      },
+      "tab": {
+        "padding": "10px 12px",
+        "borderRadius": "var(--r-lg)",
+        "fontSize": "12px",
+        "fontWeight": "600",
+        "transition": "color 0.2s var(--ease-out)"
+      }
+    }
+  },
+
+  "tailwindConfig": {
+    "extend": {
+      "colors": {
+        "gold": { "DEFAULT": "#C9A227", "light": "#E2B340", "bright": "#FFE69A", "dark": "#A07F1A" },
+        "bg": { "canvas": "#06080D", "surface": "#0C1017", "elevated": "#151C25", "overlay": "#1E2732", "raised": "#283445" },
+        "fg": { "primary": "#F0F6FC", "secondary": "#94A3B8", "tertiary": "#64748B", "disabled": "#5A6478" },
+        "accent": { "primary": "#3B82F6", "violet": "#8B5CF6", "emerald": "#10B981", "gold": "#C9A227" },
+        "state": { "success": "#22C55E", "warning": "#F59E0B", "danger": "#EF4444" },
+        "border": { "subtle": "rgba(255,255,255,0.06)", "strong": "rgba(255,255,255,0.14)", "gold": "rgba(201,162,39,0.25)" }
+      },
+      "fontFamily": {
+        "display": ["var(--font-playfair-display)", "Georgia", "serif"],
+        "sans": ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+        "mono": ["JetBrains Mono", "ui-monospace", "monospace"]
+      },
+      "borderRadius": { "sm": "8px", "md": "12px", "lg": "16px", "xl": "24px", "2xl": "32px" },
+      "boxShadow": {
+        "glass": "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
+        "glass-panel": "0 24px 64px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)",
+        "glow-gold": "0 0 0 1px rgba(201,162,39,0.5), 0 0 32px rgba(201,162,39,0.2)",
+        "glow-blue": "0 0 0 1px rgba(59,130,246,0.5), 0 0 32px rgba(59,130,246,0.2)",
+        "glow-green": "0 0 0 1px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.15)",
+        "luxury": "0 12px 40px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.08)",
+        "sidebar": "4px 0 24px rgba(0,0,0,0.15)",
+        "bottom-nav": "0 -4px 24px rgba(0,0,0,0.2)"
+      },
+      "backdropBlur": { "glass": "20px", "glass-md": "24px", "glass-lg": "32px" },
+      "animation": {
+        "fade": "fadeIn 220ms cubic-bezier(0.16,1,0.3,1) both",
+        "rise": "slideUp 220ms cubic-bezier(0.16,1,0.3,1) both",
+        "pop": "scaleIn 220ms cubic-bezier(0.34,1.56,0.64,1) both",
+        "pulse-gold": "pulseGold 3s ease-in-out infinite",
+        "shimmer": "shimmer 1.4s ease-in-out infinite",
+        "breathe": "breathe 2s ease-in-out infinite"
+      },
+      "backgroundImage": {
+        "gradient-gold": "linear-gradient(135deg, #C9A227 0%, #FFE69A 50%, #C9A227 100%)",
+        "gradient-gold-card": "linear-gradient(135deg, rgba(201,162,39,0.08) 0%, transparent 50%, rgba(201,162,39,0.04) 100%)",
+        "gradient-nav-active": "linear-gradient(180deg, #C9A227, #3B82F6)",
+        "gradient-card-3d": "linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 40%)"
+      }
+    }
+  },
+
+  "lightMode": {
+    "canvas": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "elevated": "#F1F5F9",
+    "overlay": "#E2E8F0",
+    "raised": "#CBD5E1",
+    "textPrimary": "#0F172A",
+    "textSecondary": "#475569",
+    "textTertiary": "#94A3B8",
+    "gold": "#B8860B",
+    "borderSubtle": "rgba(0,0,0,0.08)",
+    "glassBg": "rgba(255,255,255,0.65)",
+    "glassElevated": "rgba(241,245,249,0.8)",
+    "transition": "0.6s cubic-bezier(0.4, 0, 0.2, 1)"
+  }
+}
