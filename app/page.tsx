@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useTournamentStore } from '@/lib/store/tournament-store';
 import { groupResultsByDate, getFlag, getRoundLabel } from '@/lib/dashboard-utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 export default function DashboardPage() {
   const { fixture, bracket, top8, loading, error, refresh, lastUpdated } = useTournamentStore();
@@ -69,10 +70,12 @@ export default function DashboardPage() {
         <p className="text-xs text-fg-secondary">Estado actual del torneo al 7 de Julio de 2026</p>
       </header>
 
+      <ScrollReveal delay={1}>
       <div className="grid grid-cols-2 gap-2">
         <StatPill icon={<Target className="h-3.5 w-3.5" />} label="Acierto" value={`${stats?.accuracy || 0}%`} sub={`${stats?.played || 0} jugados`} color="emerald" />
         <StatPill icon={<Zap className="h-3.5 w-3.5" />} label="Exactos" value={`${stats?.exact || 0}`} sub="🎯 Marcadores OK" color="gold" />
       </div>
+      </ScrollReveal>
 
       {upcomingMatches.length > 0 && (
         <section className="space-y-2">
@@ -118,13 +121,15 @@ export default function DashboardPage() {
 
 function StatPill({ icon, label, value, sub, color }: any) {
   return (
-    <div className="p-3 rounded-[var(--r-lg)] border bg-elevated border-border-subtle luxury-card gold-glow shimmer-hover">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] text-fg-tertiary uppercase font-semibold">{label}</span>
-        <span className={cn(color === 'emerald' ? 'text-accent-emerald' : 'text-accent-gold')}>{icon}</span>
+    <div className="doppelrand">
+      <div className="doppelrand-inner flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-fg-tertiary uppercase font-semibold tracking-wider">{label}</span>
+          <span className={cn(color === 'emerald' ? 'text-accent-emerald' : 'text-accent-gold')}>{icon}</span>
+        </div>
+        <div className="text-2xl font-black font-mono tracking-tight">{value}</div>
+        <div className="text-[10px] text-fg-tertiary">{sub}</div>
       </div>
-      <div className="text-xl font-bold font-mono">{value}</div>
-      <div className="text-[10px] text-fg-tertiary mt-0.5">{sub}</div>
     </div>
   );
 }
@@ -179,24 +184,25 @@ function ResultCard({ match }: { match: { home: string, away: string, pred: [num
 function ChampionWidget({ probs, champion }: any) {
   const maxProb = probs[0]?.pct || 1;
   return (
-    <div className="surface p-4 rounded-[var(--r-lg)] border border-accent-gold/20 bg-elevated/50 luxury-card" style={{ boxShadow: '0 0 0 1px rgba(226,179,64,0.08), 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03)' }}>
-      <div className="text-center mb-4">
-        <div className="text-3xl mb-1">🏆</div>
-        <div className="text-lg font-black text-gold">{champion}</div>
-        <div className="text-[10px] text-fg-tertiary">Favorito según 1,000 simulaciones</div>
-      </div>
-      <div className="space-y-1.5">
-        {probs.slice(0, 8).map((p: any, i: number) => (
-          <div key={p.team} className="flex items-center gap-2">
-            <span className="text-[10px] w-4 text-fg-tertiary">{i+1}</span>
-            <span className="text-[10px]">{getFlag(p.team)}</span>
-            <span className="text-[11px] font-semibold w-20 truncate">{p.team}</span>
-            <div className="flex-1 h-2 bg-raised rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-accent-premium/60 to-accent-premium/30 rounded-full transition-all duration-500" style={{ width: `${(p.pct / maxProb) * 100}%` }} />
+    <div className="doppelrand doppelrand-gold">
+      <div className="doppelrand-inner !px-5 !py-5 text-center">
+        <div className="text-4xl mb-2">🏆</div>
+        <div className="text-xl font-black text-gold tracking-tight">{champion}</div>
+        <div className="text-[10px] text-fg-tertiary mt-1 mb-4">Favorito según 1,000 simulaciones</div>
+        <hr className="divider-premium mb-4" />
+        <div className="space-y-1.5 text-left">
+          {probs.slice(0, 8).map((p: any, i: number) => (
+            <div key={p.team} className="flex items-center gap-2">
+              <span className="text-[10px] w-4 text-fg-tertiary font-mono">{i+1}</span>
+              <span className="text-[10px]">{getFlag(p.team)}</span>
+              <span className="text-[11px] font-semibold w-20 truncate">{p.team}</span>
+              <div className="flex-1 h-2.5 bg-raised/60 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-accent-premium/60 to-accent-premium/30 rounded-full transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]" style={{ width: `${(p.pct / maxProb) * 100}%` }} />
+              </div>
+              <span className="text-[10px] font-mono w-10 text-right text-fg-secondary">{p.pct}%</span>
             </div>
-            <span className="text-[10px] font-mono w-10 text-right">{p.pct}%</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -204,15 +210,15 @@ function ChampionWidget({ probs, champion }: any) {
 
 function QuickLink({ href, icon, title, desc, accent }: any) {
   return (
-    <Link href={href} className="block surface-interactive px-4 py-3 rounded-[var(--r-lg)] border border-border-subtle hover:border-accent-premium/40 hover:shadow-[0_0_20px_rgba(226,179,64,0.1)] transition-all duration-300 gold-glow">
+    <Link href={href} className="btn-premium justify-between w-full !rounded-[var(--r-lg)] !px-4 !py-3.5">
       <div className="flex items-center gap-3">
-        <span className="text-lg">{icon}</span>
-        <div className="flex-1">
+        <span className="btn-icon-pill !w-8 !h-8 !bg-accent-premium/15 text-base">{icon}</span>
+        <div className="text-left">
           <div className="text-sm font-bold">{title}</div>
           <div className="text-[10px] text-fg-tertiary">{desc}</div>
         </div>
-        <ChevronRight className="w-4 h-4 text-fg-tertiary" />
       </div>
+      <ChevronRight className="w-4 h-4 opacity-60" />
     </Link>
   );
 }

@@ -25,7 +25,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useKeyboardShortcuts();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      {/* Grain overlay — subtle texture for physical depth */}
+      <div className="grain-overlay" aria-hidden="true" />
+
       {/* Skip link */}
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 surface-elevated px-3 py-2 text-sm">
         Saltar al contenido
@@ -33,13 +36,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar (lg+) */}
       <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col border-r border-border-subtle bg-surface/50 backdrop-blur-2xl z-30" role="navigation" aria-label="Navegación principal" style={{ boxShadow: '4px 0 24px rgba(0,0,0,0.15)' }}>
-        <Link href="/" className="h-14 flex items-center gap-2 px-6 border-b border-border-subtle hover:bg-elevated/30 transition-colors duration-200">
-          <span className="h-7 w-7 rounded-md bg-accent-primary/20 border border-accent-primary/40 flex items-center justify-center">
-            <span className="h-2 w-2 rounded-full bg-accent-primary" />
-          </span>
-          <div className="flex flex-col leading-none">
-            <span className="text-[13px] font-bold tracking-tight">FORCH.i</span>
-            <span className="text-[10px] text-gold tracking-widest">ORACLE</span>
+        <Link href="/" className="doppelrand !bg-transparent !border-0 !shadow-none !p-0 mx-3 mt-3">
+          <div className="doppelrand-inner flex items-center gap-3 py-2.5 px-4 !rounded-[var(--r-md)] bg-elevated/80">
+            <span className="h-8 w-8 rounded-md bg-gradient-to-br from-accent-premium/30 to-accent-premium/10 border border-accent-premium/30 flex items-center justify-center shadow-[0_0_12px_rgba(226,179,64,0.1)]">
+              <span className="h-2.5 w-2.5 rounded-full bg-accent-premium shadow-[0_0_6px_rgba(226,179,64,0.5)]" />
+            </span>
+            <div className="flex flex-col leading-none">
+              <span className="text-[14px] font-bold tracking-tight text-fg-primary">FORCH.i</span>
+              <span className="text-[10px] text-gold tracking-[0.15em] font-semibold">ORACLE</span>
+            </div>
           </div>
         </Link>
 
