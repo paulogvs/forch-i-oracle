@@ -178,4 +178,9 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   // ── THIRD PLACE ──
   // 3rd: Francia vs Inglaterra. Inglaterra 6-4 (Away win) — 18 julio, Miami
   { matchId: '3rd', homeScore: 4, awayScore: 6 },
+
+  // ── FINAL ──
+  // Final: España vs Argentina. España 1-0 (AET) — 19 julio, MetLife Stadium, New Jersey
+  // Goal: Ferran Torres 106' | Red card: Enzo Fernández 90'+3
+  { matchId: 'Final', homeScore: 0, awayScore: 1 },
 ];
