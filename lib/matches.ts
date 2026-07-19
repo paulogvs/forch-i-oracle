@@ -312,11 +312,11 @@ const SEMIFINALS: Match[] = [
 // ═══════════════════════════════════════════════════════════════
 
 const THIRD_PLACE: Match[] = [
-  { id: '3rd', group: 'Final', matchday: 1, date: '2026-07-18', time: '21:00', homeTeam: 'L-SF-1', awayTeam: 'L-SF-2', homeCode: '', awayCode: '', venue: 'Hard Rock Stadium', city: 'Miami', round: 'third' },
+  { id: '3rd', group: 'Final', matchday: 1, date: '2026-07-18', time: '21:00', homeTeam: 'Francia', awayTeam: 'Inglaterra', homeCode: 'FRA', awayCode: 'ENG', venue: 'Hard Rock Stadium', city: 'Miami', round: 'third' },
 ];
 
 const FINAL: Match[] = [
-  { id: 'Final', group: 'Final', matchday: 1, date: '2026-07-19', time: '19:00', homeTeam: 'W-SF-1', awayTeam: 'W-SF-2', homeCode: '', awayCode: '', venue: 'MetLife Stadium', city: 'New York', round: 'final' },
+  { id: 'Final', group: 'Final', matchday: 1, date: '2026-07-19', time: '19:00', homeTeam: 'España', awayTeam: 'Argentina', homeCode: 'ESP', awayCode: 'ARG', venue: 'MetLife Stadium', city: 'New York', round: 'final' },
 ];
 
 // ═══════════════════════════════════════════════════════════════

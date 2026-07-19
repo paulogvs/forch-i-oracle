@@ -168,4 +168,14 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   { matchId: 'R8-3', homeScore: 1, awayScore: 2 },
   // R8-4: Argentina vs Suiza. Argentina 3-1 (Home win, AET) — 11 julio, Kansas City
   { matchId: 'R8-4', homeScore: 3, awayScore: 1 },
+
+  // ── SEMIFINALS ──
+  // SF-1: Francia vs España. España 2-0 (Home win) — 14 julio, Dallas
+  { matchId: 'SF-1', homeScore: 0, awayScore: 2 },
+  // SF-2: Inglaterra vs Argentina. Argentina 2-1 (Away win) — 15 julio, New York
+  { matchId: 'SF-2', homeScore: 1, awayScore: 2 },
+
+  // ── THIRD PLACE ──
+  // 3rd: Francia vs Inglaterra. Inglaterra 6-4 (Away win) — 18 julio, Miami
+  { matchId: '3rd', homeScore: 4, awayScore: 6 },
 ];
