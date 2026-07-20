@@ -182,5 +182,5 @@ export const HARDCODED_RESULTS: HardcodedResult[] = [
   // ── FINAL ──
   // Final: España vs Argentina. España 1-0 (AET) — 19 julio, MetLife Stadium, New Jersey
   // Goal: Ferran Torres 106' | Red card: Enzo Fernández 90'+3
-  { matchId: 'Final', homeScore: 0, awayScore: 1 },
+  { matchId: 'Final', homeScore: 1, awayScore: 0 },
 ];
