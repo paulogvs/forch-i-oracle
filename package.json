@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "heartbeat": "node scripts/heartbeat-client.mjs --app forch-i-oracle --step \"npm run\"",
+    "predev": "npm run heartbeat",
+    "prestart": "npm run heartbeat"
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.11",
