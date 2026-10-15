@@ -47,17 +47,33 @@
 - `GET /api/predictions/all` — All pre-calculated predictions
 - `GET /api/prediction/[matchId]` — Single pre-calculated prediction
 
-## Components (17 total)
-- `MatchSelector.tsx` — WC2026 match picker (groups A-L + knockout tabs)
-- `TeamSelector.tsx` — Manual team dropdown with search
-- `ResultCard.tsx` — Prediction display with expandable tabs
-- `LensConsensus.tsx` — 5-lens analysis consensus
-- `FixtureView.tsx` — Tabbed fixture viewer (grupos → finales)
-- `BracketPhase.tsx` / `BracketMatch.tsx` — Knockout bracket display
-- `GroupCard.tsx` / `GroupTable.tsx` / `SimGroupStandings.tsx` — Group standings
-- `Top8Ranking.tsx` — Champion probability ranking
-- `ChampionPodium.tsx` / `ChampionReveal.tsx` — Champion reveal
-- `KeyFactors.tsx` / `ConfidenceMeter.tsx` / `ComparisonBars.tsx` / `FormBubbles.tsx` — Stats viz
+## Components (15 files)
+- `components/layout/AppShell.tsx` — App shell (sidebar + mobile nav + topbar)
+- `components/layout/TopBar.tsx` — Fixed top bar with refresh
+- `components/ui/Badge.tsx` — Status badge primitive
+- `components/ui/Button.tsx` — Button primitive
+- `components/ui/LiveDot.tsx` — Live status dot
+- `components/ui/ScrollReveal.tsx` — Intersection observer reveal
+- `components/ui/Surface.tsx` — Styled container primitive
+- `components/icons/animated-icons.tsx` — 7 animated SVG icons
+- `components/system/AutoSync.tsx` — Background data sync worker
+- `components/BackToTop.tsx` — Scroll-to-top button
+- `components/DriftSparkline.tsx` — Prediction drift sparkline chart
+- `components/MatchSeal.tsx` — Match verification stamp
+- `components/ModelDisagreementCard.tsx` — Ensemble model agreement display
+- `components/Skeleton.tsx` — Loading skeleton variants
+- `components/VerdictCard.tsx` — Prediction vs reality verdict
+
+> Note: Many sub-components are defined inline in page files (e.g., `fixture/page.tsx` has ~10 inline components).
+
+### Pages (7 routes)
+- `/` — Dashboard (home)
+- `/fixture` — Full fixture viewer (groups, bracket, top8)
+- `/live` — Live panel (results, upcoming)
+- `/stats` — Statistics dashboard
+- `/teams` — Team browser
+- `/backtest` — Model validation
+- `/forecast` and `/torneo` — Redirects to `/fixture`
 
 ## Data Files
 - `lib/matches.ts` — 128 WC2026 matches (72 group + 56 knockout)
