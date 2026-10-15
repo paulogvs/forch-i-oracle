@@ -5,6 +5,9 @@ import { ALL_MATCHES } from '../lib/matches';
 
 async function runTests() {
   const db = getDataLayer();
+  // Every `FAIL:` line below must land here, otherwise the test detects the
+  // defect, prints it and still exits 0 -- false coverage.
+  const failures: string[] = [];
   console.log('=== FORCH.i ORACLE - System Integration Test ===\n');
 
   // Test 1: Clear
@@ -32,7 +35,10 @@ async function runTests() {
   });
   const mex = groupA.find((t: any) => t.name === 'México' || t.name === 'Mexico');
   if (mex?.played === 1 && mex.points === 3) console.log('  OK: México standings correct\n');
-  else { console.error('  FAIL: México standings wrong'); }
+  else {
+    console.error('  FAIL: México standings wrong');
+    failures.push(`México standings wrong (played=${mex?.played}, points=${mex?.points})`);
+  }
 
   // Test 4: Bracket
   console.log('[4/6] Checking bracket...');
@@ -50,7 +56,9 @@ async function runTests() {
   console.log('[5/6] Checking for duplicate Chequia...');
   const chequiaR32 = bracket.roundOf32?.filter((m: any) => m.awayTeam === 'Chequia' || m.homeTeam === 'Chequia') || [];
   console.log(`  Chequia in R32: ${chequiaR32.length} matches`);
-  console.log(`  ${chequiaR32.length <= 1 ? 'OK' : 'FAIL: Too many!'}\n`);
+  const chequiaOk = chequiaR32.length <= 1;
+  console.log(`  ${chequiaOk ? 'OK' : 'FAIL: Too many!'}\n`);
+  if (!chequiaOk) failures.push(`Chequia appears in ${chequiaR32.length} R32 matches (max 1)`);
 
   // Test 6: Drift
   console.log('[6/6] Checking drift...');
@@ -61,6 +69,11 @@ async function runTests() {
     console.log(`  OK\n`);
   }
 
+  if (failures.length > 0) {
+    console.error(`=== Test FAILED: ${failures.length} check(s) failed ===`);
+    for (const f of failures) console.error(`  - ${f}`);
+    process.exit(1);
+  }
   console.log('=== Test Complete ===');
 }
 
