@@ -1,0 +1,59 @@
+# FORCH.iA — dockerignore.template (pod kit v5)
+# Se sincroniza a la RAÍZ DE CONTEXTO de cada app (la carpeta que tiene su
+# package.json) como `.dockerignore`. Sin esto, `COPY . .` arrastraría el
+# node_modules del HOST (binarios win32) dentro de la imagen Linux → build
+# inflado y contenedor roto. Este archivo es la fuente de verdad versionada.
+#
+# Sync: node scripts/harness-pod-up.js --app <app> --sync
+
+# ── dependencias / artefactos del host ────────────────────────────────────
+node_modules
+**/node_modules
+.pnpm-store
+**/.pnpm-store
+
+# ── builds ────────────────────────────────────────────────────────────────
+dist
+**/dist
+build
+**/build
+out
+**/out
+.next
+**/.next
+.vite
+**/.vite
+.turbo
+**/.turbo
+coverage
+**/coverage
+.cache
+**/.cache
+
+# ── VCS ───────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── secretos / entorno (NUNCA dentro de una imagen) ──────────────────────
+.env
+.env.*
+!.env.example
+
+# ── runtime del ecosistema que no debe viajar a la imagen ────────────────
+.claude
+.freebuff
+.pytest_cache
+__pycache__
+**/__pycache__
+*.pyc
+research-run
+STATE.md
+
+# ── ruido ─────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
